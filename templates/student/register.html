@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>สมัครสมาชิก | Typing Competition</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f8ff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .register-container {
+            width: 1100px;
+            min-height: 650px;
+            background: white;
+            border-radius: 30px;
+            box-shadow: 0 10px 35px rgba(70, 120, 180, 0.12);
+
+            display: flex;
+            overflow: hidden;
+        }
+
+
+        /* =========================
+           ฝั่งซ้าย
+        ========================= */
+
+        .register-form {
+            width: 58%;
+            padding: 55px 65px;
+        }
+
+        .title {
+            color: #3f6fb5;
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #777;
+            font-size: 18px;
+            margin-bottom: 28px;
+        }
+
+
+        /* =========================
+           ประเภทผู้ใช้
+        ========================= */
+
+        .section-title {
+            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .role-container {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .role-button {
+            flex: 1;
+            height: 55px;
+
+            border: 1px solid #d7dce5;
+            border-radius: 14px;
+
+            background: white;
+            color: #555;
+
+            font-size: 17px;
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+        .role-button.active {
+            background: #5d91df;
+            color: white;
+            border-color: #5d91df;
+        }
+
+
+        /* =========================
+           ช่องกรอกข้อมูล
+        ========================= */
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            color: #333;
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            height: 52px;
+            border: 1px solid #d7dce5;
+            border-radius: 14px;
+
+            padding: 0 18px;
+
+            font-size: 16px;
+            outline: none;
+            background: #fff;
+        }
+
+        .form-group input:focus {
+            border-color: #5d91df;
+            box-shadow: 0 0 0 3px rgba(93, 145, 223, 0.12);
+        }
+
+
+        /* =========================
+           ปุ่มสมัคร
+        ========================= */
+
+        .register-button {
+            width: 70%;
+            height: 58px;
+
+            margin-top: 28px;
+
+            border: none;
+            border-radius: 15px;
+
+            background: #5d91df;
+            color: white;
+
+            font-size: 20px;
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+        .register-button:hover {
+            background: #4c80cf;
+        }
+
+
+        /* =========================
+           ลิงก์ Login
+        ========================= */
+
+        .login-link {
+            margin-top: 25px;
+            text-align: center;
+
+            color: #666;
+            font-size: 16px;
+        }
+
+        .login-link a {
+            color: #5d91df;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+
+        /* =========================
+           ฝั่งขวา
+        ========================= */
+
+        .register-image {
+            width: 42%;
+            background: #eef5ff;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            position: relative;
+            overflow: hidden;
+        }
+
+        .image-content {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .keyboard-icon {
+            font-size: 150px;
+            margin-bottom: 20px;
+        }
+
+        .image-content h2 {
+            color: #4778bd;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .image-content p {
+            color: #777;
+            font-size: 16px;
+        }
+
+
+        /* =========================
+           Responsive
+        ========================= */
+
+        @media (max-width: 850px) {
+
+            .register-container {
+                width: 95%;
+            }
+
+            .register-form {
+                width: 100%;
+                padding: 40px;
+            }
+
+            .register-image {
+                display: none;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+    <div class="register-container">
+
+
+        <!-- =========================
+             FORM
+        ========================= -->
+
+        <div class="register-form">
+
+            <h1 class="title">
+                สมัครสมาชิก ✦
+            </h1>
+
+            <p class="subtitle">
+                สร้างบัญชีของคุณ เพื่อเริ่มต้นใช้งานระบบ
+            </p>
+
+
+            <!-- ประเภทผู้ใช้ -->
+
+            <p class="section-title">
+                ประเภทผู้ใช้
+            </p>
+
+            <div class="role-container">
+
+                <button
+                    type="button"
+                    class="role-button active">
+                    👤 นักเรียน
+                </button>
+
+                <button
+                    type="button"
+                    class="role-button">
+                    🎓 อาจารย์
+                </button>
+
+            </div>
+
+
+            <!-- ช่องกรอก -->
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label>
+                        ชื่อผู้ใช้
+                    </label>
+
+                    <input
+                        type="text"
+                        placeholder="กรอกชื่อผู้ใช้">
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>
+                        รหัสผ่าน
+                    </label>
+
+                    <input
+                        type="password"
+                        placeholder="กรอกรหัสผ่าน">
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>
+                        อีเมล
+                    </label>
+
+                    <input
+                        type="email"
+                        placeholder="กรอกอีเมล">
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>
+                        ยืนยันรหัสผ่าน
+                    </label>
+
+                    <input
+                        type="password"
+                        placeholder="ยืนยันรหัสผ่าน">
+
+                </div>
+
+            </div>
+
+
+            <!-- ปุ่ม -->
+
+            <button
+                type="button"
+                class="register-button">
+
+                สมัครสมาชิก ➜
+
+            </button>
+
+
+            <!-- Login -->
+
+            <div class="login-link">
+
+                มีบัญชีอยู่แล้ว?
+
+                <a href="#">
+                    เข้าสู่ระบบ
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             ภาพด้านขวา
+        ========================= -->
+
+        <div class="register-image">
+
+            <div class="image-content">
+
+                <div class="keyboard-icon">
+                    💻
+                </div>
+
+                <h2>
+                    Typing Competition
+                </h2>
+
+                <p>
+                    ฝึกพิมพ์ พัฒนาทักษะ<br>
+                    และก้าวไปให้ไกลกว่าเดิม
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

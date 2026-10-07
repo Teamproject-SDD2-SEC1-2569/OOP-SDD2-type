@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ระบบห้องเรียนฝึกพิมพ์</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="page">
+
+        <!-- ด้านซ้าย -->
+        <section class="left-section">
+
+            <div class="brand">
+
+                <h1>ระบบห้องเรียนฝึกพิมพ์</h1>
+
+                <p>
+                    ติดตามพัฒนาการพิมพ์ของนักเรียน
+                </p>
+
+            </div>
+
+            <div class="illustration">
+
+                <div class="plant">🌱</div>
+
+                <div class="student">
+                    👩🏻‍💻
+                </div>
+
+                <div class="laptop">
+                    💻
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ด้านขวา -->
+        <section class="right-section">
+
+            <div class="login-card">
+
+                <h2>
+                    เข้าสู่ระบบ / สมัครสมาชิก
+                </h2>
+
+
+                <!-- เลือกประเภทผู้ใช้ -->
+
+                <div class="role-buttons">
+
+                    <button class="role active">
+                        👤 นักเรียน
+                    </button>
+
+                    <button class="role">
+                        🎓 อาจารย์
+                    </button>
+
+                </div>
+
+
+                <form method="POST"
+                      action="/login">
+
+
+                    <!-- Username -->
+
+                    <div class="input-box">
+
+                        <span>👤</span>
+
+                        <input
+                            type="text"
+                            name="username"
+                            placeholder="ชื่อผู้ใช้ / อีเมล"
+                            required>
+
+                    </div>
+
+
+                    <!-- Password -->
+
+                    <div class="input-box">
+
+                        <span>🔒</span>
+
+                        <input
+                            type="password"
+                            name="password"
+                            placeholder="รหัสผ่าน"
+                            required>
+
+                        <span class="eye">
+                            👁
+                        </span>
+
+                    </div>
+
+
+                    <!-- Login -->
+
+                    <button
+                        type="submit"
+                        class="login-button">
+
+                        เข้าสู่ระบบ
+
+                    </button>
+
+                </form>
+
+
+                <div class="or">
+                    หรือ
+                </div>
+
+
+                <!-- Google -->
+
+                <button class="google-button">
+
+                    <span class="google">
+                        G
+                    </span>
+
+                    เข้าสู่ระบบด้วย Google
+
+                </button>
+
+
+                <!-- Register -->
+
+                <p class="register">
+
+                    ยังไม่มีบัญชี?
+
+                    <a href="#">
+                        สมัครสมาชิก
+                    </a>
+
+                </p>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</body>
+
+</html>
