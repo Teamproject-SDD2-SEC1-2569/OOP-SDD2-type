@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ห้องเรียน | TypeClass</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, "Noto Sans Thai", sans-serif;
+            background: #f7fbff;
+            color: #29445f;
+        }
+
+
+        /* =========================
+           MAIN LAYOUT
+        ========================= */
+
+        .classroom-page {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            background: #f7fbff;
+        }
+
+
+        /* =========================
+           SIDEBAR
+        ========================= */
+
+        .sidebar {
+            width: 245px;
+            min-width: 245px;
+            min-height: 100vh;
+
+            padding: 30px 20px;
+
+            background: #ffffff;
+
+            border-right: 1px solid #e5edf5;
+        }
+
+        .profile {
+            text-align: center;
+
+            padding-bottom: 30px;
+
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .profile-avatar {
+            width: 70px;
+            height: 70px;
+
+            margin: 0 auto;
+
+            border-radius: 50%;
+
+            background: #dceeff;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 35px;
+        }
+
+        .profile h3 {
+            margin: 12px 0 5px;
+
+            font-size: 16px;
+
+            color: #385a76;
+        }
+
+        .profile span {
+            font-size: 13px;
+
+            color: #8ca0b3;
+        }
+
+
+        /* Menu */
+
+        .menu {
+            margin-top: 30px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+
+            gap: 14px;
+
+            padding: 14px 16px;
+
+            margin-bottom: 10px;
+
+            border-radius: 12px;
+
+            color: #6d8296;
+
+            text-decoration: none;
+
+            font-size: 15px;
+
+            transition: 0.2s;
+        }
+
+        .menu-item:hover,
+        .menu-item.active {
+            background: #eaf5ff;
+
+            color: #4c98d8;
+        }
+
+        .menu-icon {
+            width: 25px;
+
+            text-align: center;
+
+            font-size: 19px;
+        }
+
+        .logout {
+            margin-top: 30px;
+
+            color: #e77d7d;
+        }
+
+
+        /* =========================
+           CENTER
+        ========================= */
+
+        .main-content {
+            flex: 1;
+
+            min-width: 500px;
+
+            padding: 45px 40px;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+        }
+
+        .join-card {
+            width: 100%;
+
+            max-width: 600px;
+
+            text-align: center;
+        }
+
+
+        /* Illustration */
+
+        .illustration {
+            width: 210px;
+            height: 170px;
+
+            margin: 0 auto 25px;
+
+            position: relative;
+
+            background: #eaf6ff;
+
+            border-radius: 45% 55% 50% 50%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+        }
+
+        .keyboard {
+            font-size: 70px;
+        }
+
+        .trophy {
+            position: absolute;
+
+            top: 10px;
+            right: 25px;
+
+            font-size: 40px;
+        }
+
+        .clock {
+            position: absolute;
+
+            bottom: 15px;
+            left: 20px;
+
+            font-size: 35px;
+        }
+
+
+        /* Title */
+
+        .join-card h1 {
+            margin: 0;
+
+            font-size: 32px;
+
+            color: #315b80;
+        }
+
+        .description {
+            margin: 12px 0 30px;
+
+            color: #91a2b2;
+
+            font-size: 15px;
+        }
+
+
+        /* =========================
+           INPUT
+        ========================= */
+
+        .input-wrapper {
+            width: 100%;
+
+            display: flex;
+
+            align-items: center;
+
+            background: #ffffff;
+
+            border: 1px solid #d8e4ee;
+
+            border-radius: 15px;
+
+            padding: 0 18px;
+
+            margin-bottom: 18px;
+        }
+
+        .input-icon {
+            font-size: 22px;
+
+            color: #8cb9df;
+        }
+
+        .room-input {
+            width: 100%;
+
+            border: none;
+
+            outline: none;
+
+            padding: 17px 12px;
+
+            font-size: 16px;
+
+            color: #405d75;
+
+            background: transparent;
+        }
+
+        .room-input::placeholder {
+            color: #a9b8c5;
+        }
+
+
+        /* =========================
+           BUTTON
+        ========================= */
+
+        .join-button {
+            width: 100%;
+
+            border: none;
+
+            border-radius: 15px;
+
+            padding: 16px;
+
+            background: #62a7e5;
+
+            color: #ffffff;
+
+            font-size: 17px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        .join-button:hover {
+            background: #438fd1;
+        }
+
+
+        /* =========================
+           RIGHT PANEL
+        ========================= */
+
+        .right-panel {
+            width: 390px;
+
+            min-width: 390px;
+
+            padding: 45px 30px;
+
+            background: #f7fbff;
+        }
+
+
+        /* =========================
+           LEADERBOARD
+        ========================= */
+
+        .leaderboard {
+            width: 100%;
+
+            padding: 25px;
+
+            background: #ffffff;
+
+            border: 1px solid #e2edf6;
+
+            border-radius: 20px;
+
+            box-shadow: 0 5px 18px rgba(70, 130, 180, 0.08);
+        }
+
+        .leaderboard-title {
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+            margin-bottom: 25px;
+        }
+
+        .leaderboard-title span {
+            font-size: 25px;
+        }
+
+        .leaderboard-title h2 {
+            margin: 0;
+
+            font-size: 21px;
+
+            color: #315b80;
+        }
+
+
+        /* =========================
+           TABLE HEADER
+        ========================= */
+
+        .rank-header {
+            display: grid;
+
+            grid-template-columns: 60px 1fr 70px;
+
+            align-items: center;
+
+            padding: 0 10px 12px;
+
+            border-bottom: 1px solid #edf2f7;
+
+            color: #9aabb9;
+
+            font-size: 13px;
+        }
+
+        .rank-header span:nth-child(1) {
+            text-align: center;
+        }
+
+        .rank-header span:nth-child(2) {
+            text-align: left;
+        }
+
+        .rank-header span:nth-child(3) {
+            text-align: right;
+        }
+
+
+        /* =========================
+           RANK ROW
+        ========================= */
+
+        .rank-item {
+            display: grid;
+
+            grid-template-columns: 60px 1fr 70px;
+
+            align-items: center;
+
+            min-height: 70px;
+
+            padding: 10px;
+
+            border-bottom: 1px solid #f0f4f8;
+        }
+
+        .rank-item:last-child {
+            border-bottom: none;
+        }
+
+        .rank-number {
+            text-align: center;
+
+            font-size: 22px;
+        }
+
+        .rank-user {
+            min-width: 0;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+        }
+
+        .avatar-small {
+            width: 38px;
+            height: 38px;
+
+            min-width: 38px;
+
+            border-radius: 50%;
+
+            background: #eaf5ff;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 20px;
+        }
+
+        .rank-user span {
+            font-size: 14px;
+
+            color: #526f88;
+
+            white-space: nowrap;
+        }
+
+        .score {
+            text-align: right;
+
+            font-size: 15px;
+
+            font-weight: bold;
+
+            color: #4c98d8;
+        }
+
+
+        /* =========================
+           HINT
+        ========================= */
+
+        .hint {
+            display: flex;
+
+            align-items: flex-start;
+
+            gap: 14px;
+
+            margin-top: 20px;
+
+            padding: 18px;
+
+            background: #eaf6ff;
+
+            border: 1px solid #d8ebfa;
+
+            border-radius: 16px;
+        }
+
+        .hint-icon {
+            font-size: 24px;
+
+            flex-shrink: 0;
+        }
+
+        .hint strong {
+            display: block;
+
+            margin-bottom: 7px;
+
+            font-size: 15px;
+
+            color: #3973a4;
+        }
+
+        .hint p {
+            margin: 0;
+
+            font-size: 13px;
+
+            line-height: 1.6;
+
+            color: #7693aa;
+        }
+
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 1100px) {
+
+            .sidebar {
+                width: 200px;
+
+                min-width: 200px;
+            }
+
+            .main-content {
+                min-width: 430px;
+
+                padding: 30px 20px;
+            }
+
+            .right-panel {
+                width: 340px;
+
+                min-width: 340px;
+
+                padding: 35px 20px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="classroom-page">
+
+
+        <!-- =========================
+             SIDEBAR
+        ========================= -->
+
+        <aside class="sidebar">
+
+            <div class="profile">
+
+                <div class="profile-avatar">
+                    👩🏻
+                </div>
+
+                <h3>
+                    Ratsamee Saengthong
+                </h3>
+
+                <span>
+                    นักเรียน
+                </span>
+
+            </div>
+
+
+            <nav class="menu">
+
+                <a href="#" class="menu-item active">
+
+                    <span class="menu-icon">
+                        🏠
+                    </span>
+
+                    <span>
+                        ห้องเรียน
+                    </span>
+
+                </a>
+
+
+                <a href="#" class="menu-item">
+
+                    <span class="menu-icon">
+                        📊
+                    </span>
+
+                    <span>
+                        พัฒนาการ
+                    </span>
+
+                </a>
+
+
+                <a href="#" class="menu-item">
+
+                    <span class="menu-icon">
+                        📝
+                    </span>
+
+                    <span>
+                        ประวัติการพิมพ์
+                    </span>
+
+                </a>
+
+
+                <a href="#" class="menu-item logout">
+
+                    <span class="menu-icon">
+                        🚪
+                    </span>
+
+                    <span>
+                        ออกจากระบบ
+                    </span>
+
+                </a>
+
+            </nav>
+
+        </aside>
+
+
+
+        <!-- =========================
+             CENTER CONTENT
+        ========================= -->
+
+        <main class="main-content">
+
+            <div class="join-card">
+
+
+                <div class="illustration">
+
+                    <div class="trophy">
+                        🏆
+                    </div>
+
+                    <div class="keyboard">
+                        ⌨️
+                    </div>
+
+                    <div class="clock">
+                        ⏱️
+                    </div>
+
+                </div>
+
+
+                <h1>
+                    เข้าร่วมห้องเรียน
+                </h1>
+
+
+                <p class="description">
+                    กรุณาใส่เลขห้องเพื่อเข้าร่วมการพิมพ์
+                </p>
+
+
+                <div class="input-wrapper">
+
+                    <span class="input-icon">
+                        🔑
+                    </span>
+
+                    <input
+                        type="text"
+                        id="roomCode"
+                        class="room-input"
+                        placeholder="ใส่เลขห้อง (เช่น 1234)"
+                    >
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="join-button"
+                    onclick="joinRoom()">
+
+                    เข้าห้อง →
+
+                </button>
+
+
+            </div>
+
+        </main>
+
+
+
+        <!-- =========================
+             RIGHT PANEL
+        ========================= -->
+
+        <aside class="right-panel">
+
+
+            <div class="leaderboard">
+
+
+                <div class="leaderboard-title">
+
+                    <span>
+                        🏆
+                    </span>
+
+                    <h2>
+                        สถิติคะแนนสูงสุด
+                    </h2>
+
+                </div>
+
+
+
+                <!-- TABLE HEADER -->
+
+                <div class="rank-header">
+
+                    <span>
+                        อันดับ
+                    </span>
+
+                    <span>
+                        ผู้ใช้
+                    </span>
+
+                    <span>
+                        คะแนน
+                    </span>
+
+                </div>
+
+
+
+                <!-- RANK 1 -->
+
+                <div class="rank-item">
+
+                    <div class="rank-number">
+                        🥇
+                    </div>
+
+                    <div class="rank-user">
+
+                        <div class="avatar-small">
+                            👩🏻
+                        </div>
+
+                        <span>
+                            Airada poipamee
+                        </span>
+
+                    </div>
+
+                    <div class="score">
+                        1250
+                    </div>
+
+                </div>
+
+
+
+                <!-- RANK 2 -->
+
+                <div class="rank-item">
+
+                    <div class="rank-number">
+                        🥈
+                    </div>
+
+                    <div class="rank-user">
+
+                        <div class="avatar-small">
+                            👨🏻
+                        </div>
+
+                        <span>
+                            Jamjira chimanee
+                        </span>
+
+                    </div>
+
+                    <div class="score">
+                        1148
+                    </div>
+
+                </div>
+
+
+
+                <!-- RANK 3 -->
+
+                <div class="rank-item">
+
+                    <div class="rank-number">
+                        🥉
+                    </div>
+
+                    <div class="rank-user">
+
+                        <div class="avatar-small">
+                            👦🏻
+                        </div>
+
+                        <span>
+                            sorasak jaikum
+                        </span>
+
+                    </div>
+
+                    <div class="score">
+                        1102
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- =========================
+                 HINT BOX
+            ========================= -->
+
+            <div class="hint">
+
+                <div class="hint-icon">
+                    💡
+                </div>
+
+                <div>
+
+                    <strong>
+                        กรุณาใส่รหัสห้อง
+                    </strong>
+
+                    <p>
+                        ที่ได้รับจากอาจารย์เพื่อเข้าร่วมการแข่งขัน
+                    </p>
+
+                </div>
+
+            </div>
+
+
+        </aside>
+
+
+    </div>
+
+
+
+    <!-- =========================
+         JAVASCRIPT
+    ========================= -->
+
+    <script>
+
+        function joinRoom() {
+
+            const roomCode =
+                document.getElementById("roomCode").value.trim();
+
+
+            if (roomCode === "") {
+
+                alert("กรุณาใส่เลขห้อง");
+
+                return;
+            }
+
+
+            alert("กำลังเข้าห้อง " + roomCode);
+
+        }
+
+    </script>
+
+
+</body>
+
+</html>
