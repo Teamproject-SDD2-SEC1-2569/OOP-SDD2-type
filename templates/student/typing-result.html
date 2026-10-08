@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ผลการพิมพ์</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      background: #f7fbfd;
+      color: #55718a;
+    }
+
+    .result-page {
+      min-height: 100vh;
+      display: flex;
+      background: linear-gradient(
+        135deg,
+        #f8fcff 0%,
+        #eef8fc 100%
+      );
+    }
+
+    /* =========================
+       SIDEBAR
+    ========================= */
+
+    .sidebar {
+      width: 235px;
+      min-height: 100vh;
+      background: linear-gradient(
+        180deg,
+        #cceafa 0%,
+        #b8dff3 100%
+      );
+      padding: 25px 18px;
+      flex-shrink: 0;
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 5px 7px 25px;
+    }
+
+    .profile-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #f4c5d2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 25px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .profile-info strong {
+      font-size: 13px;
+      color: #52718a;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .profile-info span {
+      font-size: 11px;
+      color: #7894a6;
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 13px 15px;
+      border-radius: 11px;
+      text-decoration: none;
+      color: #58758a;
+      font-size: 13px;
+      transition: 0.2s;
+    }
+
+    .menu-item:hover {
+      background: rgba(255, 255, 255, 0.55);
+    }
+
+    .menu-item.active {
+      background: #ffffff;
+      color: #52708a;
+      box-shadow: 0 4px 12px rgba(82, 128, 157, 0.08);
+    }
+
+    .menu-icon {
+      width: 22px;
+      text-align: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .logout {
+      margin-top: 15px;
+    }
+
+    /* =========================
+       MAIN
+    ========================= */
+
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      padding: 32px 35px 40px;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #dceaf1;
+    }
+
+    .room-badge {
+      padding: 8px 17px;
+      border-radius: 18px;
+      background: #e1f2fb;
+      color: #63839a;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* =========================
+       RESULT HEADER
+    ========================= */
+
+    .result-header {
+      text-align: center;
+      margin-top: 25px;
+      margin-bottom: 20px;
+    }
+
+    .trophy-icon {
+      font-size: 68px;
+      line-height: 1;
+      margin-bottom: 9px;
+      display: block;
+    }
+
+    .result-header h1 {
+      color: #55718a;
+      font-size: 29px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .result-header p {
+      color: #7f98a9;
+      font-size: 15px;
+    }
+
+    /* =========================
+       RESULT CARD
+    ========================= */
+
+    .result-card {
+      max-width: 760px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 22px 25px 25px;
+      box-shadow: 0 8px 28px rgba(71, 123, 153, 0.08);
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 13px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      min-height: 112px;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .stat-card.wpm {
+      background: #edf6ff;
+    }
+
+    .stat-card.accuracy {
+      background: #eefaf3;
+    }
+
+    .stat-card.score {
+      background: #fff1f5;
+    }
+
+    .stat-icon {
+      font-size: 27px;
+      margin-bottom: 3px;
+    }
+
+    .stat-name {
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .stat-card.wpm .stat-name {
+      color: #6191c5;
+    }
+
+    .stat-card.accuracy .stat-name {
+      color: #5eaa83;
+    }
+
+    .stat-card.score .stat-name {
+      color: #d77e9b;
+    }
+
+    .stat-value {
+      font-size: 29px;
+      font-weight: 700;
+    }
+
+    .stat-card.wpm .stat-value {
+      color: #547da6;
+    }
+
+    .stat-card.accuracy .stat-value {
+      color: #4e9b77;
+    }
+
+    .stat-card.score .stat-value {
+      color: #d76e91;
+    }
+        /* =========================
+       DETAIL
+    ========================= */
+
+    .detail-title {
+      color: #5b7890;
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 13px;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .detail-item {
+      background: #f8fbfd;
+      border: 1px solid #e5f0f5;
+      border-radius: 12px;
+      padding: 12px 10px;
+      text-align: center;
+    }
+
+    .detail-item .label {
+      display: block;
+      color: #8aa1b0;
+      font-size: 11px;
+      margin-bottom: 5px;
+    }
+
+    .detail-item .value {
+      display: block;
+      color: #5d788c;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    /* =========================
+       FINISH BUTTON
+    ========================= */
+
+    .finish-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 13px 18px;
+      border-radius: 12px;
+      background: #8fc8e8;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 5px 12px rgba(105, 169, 204, 0.18);
+    }
+
+    .finish-button:hover {
+      background: #78b9dd;
+    }
+
+    /* =========================
+       RIGHT PANEL
+    ========================= */
+
+    .right-panel {
+      width: 285px;
+      min-height: 100vh;
+      padding: 32px 22px;
+      background: #f4fafc;
+      border-left: 1px solid #e0edf2;
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      color: #5a768b;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 13px;
+    }
+
+    .ranking-card {
+      background: #ffffff;
+      border: 1px solid #e1edf2;
+      border-radius: 15px;
+      padding: 8px;
+      box-shadow: 0 5px 18px rgba(72, 119, 145, 0.05);
+    }
+
+    .ranking-header {
+      display: grid;
+      grid-template-columns: 55px 1fr 65px;
+      align-items: center;
+      padding: 8px 9px 10px;
+      color: #91a6b3;
+      font-size: 10px;
+      border-bottom: 1px solid #edf3f6;
+    }
+
+    .ranking-row {
+      display: grid;
+      grid-template-columns: 55px 1fr 65px;
+      align-items: center;
+      gap: 6px;
+      min-height: 62px;
+      padding: 7px 9px;
+      border-bottom: 1px solid #edf3f6;
+    }
+
+    .ranking-row:last-child {
+      border-bottom: none;
+    }
+
+    /* =========================
+       RANK + PROFILE
+    ========================= */
+
+    .rank-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .rank-number.normal {
+      width: 27px;
+      height: 27px;
+      border-radius: 50%;
+      background: #eef7fb;
+      color: #6d8da1;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .user-info {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .user-avatar {
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #e8f3f8;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(77, 117, 139, 0.12);
+    }
+
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .ranking-user {
+      color: #607c90;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ranking-score {
+      color: #6b8fa5;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .your-rank {
+      margin-top: 14px;
+      padding: 13px 14px;
+      border-radius: 13px;
+      background: #eaf6fc;
+      color: #62849a;
+      font-size: 12px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .your-rank strong {
+      color: #4f748b;
+    }
+
+    /* =========================
+       RESPONSIVE
+    ========================= */
+
+    @media (max-width: 1100px) {
+      .right-panel {
+        width: 250px;
+      }
+
+      .main-content {
+        padding-left: 25px;
+        padding-right: 25px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .sidebar {
+        width: 190px;
+      }
+
+      .right-panel {
+        display: none;
+      }
+    }
+
+    @media (max-width: 650px) {
+      .result-page {
+        display: block;
+      }
+
+      .sidebar {
+        width: 100%;
+        min-height: auto;
+        padding: 15px;
+      }
+
+      .profile {
+        padding-bottom: 12px;
+      }
+
+      .menu {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .menu-item {
+        padding: 9px 10px;
+      }
+
+      .main-content {
+        padding: 20px 15px 30px;
+      }
+
+      .stat-row {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="result-page">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+      <div class="profile">
+
+        <div class="profile-avatar">
+          👩🏻
+        </div>
+
+        <div class="profile-info">
+          <strong>Ratsamee Saengthong</strong>
+          <span>Student</span>
+        </div>
+
+      </div>
+
+
+      <nav class="menu">
+
+        <a href="classroom.html" class="menu-item active">
+          <span class="menu-icon">🏠</span>
+          <span>ห้องเรียน</span>
+        </a>
+
+        <a href="#" class="menu-item">
+          <span class="menu-icon">📊</span>
+          <span>พัฒนาการ</span>
+        </a>
+
+        <a href="#" class="menu-item">
+          <span class="menu-icon">📝</span>
+          <span>ประวัติการพิมพ์</span>
+        </a>
+
+        <a href="#" class="menu-item logout">
+          <span class="menu-icon">🚪</span>
+          <span>ออกจากระบบ</span>
+        </a>
+
+      </nav>
+
+    </aside>
+
+
+    <!-- MAIN -->
+
+    <main class="main-content">
+
+      <div class="top-bar">
+
+        <div class="room-badge">
+          ห้อง 3468
+        </div>
+
+      </div>
+
+
+      <section class="result-header">
+
+        <span class="trophy-icon">
+          🏆
+        </span>
+
+        <h1>
+          ทำได้ดีมาก!
+        </h1>
+
+        <p>
+          คุณพิมพ์เสร็จเรียบร้อยแล้ว
+        </p>
+
+      </section>
+
+
+      <section class="result-card">
+
+        <div class="stat-row">
+
+          <div class="stat-card wpm">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-name">WPM</div>
+            <div class="stat-value">42</div>
+          </div>
+
+          <div class="stat-card accuracy">
+            <div class="stat-icon">✓</div>
+            <div class="stat-name">Accuracy</div>
+            <div class="stat-value">97%</div>
+          </div>
+
+          <div class="stat-card score">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-name">Score</div>
+            <div class="stat-value">980</div>
+          </div>
+
+        </div>
+
+
+        <div class="detail-title">
+          รายละเอียดผลการพิมพ์
+        </div>
+
+
+        <div class="detail-grid">
+
+          <div class="detail-item">
+            <span class="label">จำนวนตัวอักษร</span>
+            <span class="value">89 ตัว</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="label">เวลา</span>
+            <span class="value">02:07 นาที</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="label">ความเร็ว</span>
+            <span class="value">42 WPM</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="label">ความแม่นยำ</span>
+            <span class="value">97%</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="label">คะแนน</span>
+            <span class="value">980</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="label">ห้องแข่งขัน</span>
+            <span class="value">3468</span>
+          </div>
+
+        </div>
+
+
+        <a href="classroom.html" class="finish-button">
+          สิ้นสุดการพิมพ์
+        </a>
+
+      </section>
+
+    </main>
+
+
+    <!-- RIGHT PANEL -->
+
+    <aside class="right-panel">
+
+      <div class="panel-title">
+        อันดับคะแนนสูงสุด
+      </div>
+
+
+      <div class="ranking-card">
+
+        <div class="ranking-header">
+          <span>อันดับ</span>
+          <span>ผู้ใช้</span>
+          <span style="text-align:right;">คะแนน</span>
+        </div>
+
+
+        <!-- อันดับ 1 -->
+
+        <div class="ranking-row">
+
+          <div class="rank-number">
+            🥇
+          </div>
+
+          <div class="user-info">
+
+            <div class="user-avatar">
+              <img
+                src="https://i.pinimg.com/originals/1c/7e/13/1c7e13cf6178e5d2d79485317704598c.jpg"
+                alt="shomchai lo"
+              >
+            </div>
+
+            <div class="ranking-user">
+              shomchai lo...
+            </div>
+
+          </div>
+
+          <div class="ranking-score">
+            1200
+          </div>
+
+        </div>
+
+
+        <!-- อันดับ 2 -->
+
+        <div class="ranking-row">
+
+          <div class="rank-number">
+            🥈
+          </div>
+
+          <div class="user-info">
+
+            <div class="user-avatar">
+              <img
+                src="https://q2.itc.cn/images01/20240104/7738955180d14da59322a135f56fa3d6.jpeg"
+                alt="somying sau"
+              >
+            </div>
+
+            <div class="ranking-user">
+              somying sau...
+            </div>
+
+          </div>
+
+          <div class="ranking-score">
+            1100
+          </div>
+
+        </div>
+
+
+        <!-- อันดับ 3 -->
+
+        <div class="ranking-row">
+
+          <div class="rank-number">
+            🥉
+          </div>
+
+          <div class="user-info">
+
+            <div class="user-avatar">
+              <img
+                src="https://jpx.tokyo/icon/neko/img/89-neko-icon-line.jpg"
+                alt="Ratsamee Saengthong"
+              >
+            </div>
+
+            <div class="ranking-user">
+              Ratsamee Sa...
+            </div>
+
+          </div>
+
+          <div class="ranking-score">
+            980
+          </div>
+
+        </div>
+
+
+        <!-- อันดับ 4 -->
+
+        <div class="ranking-row">
+
+          <div class="rank-number">
+            <span class="rank-number normal">4</span>
+          </div>
+
+          <div class="user-info">
+
+            <div class="user-avatar">
+              <img
+                src="https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDI2LTA0L3NyLWltYWdlLTI4MDMyNi1zaS0wMDktcy0xMDUuanBn.jpg"
+                alt="shabu shi"
+              >
+            </div>
+
+            <div class="ranking-user">
+              shabu shi
+            </div>
+
+          </div>
+
+          <div class="ranking-score">
+            950
+          </div>
+
+        </div>
+
+
+        <!-- อันดับ 5 -->
+
+        <div class="ranking-row">
+
+          <div class="rank-number">
+            <span class="rank-number normal">5</span>
+          </div>
+
+          <div class="user-info">
+
+            <div class="user-avatar">
+              <img
+                src="https://s.isanook.com/mv/0/ui/30/150535/005zhjnily1fya00ehu2qj32kw3vc.jpg"
+                alt="Fatcat M"
+              >
+            </div>
+
+            <div class="ranking-user">
+              Fatcat M
+            </div>
+
+          </div>
+
+          <div class="ranking-score">
+            900
+          </div>
+
+        </div>
+
+
+        <!-- อันดับ 6 -->
+
+        <div class="ranking-row">
+
+          <div class="rank-number">
+            <span class="rank-number normal">6</span>
+          </div>
+
+          <div class="user-info">
+
+            <div class="user-avatar">
+              <img
+                src="https://image.lceda.cn/avatars/2023/12/IcbVD7B5NEF0HOL6RS5nSgb8ulF2PGWbyVPDot9Z.png"
+                alt="Abcd efgh"
+              >
+            </div>
+
+            <div class="ranking-user">
+              Abcd efgh
+            </div>
+
+          </div>
+
+          <div class="ranking-score">
+            850
+          </div>
+
+        </div>
+
+
+        <!-- อันดับ 7 -->
+
+        <div class="ranking-row">
+
+          <div class="rank-number">
+            <span class="rank-number normal">7</span>
+          </div>
+
+          <div class="user-info">
+
+            <div class="user-avatar">
+              <img
+                src="https://risibank.fr/cache/medias/0/40/4096/409652/full.png"
+                alt="manig ase"
+              >
+            </div>
+
+            <div class="ranking-user">
+              manig ase
+            </div>
+
+          </div>
+
+          <div class="ranking-score">
+            800
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="your-rank">
+✌🏻
+        สู้ๆ นะ!<br>
+
+        อันดับของคุณคือ
+        <strong>3</strong>
+
+      </div>
+
+    </aside>
+
+  </div>
+
+</body>
+</html>
