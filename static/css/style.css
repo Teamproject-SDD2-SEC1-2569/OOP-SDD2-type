@@ -1,0 +1,367 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, "Tahoma", sans-serif;
+    background: #f4f8fc;
+    color: #3d4652;
+}
+
+.page {
+    min-height: 100vh;
+    display: flex;
+}
+
+
+/* =========================
+   LEFT
+========================= */
+
+.left-section {
+    width: 55%;
+    min-height: 100vh;
+
+    background: linear-gradient(
+        135deg,
+        #ffffff 0%,
+        #f1f8ff 100%
+    );
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding-top: 90px;
+
+    position: relative;
+    overflow: hidden;
+}
+
+.brand {
+    text-align: center;
+    z-index: 2;
+}
+
+.brand h1 {
+    font-size: 38px;
+    color: #34445a;
+    margin-bottom: 12px;
+}
+
+.brand p {
+    font-size: 20px;
+    color: #718096;
+}
+
+
+/* =========================
+   ILLUSTRATION
+========================= */
+
+.illustration {
+    position: relative;
+
+    width: 500px;
+    height: 430px;
+
+    margin-top: 45px;
+
+    background: #e8f4ff;
+
+    border-radius: 40% 40% 0 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.student {
+    font-size: 210px;
+    position: absolute;
+    left: 100px;
+    bottom: 75px;
+}
+
+.laptop {
+    font-size: 130px;
+    position: absolute;
+    right: 55px;
+    bottom: 40px;
+}
+
+.plant {
+    font-size: 70px;
+    position: absolute;
+    left: 20px;
+    bottom: 25px;
+}
+
+
+/* =========================
+   RIGHT
+========================= */
+
+.right-section {
+    width: 45%;
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background: #f7f9fc;
+}
+
+.login-card {
+    width: 520px;
+
+    background: white;
+
+    border-radius: 24px;
+
+    padding: 45px 48px;
+
+    box-shadow:
+        0 15px 40px rgba(0, 0, 0, 0.08);
+}
+
+.login-card h2 {
+    text-align: center;
+
+    font-size: 28px;
+
+    color: #536579;
+
+    margin-bottom: 30px;
+}
+
+
+/* =========================
+   ROLE
+========================= */
+
+.role-buttons {
+    display: flex;
+    gap: 15px;
+
+    margin-bottom: 22px;
+}
+
+.role {
+    flex: 1;
+
+    padding: 15px;
+
+    border-radius: 14px;
+
+    border: 1px solid #d8dee8;
+
+    background: white;
+
+    color: #687587;
+
+    font-size: 17px;
+
+    cursor: pointer;
+}
+
+.role.active {
+    background: #5b9fe8;
+
+    border-color: #5b9fe8;
+
+    color: white;
+}
+
+
+/* =========================
+   INPUT
+========================= */
+
+.input-box {
+    height: 58px;
+
+    border: 1px solid #d9dfe8;
+
+    border-radius: 14px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 16px;
+
+    margin-bottom: 15px;
+
+    background: white;
+}
+
+.input-box span {
+    font-size: 20px;
+
+    margin-right: 12px;
+}
+
+.input-box input {
+    flex: 1;
+
+    border: none;
+
+    outline: none;
+
+    font-size: 16px;
+
+    color: #444;
+
+    background: transparent;
+}
+
+.input-box input::placeholder {
+    color: #9aa4b2;
+}
+
+.eye {
+    cursor: pointer;
+
+    margin-right: 0 !important;
+}
+
+
+/* =========================
+   LOGIN BUTTON
+========================= */
+
+.login-button {
+    width: 100%;
+
+    height: 58px;
+
+    border: none;
+
+    border-radius: 14px;
+
+    background: #579be8;
+
+    color: white;
+
+    font-size: 18px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+    margin-top: 5px;
+}
+
+.login-button:hover {
+    background: #438bdc;
+}
+
+
+/* =========================
+   OR
+========================= */
+
+.or {
+    text-align: center;
+
+    color: #9aa3af;
+
+    margin: 25px 0;
+
+    font-size: 16px;
+}
+
+
+/* =========================
+   GOOGLE
+========================= */
+
+.google-button {
+    width: 100%;
+
+    height: 55px;
+
+    border-radius: 14px;
+
+    border: 1px solid #d9dfe8;
+
+    background: white;
+
+    color: #687587;
+
+    font-size: 16px;
+
+    cursor: pointer;
+}
+
+.google {
+    color: #4285f4;
+
+    font-size: 22px;
+
+    font-weight: bold;
+
+    margin-right: 10px;
+}
+
+
+/* =========================
+   REGISTER
+========================= */
+
+.register {
+    text-align: center;
+
+    margin-top: 25px;
+
+    color: #8a94a3;
+
+    font-size: 15px;
+}
+
+.register a {
+    color: #4d96e6;
+
+    text-decoration: none;
+
+    font-weight: bold;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 900px) {
+
+    .page {
+        flex-direction: column;
+    }
+
+    .left-section {
+        width: 100%;
+        min-height: 45vh;
+        padding-top: 40px;
+    }
+
+    .right-section {
+        width: 100%;
+        padding: 30px;
+    }
+
+    .illustration {
+        transform: scale(0.7);
+        margin-top: 0;
+    }
+
+    .brand h1 {
+        font-size: 28px;
+    }
+
+    .brand p {
+        font-size: 16px;
+    }
+}
