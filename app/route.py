@@ -37,7 +37,7 @@ def register_socket_events(socketio: SocketIO):
         emit('server_message', {'msg': f'A student joined room {room}'}, room=room)
 
     @socketio.on('start_typing')
-    def handle_start_typing(data):
+    def handle_start_typing(data=None):
         session_id = request.sid
         
         # ผสมคำศัพท์โดยให้น้ำหนักคำทั่วไปมากกว่า 2 เท่า
