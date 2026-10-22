@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>พัฒนาการการพิมพ์</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --blue: #86afe6;
+            --green: #80c5ae;
+            --orange: #e9b181;
+            --purple: #9c96df;
+            --text: #526580;
+            --muted: #94a2b5;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background: #f3f7fc;
+            color: var(--text);
+            min-height: 100vh
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit
+        }
+
+        .app {
+            display: flex;
+            min-height: 100vh
+        }
+
+        .sidebar {
+            width: 235px;
+            min-width: 235px;
+            padding: 25px 14px;
+            background: linear-gradient(180deg, #c5e3f6, #a9d2ed);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 8px 30px
+        }
+
+        .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #f5cbd9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .profile-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #405a77
+        }
+
+        .profile-role {
+            font-size: 11px;
+            color: #7189a2;
+            margin-top: 3px
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .menu a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            color: #526d89;
+            transition: .2s;
+        }
+
+        .menu a:hover {
+            background: rgba(255, 255, 255, .55)
+        }
+
+        .menu a.active {
+            background: #fff;
+            color: #648bc5;
+            font-weight: 600
+        }
+
+        .menu-icon {
+            width: 24px;
+            text-align: center;
+            font-size: 19px
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding: 30px 8px 5px;
+            color: #6c88a5;
+            font-size: 11px;
+            line-height: 1.8
+        }
+
+        .main {
+            flex: 1;
+            min-width: 0;
+            padding: 28px 30px 22px
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 24px
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 14px
+        }
+
+        .title-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: #e5efff;
+            color: #7da4df;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 27px;
+            flex-shrink: 0;
+        }
+
+        .page-title h1 {
+            font-size: 23px;
+            font-weight: 600;
+            color: #4c6280
+        }
+
+        .page-title p {
+            font-size: 12px;
+            color: #8c9bb0;
+            margin-top: 4px
+        }
+
+        .encourage {
+            background: #fff;
+            border-radius: 14px;
+            padding: 11px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 18px #5e7c9d0f;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .encourage-icon {
+            font-size: 27px
+        }
+
+        .encourage strong {
+            color: #6e9c8e;
+            font-weight: 500
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 15px;
+            margin-bottom: 23px
+        }
+
+        .stat-card {
+            background: #fff;
+            padding: 19px 17px;
+            min-height: 145px;
+            border-radius: 16px;
+            border: 1px solid #edf2f8;
+            box-shadow: 0 4px 18px #5e7c9d0d;
+        }
+
+        .stat-icon {
+            font-size: 26px;
+            margin-bottom: 8px
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #8797ac
+        }
+
+        .stat-value {
+            font-size: 32px;
+            line-height: 1.4;
+            font-weight: 600;
+            margin-top: 3px
+        }
+
+        .stat-unit {
+            font-size: 12px;
+            color: #9aa8b9
+        }
+
+        .blue {
+            color: #7da5df
+        }
+
+        .green {
+            color: #78bca9
+        }
+
+        .orange {
+            color: #e7ae7e
+        }
+
+        .purple {
+            color: #9a96dc
+        }
+
+        .score-value {
+            font-size: 27px
+        }
+
+        .score-value span {
+            font-size: 15px
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: #fff;
+            border-radius: 17px;
+            border: 1px solid #edf2f8;
+            padding: 21px;
+            box-shadow: 0 4px 18px #5e7c9d0a;
+            min-width: 0;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #596d88
+        }
+
+        .panel-title span {
+            font-size: 22px
+        }
+
+        .chart-options {
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+            background: #f4f7fb;
+            border-radius: 11px;
+            margin-bottom: 14px
+        }
+
+        .chart-options label {
+            padding: 7px 11px;
+            font-size: 11px;
+            border-radius: 8px;
+            color: #8292a8;
+            cursor: pointer
+        }
+
+        .chart-options label:has(input:checked) {
+            background: #86afe6;
+            color: #fff
+        }
+
+        .chart-options input {
+            margin-right: 4px;
+            accent-color: #86aee6
+        }
+
+        .chart-container {
+            width: 100%;
+            min-width: 0
+        }
+
+        .chart-data {
+            display: none
+        }
+
+        .chart {
+            display: block;
+            width: 100%;
+            height: auto
+        }
+
+        .chart-panel:has(.chart-options label:nth-child(1) input:checked) .wpm-data {
+            display: block
+        }
+
+        .chart-panel:has(.chart-options label:nth-child(2) input:checked) .accuracy-data {
+            display: block
+        }
+
+        .chart-panel:has(.chart-options label:nth-child(3) input:checked) .score-data {
+            display: block
+        }
+
+        .grid-line {
+            stroke: #edf1f7;
+            stroke-width: 1
+        }
+
+        .axis-text {
+            fill: #9ba8ba;
+            font-size: 10px;
+            font-family: 'Prompt', sans-serif
+        }
+
+        .line-blue,
+        .line-green,
+        .line-orange {
+            fill: none;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round
+        }
+
+        .line-blue {
+            stroke: #86aee7
+        }
+
+        .line-green {
+            stroke: #80c5ae
+        }
+
+        .line-orange {
+            stroke: #e9b181
+        }
+
+        .point-blue {
+            fill: #86aee7
+        }
+
+        .point-green {
+            fill: #80c5ae
+        }
+
+        .point-orange {
+            fill: #e9b181
+        }
+
+        .chart-number {
+            fill: #7d8da3;
+            font-size: 10px;
+            font-family: 'Prompt', sans-serif;
+            text-anchor: middle
+        }
+
+        .chart-legend {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            font-size: 11px;
+            color: #94a2b5
+        }
+
+        .legend-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #86aee7;
+            flex-shrink: 0
+        }
+
+        .summary-panel {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 100%
+        }
+
+        .summary-list {
+            display: flex;
+            flex-direction: column;
+            gap: 25px
+        }
+
+        .summary-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            width: 100%
+        }
+
+        .summary-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 19px;
+            flex-shrink: 0;
+            background: #edf3ff;
+        }
+
+        .summary-icon.green {
+            background: #e9f7f1
+        }
+
+        .summary-icon.orange {
+            background: #fff3e8
+        }
+
+        .summary-content {
+            flex: 1;
+            min-width: 0
+        }
+
+        .summary-title {
+            font-size: 12px;
+            font-weight: 500;
+            color: #687c96;
+            margin-bottom: 5px
+        }
+
+        .summary-content p {
+            font-size: 11px;
+            color: #9aa8b9;
+            line-height: 1.8
+        }
+
+        .change-badge {
+            background: #e8f6ee;
+            color: #75b49a;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 5px 8px;
+            border-radius: 9px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .tip-box {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: auto;
+            padding: 14px 12px;
+            border-radius: 12px;
+            background: #f8faff;
+            border: 1px solid #edf2fb;
+        }
+
+        .tip-icon {
+            font-size: 20px
+        }
+
+        .tip-box strong {
+            display: block;
+            font-size: 11px;
+            color: #7589a5;
+            font-weight: 500;
+            margin-bottom: 4px
+        }
+
+        .tip-box p {
+            font-size: 10px;
+            line-height: 1.8;
+            color: #9aa8b9
+        }
+
+        .page-footer {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 14px;
+            padding: 27px 35px 12px;
+            margin-top: 14px;
+            font-size: 12px;
+            color: #899bb2;
+            text-align: center;
+        }
+
+        .footer-decoration {
+            font-size: 25px
+        }
+
+        .footer-heart {
+            position: absolute;
+            right: 12px;
+            font-size: 23px
+        }
+
+        @media(max-width:1100px) {
+            .sidebar {
+                width: 205px;
+                min-width: 205px
+            }
+
+            .main {
+                padding: 24px 20px
+            }
+
+            .dashboard {
+                grid-template-columns: minmax(0, 1.2fr) minmax(270px, 1fr);
+                gap: 14px
+            }
+
+            .stats {
+                gap: 10px
+            }
+
+            .stat-card {
+                padding: 16px 12px
+            }
+
+            .stat-value {
+                font-size: 27px
+            }
+
+            .score-value {
+                font-size: 23px
+            }
+
+            .panel {
+                padding: 16px
+            }
+
+            .summary-item {
+                gap: 7px
+            }
+        }
+
+        @media(max-width:800px) {
+            .app {
+                flex-direction: column
+            }
+
+            .sidebar {
+                width: 100%;
+                min-width: 0;
+                min-height: auto;
+                padding: 14px
+            }
+
+            .profile {
+                padding: 0 5px 13px
+            }
+
+            .menu {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 5px
+            }
+
+            .menu a {
+                flex: 1 1 auto;
+                justify-content: center;
+                padding: 9px;
+                font-size: 11px
+            }
+
+            .menu-icon {
+                width: auto;
+                font-size: 16px
+            }
+
+            .sidebar-bottom {
+                display: none
+            }
+
+            .main {
+                padding: 20px 14px
+            }
+
+            .page-header {
+                align-items: flex-start;
+                flex-direction: column
+            }
+
+            .page-title h1 {
+                font-size: 20px
+            }
+
+            .encourage {
+                width: 100%
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr))
+            }
+
+            .dashboard {
+                grid-template-columns: minmax(0, 1fr)
+            }
+
+            .chart-panel,
+            .summary-panel {
+                width: 100%
+            }
+
+            .summary-list {
+                gap: 20px
+            }
+
+            .tip-box {
+                margin-top: 24px
+            }
+        }
+
+        @media(max-width:420px) {
+            .main {
+                padding: 16px 10px
+            }
+
+            .title-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 23px
+            }
+
+            .page-title h1 {
+                font-size: 17px
+            }
+
+            .page-title p {
+                font-size: 10px
+            }
+
+            .stat-card {
+                min-height: 125px;
+                padding: 13px 10px
+            }
+
+            .stat-value {
+                font-size: 25px
+            }
+
+            .score-value {
+                font-size: 20px
+            }
+
+            .score-value span {
+                font-size: 12px
+            }
+
+            .stat-label {
+                font-size: 10px
+            }
+
+            .panel {
+                padding: 13px 10px
+            }
+
+            .panel-title {
+                font-size: 12px
+            }
+
+            .chart-options label {
+                padding: 6px 5px;
+                font-size: 10px
+            }
+
+            .summary-item {
+                gap: 7px
+            }
+
+            .summary-title {
+                font-size: 11px
+            }
+
+            .summary-content p {
+                font-size: 10px
+            }
+
+            .change-badge {
+                font-size: 9px;
+                padding: 4px 5px
+            }
+
+            .page-footer {
+                font-size: 10px;
+                gap: 7px
+            }
+
+            .footer-heart {
+                right: 2px
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app">
+        <aside class="sidebar">
+            <div class="profile">
+                <div class="avatar">👩🏻</div>
+                <div>
+                    <div class="profile-name">Ratsamee Saengthong</div>
+                    <div class="profile-role">นักเรียน</div>
+                </div>
+            </div>
+
+            <nav class="menu">
+                <a href="classroom.html"><span class="menu-icon">🏠</span>ห้องเรียน</a>
+                <a href="progress.html" class="active"><span class="menu-icon">📊</span>พัฒนาการ</a>
+                <a href="typing_history.html"><span class="menu-icon">📝</span>ประวัติการพิมพ์</a>
+                <a href="login.html"><span class="menu-icon">🚪</span>ออกจากระบบ</a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div>⌨️ Typing Classroom</div>
+                <div>ฝึกฝนทุกวัน พัฒนาได้เสมอ 💙</div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="page-header">
+                <div class="page-title">
+                    <div class="title-icon">📊</div>
+                    <div>
+                        <h1>พัฒนาการการพิมพ์</h1>
+                        <p>ดูความก้าวหน้าและพัฒนาการของคุณได้ที่นี่</p>
+                    </div>
+                </div>
+
+                <div class="encourage">
+                    <span class="encourage-icon">🌱</span>
+                    <div>
+                        <strong>ทุกครั้งที่ฝึกพิมพ์</strong>
+                        <div>คุณกำลังเติบโตขึ้นอีกนะ 💙</div>
+                    </div>
+                </div>
+            </header>
+
+            <section class="stats">
+                <article class="stat-card">
+                    <div class="stat-icon blue">◉</div>
+                    <div class="stat-label">WPM สูงสุด</div>
+                    <div class="stat-value blue">42</div>
+                    <div class="stat-unit">WPM</div>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-icon green">◎</div>
+                    <div class="stat-label">Accuracy สูงสุด</div>
+                    <div class="stat-value green">97%</div>
+                    <div class="stat-unit">เปอร์เซ็นต์</div>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-icon orange">🏆</div>
+                    <div class="stat-label">คะแนนสูงสุด</div>
+                    <div class="stat-value orange score-value">980 <span>/ 1,000</span></div>
+                    <div class="stat-unit">คะแนน</div>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-icon purple">▦</div>
+                    <div class="stat-label">จำนวนตัวอักษรสูงสุด</div>
+                    <div class="stat-value purple">89</div>
+                    <div class="stat-unit">ตัวอักษร</div>
+                </article>
+            </section>
+
+            <section class="dashboard">
+                <article class="panel chart-panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title"><span>📊</span>กราฟพัฒนาการของฉัน</h2>
+                    </div>
+
+                    <div class="chart-options">
+                        <label><input type="radio" name="chartType" checked><span>WPM</span></label>
+                        <label><input type="radio" name="chartType"><span>Accuracy</span></label>
+                        <label><input type="radio" name="chartType"><span>คะแนน</span></label>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-data wpm-data">
+                            <svg viewBox="0 0 560 280" class="chart" role="img" aria-label="กราฟความเร็วในการพิมพ์">
+                                <g class="grid-line">
+                                    <line x1="45" y1="30" x2="535" y2="30" />
+                                    <line x1="45" y1="70" x2="535" y2="70" />
+                                    <line x1="45" y1="110" x2="535" y2="110" />
+                                    <line x1="45" y1="150" x2="535" y2="150" />
+                                    <line x1="45" y1="190" x2="535" y2="190" />
+                                    <line x1="45" y1="230" x2="535" y2="230" />
+                                </g>
+                                <g class="axis-text">
+                                    <text x="15" y="34">50</text><text x="15" y="74">40</text>
+                                    <text x="15" y="114">30</text><text x="15" y="154">20</text>
+                                    <text x="15" y="194">10</text><text x="20" y="234">0</text>
+                                </g>
+                                <path d="M55 118 L148 102 L241 90 L334 78 L427 62 L520 50 L520 230 L55 230 Z" fill="#86afe6" opacity=".14" />
+                                <polyline class="line-blue" points="55,118 148,102 241,90 334,78 427,62 520,50" />
+                                <g class="point-blue">
+                                    <circle cx="55" cy="118" r="4" /><circle cx="148" cy="102" r="4" />
+                                    <circle cx="241" cy="90" r="4" /><circle cx="334" cy="78" r="4" />
+                                    <circle cx="427" cy="62" r="4" /><circle cx="520" cy="50" r="4" />
+                                </g>
+                                <g class="chart-number">
+                                    <text x="55" y="106">28</text><text x="148" y="90">32</text>
+                                    <text x="241" y="78">35</text><text x="334" y="66">38</text>
+                                    <text x="427" y="50">42</text><text x="520" y="38">45</text>
+                                </g>
+                                <g class="axis-text" text-anchor="middle">
+                                    <text x="55" y="255">ครั้งที่ 1</text><text x="148" y="255">ครั้งที่ 2</text>
+                                    <text x="241" y="255">ครั้งที่ 3</text><text x="334" y="255">ครั้งที่ 4</text>
+                                    <text x="427" y="255">ครั้งที่ 5</text><text x="520" y="255">ครั้งที่ 6</text>
+                                </g>
+                            </svg>
+                        </div>
+
+                        <div class="chart-data accuracy-data">
+                            <svg viewBox="0 0 560 280" class="chart" role="img" aria-label="กราฟความแม่นยำ">
+                                <g class="grid-line">
+                                    <line x1="45" y1="30" x2="535" y2="30" />
+                                    <line x1="45" y1="70" x2="535" y2="70" />
+                                    <line x1="45" y1="110" x2="535" y2="110" />
+                                    <line x1="45" y1="150" x2="535" y2="150" />
+                                    <line x1="45" y1="190" x2="535" y2="190" />
+                                    <line x1="45" y1="230" x2="535" y2="230" />
+                                </g>
+                                <g class="axis-text">
+                                    <text x="5" y="34">100%</text><text x="15" y="74">80%</text>
+                                    <text x="15" y="114">60%</text><text x="15" y="154">40%</text>
+                                    <text x="15" y="194">20%</text><text x="20" y="234">0%</text>
+                                </g>
+                                <path d="M55 78 L148 74 L241 66 L334 58 L427 50 L520 36 L520 230 L55 230 Z" fill="#80c5ae" opacity=".14" />
+                                <polyline class="line-green" points="55,78 148,74 241,66 334,58 427,50 520,36" />
+                                <g class="point-green">
+                                    <circle cx="55" cy="78" r="4" /><circle cx="148" cy="74" r="4" />
+                                    <circle cx="241" cy="66" r="4" /><circle cx="334" cy="58" r="4" />
+                                    <circle cx="427" cy="50" r="4" /><circle cx="520" cy="36" r="4" />
+                                </g>
+                                <g class="chart-number">
+                                    <text x="55" y="66">76%</text><text x="148" y="62">78%</text>
+                                    <text x="241" y="54">82%</text><text x="334" y="46">86%</text>
+                                    <text x="427" y="38">90%</text><text x="520" y="24">97%</text>
+                                </g>
+                                <g class="axis-text" text-anchor="middle">
+                                    <text x="55" y="255">ครั้งที่ 1</text><text x="148" y="255">ครั้งที่ 2</text>
+                                    <text x="241" y="255">ครั้งที่ 3</text><text x="334" y="255">ครั้งที่ 4</text>
+                                    <text x="427" y="255">ครั้งที่ 5</text><text x="520" y="255">ครั้งที่ 6</text>
+                                </g>
+                            </svg>
+                        </div>
+
+                        <div class="chart-data score-data">
+                            <svg viewBox="0 0 560 280" class="chart" role="img" aria-label="กราฟคะแนน">
+                                <g class="grid-line">
+                                    <line x1="45" y1="30" x2="535" y2="30" />
+                                    <line x1="45" y1="70" x2="535" y2="70" />
+                                    <line x1="45" y1="110" x2="535" y2="110" />
+                                    <line x1="45" y1="150" x2="535" y2="150" />
+                                    <line x1="45" y1="190" x2="535" y2="190" />
+                                    <line x1="45" y1="230" x2="535" y2="230" />
+                                </g>
+                                <g class="axis-text">
+                                    <text x="2" y="34">1,000</text><text x="15" y="74">800</text>
+                                    <text x="15" y="114">600</text><text x="15" y="154">400</text>
+                                    <text x="15" y="194">200</text><text x="20" y="234">0</text>
+                                </g>
+                                <path d="M55 120 L148 108 L241 90 L334 70 L427 55 L520 34 L520 230 L55 230 Z" fill="#e9b181" opacity=".14" />
+                                <polyline class="line-orange" points="55,120 148,108 241,90 334,70 427,55 520,34" />
+                                <g class="point-orange">
+                                    <circle cx="55" cy="120" r="4" /><circle cx="148" cy="108" r="4" />
+                                    <circle cx="241" cy="90" r="4" /><circle cx="334" cy="70" r="4" />
+                                    <circle cx="427" cy="55" r="4" /><circle cx="520" cy="34" r="4" />
+                                </g>
+                                <g class="chart-number">
+                                    <text x="55" y="108">550</text><text x="148" y="96">610</text>
+                                    <text x="241" y="78">700</text><text x="334" y="58">800</text>
+                                    <text x="427" y="43">875</text><text x="520" y="22">980</text>
+                                </g>
+                                <g class="axis-text" text-anchor="middle">
+                                    <text x="55" y="255">ครั้งที่ 1</text><text x="148" y="255">ครั้งที่ 2</text>
+                                    <text x="241" y="255">ครั้งที่ 3</text><text x="334" y="255">ครั้งที่ 4</text>
+                                    <text x="427" y="255">ครั้งที่ 5</text><text x="520" y="255">ครั้งที่ 6</text>
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="chart-legend">
+                        <span class="legend-dot"></span>
+                        <span>ผลการฝึกพิมพ์แต่ละครั้ง</span>
+                    </div>
+                </article>
+
+                <article class="panel summary-panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title"><span>⭐</span>สรุปพัฒนาการของฉัน</h2>
+                    </div>
+
+                    <div class="summary-list">
+                        <div class="summary-item">
+                            <div class="summary-icon blue">◉</div>
+                            <div class="summary-content">
+                                <div class="summary-title">ความเร็วในการพิมพ์ (WPM)</div>
+                                <p>เพิ่มขึ้นจาก 28 เป็น 45 WPM</p>
+                            </div>
+                            <div class="change-badge">+60.7%</div>
+                        </div>
+
+                        <div class="summary-item">
+                            <div class="summary-icon green">◎</div>
+                            <div class="summary-content">
+                                <div class="summary-title">ความแม่นยำ (Accuracy)</div>
+                                <p>เพิ่มขึ้นจาก 90% เป็น 97%</p>
+                            </div>
+                            <div class="change-badge">+7%</div>
+                        </div>
+
+                        <div class="summary-item">
+                            <div class="summary-icon orange">⭐</div>
+                            <div class="summary-content">
+                                <div class="summary-title">คะแนนรวม</div>
+                                <p>เพิ่มขึ้นจาก 720 เป็น 980 คะแนน</p>
+                            </div>
+                            <div class="change-badge">+36.1%</div>
+                        </div>
+                    </div>
+
+                    <div class="tip-box">
+                        <span class="tip-icon">💡</span>
+                        <div>
+                            <strong>เคล็ดลับการฝึกพิมพ์</strong>
+                            <p>ฝึกพิมพ์อย่างสม่ำเสมอ จะช่วยเพิ่มทั้งความเร็วและความแม่นยำ 💙</p>
+                        </div>
+                    </div>
+                </article>
+            </section>
+
+            <footer class="page-footer">
+                <span class="footer-decoration">🌱</span>
+                <p>“ความพยายามในวันนี้ คือความสำเร็จในวันหน้า”</p>
+                <span class="footer-heart">💙</span>
+            </footer>
+        </main>
+    </div>
+
+</body>
+
+</html>

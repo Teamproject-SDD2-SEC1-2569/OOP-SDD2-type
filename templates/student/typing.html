@@ -4,11 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>การแข่งขันพิมพ์ - ระบบห้องเรียนฝึกพิมพ์</title>
-
     <style>
-
         * {
             margin: 0;
             padding: 0;
@@ -24,378 +21,214 @@
         .typing-page {
             min-height: 100vh;
             display: flex;
-
-            background:
-                radial-gradient(
-                    circle at 12% 88%,
-                    rgba(126, 191, 238, 0.12) 0 75px,
-                    transparent 76px
-                ),
-                radial-gradient(
-                    circle at 92% 90%,
-                    rgba(126, 191, 238, 0.12) 0 90px,
-                    transparent 91px
-                ),
-                #f8fcff;
+            background: radial-gradient(circle at 12% 88%, rgba(126, 191, 238, 0.12) 0 75px, transparent 76px), radial-gradient(circle at 92% 90%, rgba(126, 191, 238, 0.12) 0 90px, transparent 91px), #f8fcff;
         }
-
-
-        /* =========================
-           SIDEBAR
-        ========================= */
 
         .sidebar {
             width: 250px;
             min-height: 100vh;
-
-            background:
-                linear-gradient(
-                    180deg,
-                    #cfeeff 0%,
-                    #bce4f8 100%
-                );
-
+            background: linear-gradient(180deg, #cfeeff 0%, #bce4f8 100%);
             padding: 28px 18px;
-
             flex-shrink: 0;
-
             display: flex;
             flex-direction: column;
         }
-
 
         .profile {
             display: flex;
             align-items: center;
-
             gap: 12px;
-
             padding: 8px 12px 28px;
         }
-
 
         .profile-avatar {
             width: 52px;
             height: 52px;
-
             border-radius: 50%;
-
             background: #f6a8bf;
-
             display: flex;
             align-items: center;
             justify-content: center;
-
             font-size: 27px;
-
-            box-shadow:
-                0 4px 10px rgba(90, 130, 160, 0.12);
+            box-shadow: 0 4px 10px rgba(90, 130, 160, 0.12);
         }
-
 
         .profile-info strong {
             display: block;
-
             color: #3f5c72;
-
             font-size: 14px;
-
             margin-bottom: 3px;
         }
 
-
         .profile-info span {
             color: #6f899d;
-
             font-size: 12px;
         }
-
-
-        /* =========================
-           MENU
-        ========================= */
 
         .menu {
             display: flex;
             flex-direction: column;
-
             gap: 8px;
-
             margin-top: 12px;
         }
-
 
         .menu-item {
             display: flex;
             align-items: center;
-
             gap: 14px;
-
             padding: 15px 17px;
-
             border-radius: 12px;
-
             color: #4d6a7e;
-
             font-size: 15px;
-
             text-decoration: none;
-
             transition: 0.2s;
         }
-
 
         .menu-item:hover {
             background: rgba(255, 255, 255, 0.55);
         }
 
-
         .menu-item.active {
             background: #ffffff;
-
             color: #4d78a3;
-
             font-weight: 600;
-
-            box-shadow:
-                0 4px 12px rgba(70, 130, 170, 0.08);
+            box-shadow: 0 4px 12px rgba(70, 130, 170, 0.08);
         }
-
 
         .menu-icon {
             width: 24px;
-
             text-align: center;
-
             font-size: 19px;
         }
-
 
         .logout {
             margin-top: auto;
         }
 
-
-        /* =========================
-           MAIN CONTENT
-        ========================= */
-
         .main-content {
             flex: 1;
-
             min-width: 0;
-
             padding: 30px 22px 40px;
         }
 
-
-        /* =========================
-           TOP BAR
-        ========================= */
-
         .top-bar {
             display: flex;
-
             justify-content: space-between;
             align-items: center;
-
             margin-bottom: 18px;
         }
-
 
         .back-button {
             display: inline-flex;
             align-items: center;
-
             gap: 8px;
-
             padding: 10px 20px;
-
             border: 1px solid #b7cddd;
-
             border-radius: 24px;
-
             background: #ffffff;
-
             color: #5c7285;
-
             font-size: 14px;
-
             text-decoration: none;
-
             cursor: pointer;
-
             transition: 0.2s;
         }
-
 
         .back-button:hover {
             background: #f2f8fc;
         }
 
-
         .room-badge {
             padding: 10px 22px;
-
             background: #ffffff;
-
             border: 1px solid #b7cddd;
-
             border-radius: 24px;
-
             color: #506d82;
-
             font-size: 15px;
-
             font-weight: 600;
         }
 
-
-        /* =========================
-           TIMER
-        ========================= */
-
         .timer-section {
             text-align: center;
-
             margin: 4px 0 22px;
         }
 
-
         .timer {
             display: flex;
-
             justify-content: center;
             align-items: center;
-
             gap: 10px;
-
             color: #5c83c4;
-
             font-size: 40px;
-
             font-weight: 700;
-
             letter-spacing: 1px;
         }
-
 
         .timer-icon {
             font-size: 39px;
         }
 
-
         .timer-label {
             margin-top: 1px;
-
             color: #8da1b2;
-
             font-size: 13px;
         }
 
-
-        /* =========================
-           TYPING CARD
-        ========================= */
-
         .typing-card {
             position: relative;
-
             background: #ffffff;
-
             border: 1px solid #e4edf3;
-
             border-radius: 20px;
-
             padding: 27px 28px;
-
-            box-shadow:
-                0 8px 25px rgba(77, 126, 160, 0.08);
+            box-shadow: 0 8px 25px rgba(77, 126, 160, 0.08);
         }
-
 
         .typing-title {
             display: flex;
             align-items: center;
-
             gap: 10px;
-
             color: #547697;
-
             font-size: 17px;
-
             font-weight: 600;
-
             margin-bottom: 17px;
         }
-
 
         .typing-title-icon {
             width: 35px;
             height: 35px;
-
             border-radius: 10px;
-
             background: #e7f5ff;
-
             display: flex;
             align-items: center;
             justify-content: center;
-
             font-size: 18px;
         }
 
-
-        /* =========================
-           TEXT TO TYPE
-        ========================= */
-
         .text-box {
             position: relative;
-
             background: #f8fbfd;
-
             border: 1px solid #e3edf3;
-
             border-radius: 14px;
-
             padding: 19px 21px;
-
             line-height: 2;
-
             color: #5e7587;
-
             font-size: 14px;
-
             min-height: 145px;
-
             padding-right: 90px;
         }
 
-
         .word {
             margin-right: 7px;
-
             display: inline-block;
         }
 
-
         .keyboard-decoration {
             position: absolute;
-
             right: 25px;
             bottom: 24px;
-
             font-size: 48px;
-
             opacity: 0.65;
-
             transform: rotate(-8deg);
         }
-
-                /* =========================
-           TYPING AREA
-        ========================= */
 
         .typing-area-wrapper {
             position: relative;
@@ -439,11 +272,6 @@
             pointer-events: none;
         }
 
-
-        /* =========================
-           STATUS
-        ========================= */
-
         .status-row {
             display: flex;
             gap: 16px;
@@ -482,19 +310,10 @@
             background: #7184a9;
         }
 
-
-        /* =========================
-           RIGHT PANEL
-        ========================= */
-
         .right-panel {
             width: 285px;
             min-height: 100vh;
-            background: linear-gradient(
-                180deg,
-                #c9e9fa 0%,
-                #b8e0f5 100%
-            );
+            background: linear-gradient(180deg, #c9e9fa 0%, #b8e0f5 100%);
             padding: 30px 18px;
             flex-shrink: 0;
         }
@@ -527,11 +346,6 @@
             justify-content: center;
             font-size: 17px;
         }
-
-
-        /* =========================
-           PARTICIPANTS
-        ========================= */
 
         .participant-list {
             display: flex;
@@ -582,11 +396,6 @@
             color: #9aaab6;
             font-size: 11px;
         }
-
-
-        /* =========================
-           SCORE CARD
-        ========================= */
 
         .score-card {
             min-height: 235px;
@@ -639,11 +448,6 @@
             line-height: 1.7;
         }
 
-
-        /* =========================
-           RESPONSIVE
-        ========================= */
-
         @media (max-width: 1100px) {
             .sidebar {
                 width: 210px;
@@ -687,545 +491,193 @@
                 min-height: auto;
             }
         }
-
     </style>
 </head>
 
 <body>
 
     <div class="typing-page">
-
-        <!-- =========================
-             LEFT SIDEBAR
-        ========================= -->
-
         <aside class="sidebar">
-
             <div class="profile">
-                <div class="profile-avatar">
-                    👩🏻
-                </div>
-
+                <div class="profile-avatar">👩🏻</div>
                 <div class="profile-info">
                     <strong>Ratsamee Saengthong</strong>
                     <span>นักเรียน</span>
                 </div>
             </div>
 
-
             <nav class="menu">
-
                 <a href="classroom.html" class="menu-item active">
                     <span class="menu-icon">🏠</span>
                     <span>ห้องเรียน</span>
                 </a>
-
-                <a href="#" class="menu-item">
+                <a href="progress.html" class="menu-item">
                     <span class="menu-icon">📊</span>
                     <span>พัฒนาการ</span>
                 </a>
-
-                <a href="#" class="menu-item">
+                <a href="typing_history.html" class="menu-item">
                     <span class="menu-icon">📝</span>
                     <span>ประวัติการพิมพ์</span>
                 </a>
-
-                <a href="#" class="menu-item logout">
+                <a href="login.html" class="menu-item logout">
                     <span class="menu-icon">🚪</span>
                     <span>ออกจากระบบ</span>
                 </a>
-
             </nav>
-
         </aside>
 
-
-        <!-- =========================
-             MAIN CONTENT
-        ========================= -->
-
         <main class="main-content">
-
-            <!-- TOP BAR -->
-
             <div class="top-bar">
-
                 <a href="classroom.html" class="back-button">
                     <span>←</span>
                     <span>กลับ</span>
                 </a>
-
-                <div class="room-badge">
-                    ห้อง 3468
-                </div>
-
+                <div class="room-badge">ห้อง 3468</div>
             </div>
 
-
-            <!-- =========================
-                 TIMER
-            ========================= -->
-
             <section class="timer-section">
-
                 <div class="timer">
-
-                    <span class="timer-icon">
-                        ⏱
-                    </span>
-
-                    <span id="timer">
-                        01:00
-                    </span>
-
+                    <span class="timer-icon">⏱</span>
+                    <span id="timer">01:00</span>
                 </div>
-
-                <div class="timer-label">
-                    เวลาที่เหลือ
-                </div>
-
+                <div class="timer-label">เวลาที่เหลือ</div>
             </section>
-
-
-            <!-- =========================
-                 TYPING CARD
-            ========================= -->
 
             <section class="typing-card">
-
                 <div class="typing-title">
-
-                    <div class="typing-title-icon">
-                        ⌨️
-                    </div>
-
-                    <span>
-                        พิมพ์ข้อความต่อไปนี้
-                    </span>
-
+                    <div class="typing-title-icon">⌨️</div>
+                    <span>พิมพ์ข้อความต่อไปนี้</span>
                 </div>
-
-
-                <!-- =========================
-                     TEXT TO TYPE
-                ========================= -->
 
                 <div class="text-box">
-
                     <span class="word">apple</span>
-
                     <span class="word">banana</span>
-
                     <span class="word">computer</span>
-
                     <span class="word">desk</span>
-
                     <span class="word">window</span>
-
                     <span class="word">school</span>
-
                     <span class="word">friend</span>
-
                     <span class="word">family</span>
-
                     <span class="word">house</span>
-
                     <span class="word">book</span>
-
                     <span class="word">water</span>
-
                     <span class="word">plane</span>
-
                     <span class="word">train</span>
-
                     <span class="word">car</span>
-
                     <span class="word">chair</span>
-
                     <span class="word">table</span>
-
                     <span class="word">phone</span>
-
                     <span class="word">sun</span>
-
                     <span class="word">moon</span>
-
                     <span class="word">star</span>
-
                     <span class="word">happy</span>
-
                     <span class="word">sad</span>
 
-                    <span class="word">big</span>
-
-                    <span class="word">small</span>
-
-                    <span class="word">cute</span>
-
-                    <span class="word">blue</span>
-
-                    <span class="word">red</span>
-
-                    <span class="word">green</span>
-
-                    <span class="word">yellow</span>
-
-                    <span class="word">orange</span>
-
-                    <span class="word">purple</span>
-
-                    <span class="word">white</span>
-
-                    <span class="word">black</span>
-
-                    <span class="word">like</span>
-
-                    <span class="word">love</span>
-
-                    <span class="word">eat</span>
-
-                    <span class="word">drink</span>
-
-                    <span class="word">sleep</span>
-
-                    <span class="word">read</span>
-
-                    <span class="word">write</span>
-
-                    <span class="word">play</span>
-
-
-                    <div class="keyboard-decoration">
-                        ⌨️
-                    </div>
-
+                    <div class="keyboard-decoration">⌨️</div>
                 </div>
-
-
-                <!-- =========================
-                     TYPING INPUT
-                ========================= -->
 
                 <div class="typing-area-wrapper">
-
-                    <textarea
-                        id="typingInput"
-                        class="typing-area"
-                        maxlength="200"
-                        placeholder="เริ่มพิมพ์ข้อความนี้..."
-                        disabled
-                    ></textarea>
-
-
+                    <textarea id="typingInput" class="typing-area" maxlength="200" placeholder="เริ่มพิมพ์ข้อความนี้..." disabled></textarea>
                     <div class="character-count">
-
-                        <span id="characterCount">
-                            0
-                        </span>
-
-                        / 200
-
+                        <span id="characterCount">0</span> / 200
                     </div>
-
                 </div>
-
-
-                <!-- =========================
-                     STATUS
-                ========================= -->
 
                 <div class="status-row">
-
                     <div class="status-item">
-
                         <span class="status-dot correct-dot"></span>
-
-                        <span>
-                            ถูกต้อง
-                        </span>
-
+                        <span>ถูกต้อง</span>
                     </div>
-
-
                     <div class="status-item">
-
                         <span class="status-dot wrong-dot"></span>
-
-                        <span>
-                            ผิดพลาด
-                        </span>
-
+                        <span>ผิดพลาด</span>
                     </div>
-
-
                     <div class="status-item">
-
                         <span class="status-dot waiting-dot"></span>
-
-                        <span>
-                            ยังไม่ได้พิมพ์
-                        </span>
-
+                        <span>ยังไม่ได้พิมพ์</span>
                     </div>
-
                 </div>
-
             </section>
-
         </main>
 
-
-        <!-- =========================
-             RIGHT PANEL
-        ========================= -->
-
         <aside class="right-panel">
-
-            <!-- PARTICIPANTS -->
-
             <section class="side-card">
-
                 <div class="side-card-title">
-
-                    <span class="side-title-icon">
-                        👥
-                    </span>
-
-                    <span>
-                        ผู้เข้าร่วม
-                    </span>
-
+                    <span class="side-title-icon">👥</span>
+                    <span>ผู้เข้าร่วม</span>
                 </div>
-
 
                 <div class="participant-list">
-
                     <div class="participant">
-
-                        <div class="participant-avatar pink">
-                            👩🏻
-                        </div>
-
-                        <span>
-                            ying ratsamee
-                        </span>
-
+                        <div class="participant-avatar pink">👩🏻</div>
+                        <span>ying ratsamee</span>
                     </div>
-
-
                     <div class="participant">
-
-                        <div class="participant-avatar yellow">
-                            👩🏻
-                        </div>
-
-                        <span>
-                            Fatcat M
-                        </span>
-
+                        <div class="participant-avatar yellow">👩🏻</div>
+                        <span>Fatcat M</span>
                     </div>
-
-
                     <div class="participant">
-
-                        <div class="participant-avatar blue">
-                            👨🏻
-                        </div>
-
-                        <span>
-                            นายสมชาย กล้ากลาง
-                        </span>
-
+                        <div class="participant-avatar blue">👨🏻</div>
+                        <span>นายสมชาย กล้ากลาง</span>
                     </div>
-
-
-                    <div class="participant">
-
-                        <div class="participant-avatar purple">
-                            👨🏻
-                        </div>
-
-                        <span>
-                            นายสมหวัง ชอบพิมพ์
-                        </span>
-
-                    </div>
-
-
-                    <div class="participant">
-
-                        <div class="participant-avatar pink">
-                            👩🏻
-                        </div>
-
-                        <span>
-                            Shabu shi
-                        </span>
-
-                    </div>
-
                 </div>
 
-
-                <div class="participant-count">
-                    ผู้เข้าร่วม 12 คน
-                </div>
-
+                <div class="participant-count">ผู้เข้าร่วม 12 คน</div>
             </section>
-
-
-            <!-- =========================
-                 SCORE
-            ========================= -->
 
             <section class="side-card score-card">
-
                 <div class="score-title-row">
-
                     <div class="side-card-title">
-
-                        <span class="side-title-icon">
-                            🏆
-                        </span>
-
-                        <span>
-                            อันดับคะแนน
-                        </span>
-
+                        <span class="side-title-icon">🏆</span>
+                        <span>อันดับคะแนน</span>
                     </div>
-
-
-                    <span class="score-label">
-                        ล่าสุด
-                    </span>
-
+                    <span class="score-label">ล่าสุด</span>
                 </div>
-
 
                 <div class="score-empty">
-
-                    <div class="trophy">
-                        🏆
-                    </div>
-
-                    <strong>
-                        ยังไม่มีคะแนน
-                    </strong>
-
-                    <p>
-                        คะแนนจะแสดงหลังจาก<br>
- ทำการแข่งขันเสร็จสิ้น
-                    </p>
-
+                    <div class="trophy">🏆</div>
+                    <strong>ยังไม่มีคะแนน</strong>
+                    <p>คะแนนจะแสดงหลังจาก<br>ทำการแข่งขันเสร็จสิ้น</p>
                 </div>
-
             </section>
-
         </aside>
-
     </div>
 
-        <script>
-
-        /* =========================
-           TIMER
-        ========================= */
-
+    <script>
         let timeLeft = 60;
+        const timerElement = document.getElementById("timer");
+        const typingInput = document.getElementById("typingInput");
+        const characterCount = document.getElementById("characterCount");
 
-        const timerElement =
-            document.getElementById("timer");
-
-        const typingInput =
-            document.getElementById("typingInput");
-
-        const characterCount =
-            document.getElementById("characterCount");
-
-
-        /* =========================
-           CHARACTER COUNT
-        ========================= */
-
-        typingInput.addEventListener(
-            "input",
-            function () {
-
-                characterCount.textContent =
-                    this.value.length;
-
-            }
-        );
-
-
-        /* =========================
-           START TIMER
-        ========================= */
+        typingInput.addEventListener("input", function () {
+            characterCount.textContent = this.value.length;
+        });
 
         function startTimer() {
-
             typingInput.disabled = false;
-
             typingInput.focus();
 
+            const timer = setInterval(function () {
+                timeLeft--;
 
-            const timer =
-                setInterval(function () {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
 
-                    timeLeft--;
+                timerElement.textContent = String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
 
-
-                    const minutes =
-                        Math.floor(timeLeft / 60);
-
-                    const seconds =
-                        timeLeft % 60;
-
-
-                    timerElement.textContent =
-                        String(minutes).padStart(2, "0")
-                        + ":" +
-                        String(seconds).padStart(2, "0");
-
-
-                    /* =========================
-                       TIME OUT
-                    ========================= */
-
-                    if (timeLeft <= 0) {
-
-                        clearInterval(timer);
-
-                        typingInput.disabled = true;
-
-                        alert("หมดเวลาแล้วค่ะ");
-
-                    }
-
-                }, 1000);
-
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    typingInput.disabled = true;
+                    alert("หมดเวลาแล้วค่ะ!");
+                    window.location.href = "typing-result.html";
+                }
+            }, 1000);
         }
 
-
-        /* =========================
-           PAGE LOAD
-        ========================= */
-
-        window.addEventListener(
-            "load",
-            function () {
-
-                setTimeout(function () {
-
-                    startTimer();
-
-                }, 1000);
-
-            }
-        );
-
+        window.addEventListener("load", function () {
+            setTimeout(startTimer, 1000);
+        });
     </script>
-
 </body>
 
 </html>
