@@ -7,435 +7,75 @@
     <title>ประวัติการพิมพ์ | Typing Classroom</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Prompt', sans-serif; background: #f5f8fc; color: #52647c; min-height: 100vh; }
+        .app { display: flex; min-height: 100vh; }
 
-        body {
-            font-family: 'Prompt', sans-serif;
-            background: #f5f8fc;
-            color: #52647c;
-            min-height: 100vh;
-        }
+        .sidebar { width: 245px; min-width: 245px; background: linear-gradient(180deg, #c6e1f7 0%, #b7d7ed 100%); padding: 28px 15px; display: flex; flex-direction: column; }
+        .profile { display: flex; align-items: center; gap: 10px; padding: 8px 7px 35px; }
+        .avatar { width: 46px; height: 46px; border-radius: 50%; background: #f5c3d1; display: flex; align-items: center; justify-content: center; font-size: 25px; flex-shrink: 0; border: 2px solid rgba(255, 255, 255, .7); }
+        .profile-name { font-size: 12px; font-weight: 600; color: #355777; }
+        .profile-role { font-size: 11px; color: #6f8ca7; margin-top: 3px; }
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 13px; padding: 14px 13px; border-radius: 12px; text-decoration: none; color: #42617d; font-size: 14px; transition: .2s; }
+        .nav-item:hover { background: rgba(255, 255, 255, .45); }
+        .nav-item.active { background: #f3f6fa; color: #405c7b; font-weight: 600; box-shadow: 0 3px 10px rgba(76, 113, 150, .06); }
+        .nav-icon { width: 27px; text-align: center; font-size: 21px; flex-shrink: 0; }
 
-        .app {
-            display: flex;
-            min-height: 100vh;
-        }
+        .main { flex: 1; min-width: 0; padding: 30px 34px 24px; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 32px; }
+        .page-heading { display: flex; align-items: center; gap: 18px; }
+        .heading-icon { width: 55px; height: 55px; border-radius: 13px; background: #7199e8; color: white; display: flex; align-items: center; justify-content: center; font-size: 27px; flex-shrink: 0; }
+        .page-heading h1 { font-size: 25px; color: #425879; font-weight: 600; }
+        .page-heading p { font-size: 12px; color: #98a7b9; margin-top: 4px; }
+        .encouragement { display: flex; align-items: center; gap: 12px; color: #729c91; font-size: 13px; line-height: 1.8; flex-shrink: 0; }
+        .encouragement-icon { font-size: 35px; }
 
-        .sidebar {
-            width: 245px;
-            min-width: 245px;
-            background: linear-gradient(180deg, #c6e1f7 0%, #b7d7ed 100%);
-            padding: 28px 15px;
-            display: flex;
-            flex-direction: column;
-        }
+        .filter-panel { display: grid; grid-template-columns: 1fr 1fr 1.1fr; gap: 22px; align-items: end; margin-bottom: 25px; }
+        .filter-group { min-width: 0; }
+        .filter-label { display: block; font-size: 12px; color: #899bb0; margin-bottom: 8px; }
+        .filter-control { width: 100%; height: 42px; border: none; border-bottom: 1px solid #e1e8f0; background: transparent; outline: none; font-family: inherit; font-size: 13px; color: #63758e; padding: 0 8px; }
+        .filter-control:focus { border-bottom-color: #7199e8; }
+        select.filter-control { cursor: pointer; }
+        .search-wrap { position: relative; }
+        .search-icon { position: absolute; left: 8px; top: 10px; font-size: 18px; color: #8c9bb0; pointer-events: none; }
+        .search-input { padding-left: 35px; }
 
-        .profile {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 7px 35px;
-        }
+        .table-container { width: 100%; overflow-x: auto; }
+        .history-table { width: 100%; min-width: 790px; border-collapse: collapse; table-layout: fixed; }
+        .history-table th { text-align: left; padding: 12px 10px; font-size: 12px; color: #899bb0; border-bottom: 1px solid #e1e8f0; }
+        .history-table td { padding: 14px 10px; border-bottom: 1px solid #f0f4f8; font-size: 13px; }
 
-        .avatar {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            background: #f5c3d1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 25px;
-            flex-shrink: 0;
-            border: 2px solid rgba(255, 255, 255, .7);
-        }
+        .date-cell { line-height: 1.6; color: #74859b; }
+        .date-cell .date { display: block; }
+        .date-cell .time { display: block; color: #9ba8b8; font-size: 11px; }
+        .room-name { font-weight: 500; color: #657b98; }
+        .wpm { color: #7196d9; font-weight: 500; }
+        .accuracy { display: inline-block; min-width: 49px; padding: 4px 9px; border-radius: 15px; background: #e6f4ed; color: #69a88b; text-align: center; }
+        .accuracy.medium { background: #fff2df; color: #c89b60; }
+        .accuracy.low { background: #fbe9eb; color: #c77d91; }
+        .score { color: #c9a07c; font-weight: 500; }
+        .score.low { color: #c78399; }
+        .detail-btn { display: inline-block; padding: 6px 13px; border: 1px solid #cbd8e8; border-radius: 20px; color: #7395c5; background: transparent; text-decoration: none; font-family: inherit; font-size: 11px; white-space: nowrap; transition: .2s; }
+        .detail-btn:hover { background: #eaf2fc; }
 
-        .profile-name {
-            font-size: 12px;
-            font-weight: 600;
-            color: #355777;
-        }
-
-        .profile-role {
-            font-size: 11px;
-            color: #6f8ca7;
-            margin-top: 3px;
-        }
-
-        .nav-menu {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 13px;
-            padding: 14px 13px;
-            border-radius: 12px;
-            text-decoration: none;
-            color: #42617d;
-            font-size: 14px;
-            transition: .2s;
-        }
-
-        .nav-item:hover {
-            background: rgba(255, 255, 255, .45);
-        }
-
-        .nav-item.active {
-            background: #f3f6fa;
-            color: #405c7b;
-            font-weight: 600;
-            box-shadow: 0 3px 10px rgba(76, 113, 150, .06);
-        }
-
-        .nav-icon {
-            width: 27px;
-            text-align: center;
-            font-size: 21px;
-            flex-shrink: 0;
-        }
-
-        .main {
-            flex: 1;
-            min-width: 0;
-            padding: 30px 34px 24px;
-        }
-
-        .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            margin-bottom: 32px;
-        }
-
-        .page-heading {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
-
-        .heading-icon {
-            width: 55px;
-            height: 55px;
-            border-radius: 13px;
-            background: #7199e8;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 27px;
-            flex-shrink: 0;
-        }
-
-        .page-heading h1 {
-            font-size: 25px;
-            color: #425879;
-            font-weight: 600;
-        }
-
-        .page-heading p {
-            font-size: 12px;
-            color: #98a7b9;
-            margin-top: 4px;
-        }
-
-        .encouragement {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #729c91;
-            font-size: 13px;
-            line-height: 1.8;
-            flex-shrink: 0;
-        }
-
-        .encouragement-icon {
-            font-size: 35px;
-        }
-
-        .filter-panel {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1.1fr;
-            gap: 22px;
-            align-items: end;
-            margin-bottom: 25px;
-        }
-
-        .filter-group {
-            min-width: 0;
-        }
-
-        .filter-label {
-            display: block;
-            font-size: 12px;
-            color: #899bb0;
-            margin-bottom: 8px;
-        }
-
-        .filter-control {
-            width: 100%;
-            height: 42px;
-            border: none;
-            border-bottom: 1px solid #e1e8f0;
-            background: transparent;
-            outline: none;
-            font-family: inherit;
-            font-size: 13px;
-            color: #63758e;
-            padding: 0 8px;
-        }
-
-        .filter-control:focus {
-            border-bottom-color: #7199e8;
-        }
-
-        select.filter-control {
-            cursor: pointer;
-        }
-
-        .search-wrap {
-            position: relative;
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 8px;
-            top: 10px;
-            font-size: 18px;
-            color: #8c9bb0;
-            pointer-events: none;
-        }
-
-        .search-input {
-            padding-left: 35px;
-        }
-
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-        }
-
-        .history-table {
-            width: 100%;
-            min-width: 790px;
-            border-collapse: collapse;
-            table-layout: fixed;
-        }
-
-        .history-table th {
-            text-align: left;
-            padding: 12px 10px;
-            font-size: 12px;
-            color: #899bb0;
-            border-bottom: 1px solid #e1e8f0;
-        }
-
-        .history-table td {
-            padding: 14px 10px;
-            border-bottom: 1px solid #f0f4f8;
-            font-size: 13px;
-        }
-
-        .date-cell {
-            line-height: 1.6;
-            color: #74859b;
-        }
-
-        .date-cell .date {
-            display: block;
-        }
-
-        .date-cell .time {
-            display: block;
-            color: #9ba8b8;
-            font-size: 11px;
-        }
-
-        .room-name {
-            font-weight: 500;
-            color: #657b98;
-        }
-
-        .wpm {
-            color: #7196d9;
-            font-weight: 500;
-        }
-
-        .accuracy {
-            display: inline-block;
-            min-width: 49px;
-            padding: 4px 9px;
-            border-radius: 15px;
-            background: #e6f4ed;
-            color: #69a88b;
-            text-align: center;
-        }
-
-        .accuracy.medium {
-            background: #fff2df;
-            color: #c89b60;
-        }
-
-        .accuracy.low {
-            background: #fbe9eb;
-            color: #c77d91;
-        }
-
-        .score {
-            color: #c9a07c;
-            font-weight: 500;
-        }
-
-        .score.low {
-            color: #c78399;
-        }
-
-        .detail-btn {
-            display: inline-block;
-            padding: 6px 13px;
-            border: 1px solid #cbd8e8;
-            border-radius: 20px;
-            color: #7395c5;
-            background: transparent;
-            text-decoration: none;
-            font-family: inherit;
-            font-size: 11px;
-            white-space: nowrap;
-            transition: .2s;
-        }
-
-        .detail-btn:hover {
-            background: #eaf2fc;
-        }
-
-        .table-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            padding: 20px 3px;
-        }
-
-        .pagination {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-        }
-
-        .page-number,
-        .page-arrow {
-            width: 30px;
-            height: 30px;
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 7px;
-            color: #7d8da3;
-            font-size: 12px;
-            text-decoration: none;
-            transition: .2s;
-        }
-
-        .page-number.active {
-            background: #7199e8;
-            color: white;
-        }
-
-        .page-arrow {
-            font-size: 21px;
-        }
-
-        .page-number:hover,
-        .page-arrow:hover {
-            background: #e5eefb;
-        }
-
-        .record-count {
-            font-size: 11px;
-            color: #8b9cb1;
-            white-space: nowrap;
-        }
-
-        .record-count span {
-            color: #7199e8;
-            margin-right: 5px;
-            font-size: 15px;
-        }
+        .table-footer { display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 20px 3px; }
+        .pagination { display: flex; align-items: center; gap: 9px; }
+        .page-number, .page-arrow { width: 30px; height: 30px; display: inline-flex; justify-content: center; align-items: center; border-radius: 7px; color: #7d8da3; font-size: 12px; text-decoration: none; transition: .2s; cursor: pointer; }
+        .page-number.active { background: #7199e8; color: white; }
+        .page-arrow { font-size: 21px; }
+        .page-number:hover, .page-arrow:hover { background: #e5eefb; }
+        .record-count { font-size: 11px; color: #8b9cb1; white-space: nowrap; }
+        .record-count span { color: #7199e8; margin-right: 5px; font-size: 15px; }
 
         @media (max-width: 1000px) {
-            .sidebar {
-                width: 210px;
-                min-width: 210px;
-            }
-
-            .main {
-                padding: 24px 20px;
-            }
-
-            .encouragement {
-                display: none;
-            }
-
-            .filter-panel {
-                gap: 12px;
-            }
+            .sidebar { width: 210px; min-width: 210px; } .main { padding: 24px 20px; } .encouragement { display: none; } .filter-panel { gap: 12px; }
         }
-
         @media (max-width: 650px) {
-            .app {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                min-width: 0;
-                padding: 12px;
-            }
-
-            .profile {
-                padding-bottom: 12px;
-            }
-
-            .nav-menu {
-                flex-direction: row;
-                flex-wrap: wrap;
-            }
-
-            .nav-item {
-                flex: 1;
-                min-width: 120px;
-                padding: 10px;
-                font-size: 12px;
-            }
-
-            .main {
-                padding: 20px 14px;
-            }
-
-            .topbar {
-                margin-bottom: 22px;
-            }
-
-            .page-heading h1 {
-                font-size: 20px;
-            }
-
-            .filter-panel {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-
-            .table-footer {
-                flex-wrap: wrap;
-            }
+            .app { flex-direction: column; } .sidebar { width: 100%; min-width: 0; padding: 12px; } .profile { padding-bottom: 12px; }
+            .nav-menu { flex-direction: row; flex-wrap: wrap; } .nav-item { flex: 1; min-width: 120px; padding: 10px; font-size: 12px; }
+            .main { padding: 20px 14px; } .topbar { margin-bottom: 22px; } .page-heading h1 { font-size: 20px; } .filter-panel { grid-template-columns: 1fr; gap: 12px; }
+            .table-footer { flex-wrap: wrap; }
         }
     </style>
 </head>
@@ -443,6 +83,7 @@
 <body>
 
     <div class="app">
+        <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="profile">
                 <div class="avatar">👩🏻</div>
@@ -453,25 +94,26 @@
             </div>
 
             <nav class="nav-menu">
-                <a href="classroom.html" class="nav-item">
+                <a href="{{ url_for('classroom') }}" class="nav-item">
                     <span class="nav-icon">🏠</span>
                     <span>ห้องเรียน</span>
                 </a>
-                <a href="progress.html" class="nav-item">
+                <a href="{{ url_for('progress') }}" class="nav-item">
                     <span class="nav-icon">📊</span>
                     <span>พัฒนาการ</span>
                 </a>
-                <a href="typing_history.html" class="nav-item active">
+                <a href="{{ url_for('typing_history') }}" class="nav-item active">
                     <span class="nav-icon">📝</span>
                     <span>ประวัติการพิมพ์</span>
                 </a>
-                <a href="login.html" class="nav-item">
+                <a href="{{ url_for('login') }}" class="nav-item">
                     <span class="nav-icon">🚪</span>
                     <span>ออกจากระบบ</span>
                 </a>
             </nav>
         </aside>
 
+        <!-- MAIN CONTENT -->
         <main class="main">
             <div class="topbar">
                 <div class="page-heading">
@@ -484,9 +126,7 @@
 
                 <div class="encouragement">
                     <span class="encouragement-icon">🌱</span>
-                    <div>
-                        ทุกการฝึกซ้อม มีความหมายเสมอ
-                    </div>
+                    <div>ทุกการฝึกซ้อม มีความหมายเสมอ</div>
                 </div>
             </div>
 
@@ -530,56 +170,18 @@
                         </tr>
                     </thead>
 
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td class="date-cell">
-                                <span class="date">12 ก.ย. 2568</span>
-                                <span class="time">14:32</span>
-                            </td>
-                            <td class="room-name">ห้อง A</td>
-                            <td class="wpm">45</td>
-                            <td><span class="accuracy">97%</span></td>
-                            <td class="score">980</td>
-                            <td><a href="typing-result.html" class="detail-btn">⊙ ดูรายละเอียด</a></td>
-                        </tr>
-
-                        <tr>
-                            <td>2</td>
-                            <td class="date-cell">
-                                <span class="date">10 ก.ย. 2568</span>
-                                <span class="time">16:18</span>
-                            </td>
-                            <td class="room-name">ห้อง B</td>
-                            <td class="wpm">42</td>
-                            <td><span class="accuracy">95%</span></td>
-                            <td class="score">920</td>
-                            <td><a href="typing-result.html" class="detail-btn">⊙ ดูรายละเอียด</a></td>
-                        </tr>
-
-                        <tr>
-                            <td>3</td>
-                            <td class="date-cell">
-                                <span class="date">8 ก.ย. 2568</span>
-                                <span class="time">13:07</span>
-                            </td>
-                            <td class="room-name">ห้อง C</td>
-                            <td class="wpm">38</td>
-                            <td><span class="accuracy">94%</span></td>
-                            <td class="score">870</td>
-                            <td><a href="typing-result.html" class="detail-btn">⊙ ดูรายละเอียด</a></td>
-                        </tr>
-                    </tbody>
+                    <!-- ข้อมูลจะเปลี่ยนตามหน้าที่กด -->
+                    <tbody id="historyTbody"></tbody>
                 </table>
             </section>
 
             <footer class="table-footer">
                 <nav class="pagination" aria-label="เปลี่ยนหน้า">
-                    <a href="#" class="page-arrow">‹</a>
-                    <a href="#" class="page-number active">1</a>
-                    <a href="#" class="page-number">2</a>
-                    <a href="#" class="page-number">3</a>
-                    <a href="#" class="page-arrow">›</a>
+                    <a class="page-arrow" onclick="prevPage()">‹</a>
+                    <a class="page-number active" data-page="1" onclick="goToPage(1)">1</a>
+                    <a class="page-number" data-page="2" onclick="goToPage(2)">2</a>
+                    <a class="page-number" data-page="3" onclick="goToPage(3)">3</a>
+                    <a class="page-arrow" onclick="nextPage()">›</a>
                 </nav>
 
                 <div class="record-count">
@@ -588,6 +190,91 @@
             </footer>
         </main>
     </div>
+
+    <!-- JAVASCRIPT สำหรับเปลี่ยนหน้า TABLE -->
+    <script>
+        const detailUrl = "{{ url_for('typing_result') }}";
+
+        // ข้อมูลตัวอย่างแบ่งตามหน้า (Page 1, 2, 3)
+        const historyData = {
+            1: [
+                { id: 1, date: "12 ก.ย. 2568", time: "14:32", room: "ห้อง A", wpm: 45, acc: "97%", accClass: "", score: 980, scoreClass: "" },
+                { id: 2, date: "10 ก.ย. 2568", time: "16:18", room: "ห้อง B", wpm: 42, acc: "95%", accClass: "", score: 920, scoreClass: "" },
+                { id: 3, date: "8 ก.ย. 2568", time: "13:07", room: "ห้อง C", wpm: 38, acc: "94%", accClass: "", score: 870, scoreClass: "" }
+            ],
+            2: [
+                { id: 4, date: "5 ก.ย. 2568", time: "15:45", room: "ห้อง D", wpm: 35, acc: "92%", accClass: "", score: 820, scoreClass: "" },
+                { id: 5, date: "2 ก.ย. 2568", time: "11:22", room: "ห้อง A", wpm: 32, acc: "90%", accClass: "", score: 760, scoreClass: "" },
+                { id: 6, date: "30 ส.ค. 2568", time: "14:36", room: "ห้อง E", wpm: 28, acc: "88%", accClass: "medium", score: 720, scoreClass: "" }
+            ],
+            3: [
+                { id: 7, date: "28 ส.ค. 2568", time: "10:12", room: "ห้อง B", wpm: 26, acc: "85%", accClass: "medium", score: 680, scoreClass: "low" },
+                { id: 8, date: "25 ส.ค. 2568", time: "16:40", room: "ห้อง C", wpm: 24, acc: "82%", accClass: "medium", score: 640, scoreClass: "low" },
+                { id: 9, date: "22 ส.ค. 2568", time: "13:25", room: "ห้อง D", wpm: 22, acc: "78%", accClass: "low", score: 590, scoreClass: "low" }
+            ]
+        };
+
+        let currentPage = 1;
+        const totalPages = 3;
+
+        function renderPage(page) {
+            const tbody = document.getElementById("historyTbody");
+            tbody.innerHTML = "";
+
+            const rows = historyData[page] || [];
+            rows.forEach(item => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${item.id}</td>
+                    <td class="date-cell">
+                        <span class="date">${item.date}</span>
+                        <span class="time">${item.time}</span>
+                    </td>
+                    <td class="room-name">${item.room}</td>
+                    <td class="wpm">${item.wpm}</td>
+                    <td><span class="accuracy ${item.accClass}">${item.acc}</span></td>
+                    <td class="score ${item.scoreClass}">${item.score}</td>
+                    <td><a href="${detailUrl}" class="detail-btn">⊙ ดูรายละเอียด</a></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // อัปเดตสถานะปุ่ม Active
+            document.querySelectorAll(".page-number").forEach(btn => {
+                const btnPage = parseInt(btn.getAttribute("data-page"));
+                if (btnPage === page) {
+                    btn.classList.add("active");
+                } else {
+                    btn.classList.remove("active");
+                }
+            });
+
+            currentPage = page;
+        }
+
+        function goToPage(page) {
+            if (page >= 1 && page <= totalPages) {
+                renderPage(page);
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                renderPage(currentPage - 1);
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                renderPage(currentPage + 1);
+            }
+        }
+
+        // แสดงผลหน้า 1 ตั้งแต่เริ่มต้น
+        window.addEventListener("load", function() {
+            renderPage(1);
+        });
+    </script>
 </body>
 
 </html>

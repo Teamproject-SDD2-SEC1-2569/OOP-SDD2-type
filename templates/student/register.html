@@ -6,192 +6,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>สมัครสมาชิก | Typing Competition</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f8ff;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .register-container {
-            width: 1100px;
-            min-height: 650px;
-            background: white;
-            border-radius: 30px;
-            box-shadow: 0 10px 35px rgba(70, 120, 180, 0.12);
-            display: flex;
-            overflow: hidden;
-        }
-
-        .register-form {
-            width: 58%;
-            padding: 55px 65px;
-        }
-
-        .title {
-            color: #3f6fb5;
-            font-size: 42px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        .subtitle {
-            color: #777;
-            font-size: 18px;
-            margin-bottom: 28px;
-        }
-
-        .section-title {
-            color: #333;
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 12px;
-        }
-
-        .role-container {
-            display: flex;
-            gap: 18px;
-            margin-bottom: 25px;
-        }
-
-        .role-button {
-            flex: 1;
-            height: 55px;
-            border: 1px solid #d7dce5;
-            border-radius: 14px;
-            background: white;
-            color: #555;
-            font-size: 17px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .role-button.active {
-            background: #5d91df;
-            color: white;
-            border-color: #5d91df;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-group label {
-            color: #333;
-            font-size: 17px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        .form-group input {
-            height: 52px;
-            border: 1px solid #d7dce5;
-            border-radius: 14px;
-            padding: 0 18px;
-            font-size: 16px;
-            outline: none;
-            background: #fff;
-        }
-
-        .form-group input:focus {
-            border-color: #5d91df;
-            box-shadow: 0 0 0 3px rgba(93, 145, 223, 0.12);
-        }
-
-        .register-button {
-            width: 70%;
-            height: 58px;
-            margin-top: 28px;
-            border: none;
-            border-radius: 15px;
-            background: #5d91df;
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .register-button:hover {
-            background: #4c80cf;
-        }
-
-        .login-link {
-            margin-top: 25px;
-            text-align: center;
-            color: #666;
-            font-size: 16px;
-        }
-
-        .login-link a {
-            color: #5d91df;
-            text-decoration: none;
-            font-weight: bold;
-            margin-left: 5px;
-        }
-
-        .register-image {
-            width: 42%;
-            background: #eef5ff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .image-content {
-            text-align: center;
-            padding: 30px;
-        }
-
-        .keyboard-icon {
-            font-size: 150px;
-            margin-bottom: 20px;
-        }
-
-        .image-content h2 {
-            color: #4778bd;
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-
-        .image-content p {
-            color: #777;
-            font-size: 16px;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f4f8ff; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .register-container { width: 1100px; min-height: 650px; background: white; border-radius: 30px; box-shadow: 0 10px 35px rgba(70, 120, 180, 0.12); display: flex; overflow: hidden; }
+        .register-form { width: 58%; padding: 55px 65px; }
+        .title { color: #3f6fb5; font-size: 42px; font-weight: bold; margin-bottom: 8px; }
+        .subtitle { color: #777; font-size: 18px; margin-bottom: 28px; }
+        .section-title { color: #333; font-size: 18px; font-weight: bold; margin-bottom: 12px; }
+        .role-container { display: flex; gap: 18px; margin-bottom: 25px; }
+        .role-button { flex: 1; height: 55px; border: 1px solid #d7dce5; border-radius: 14px; background: white; color: #555; font-size: 17px; font-weight: bold; cursor: pointer; }
+        .role-button.active { background: #5d91df; color: white; border-color: #5d91df; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { color: #333; font-size: 17px; font-weight: bold; margin-bottom: 8px; }
+        .form-group input { height: 52px; border: 1px solid #d7dce5; border-radius: 14px; padding: 0 18px; font-size: 16px; outline: none; background: #fff; }
+        .form-group input:focus { border-color: #5d91df; box-shadow: 0 0 0 3px rgba(93, 145, 223, 0.12); }
+        .register-button { width: 70%; height: 58px; margin-top: 28px; border: none; border-radius: 15px; background: #5d91df; color: white; font-size: 20px; font-weight: bold; cursor: pointer; }
+        .register-button:hover { background: #4c80cf; }
+        .login-link { margin-top: 25px; text-align: center; color: #666; font-size: 16px; }
+        .login-link a { color: #5d91df; text-decoration: none; font-weight: bold; margin-left: 5px; }
+        .register-image { width: 42%; background: #eef5ff; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
+        .image-content { text-align: center; padding: 30px; }
+        .keyboard-icon { font-size: 150px; margin-bottom: 20px; }
+        .image-content h2 { color: #4778bd; font-size: 28px; margin-bottom: 10px; }
+        .image-content p { color: #777; font-size: 16px; }
         @media (max-width: 850px) {
-            .register-container {
-                width: 95%;
-            }
-
-            .register-form {
-                width: 100%;
-                padding: 40px;
-            }
-
-            .register-image {
-                display: none;
-            }
-
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
+            .register-container { width: 95%; } .register-form { width: 100%; padding: 40px; } .register-image { display: none; } .form-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -237,7 +77,7 @@
 
             <div class="login-link">
                 มีบัญชีอยู่แล้ว?
-                <a href="login.html">เข้าสู่ระบบ</a>
+                <a href="{{ url_for('login') }}">เข้าสู่ระบบ</a>
             </div>
         </div>
 
@@ -262,7 +102,7 @@
         function handleRegister(e) {
             e.preventDefault();
             alert("สมัครสมาชิกสำเร็จ!");
-            window.location.href = "login.html";
+            window.location.href = "{{ url_for('login') }}";
         }
     </script>
 </body>
