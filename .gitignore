@@ -1,0 +1,16 @@
+# Security / Environment variables
+.env
+
+# Python Byte-compiled / Optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments (เผื่อในอนาคตมีการสร้าง)
+venv/
+env/
+.venv/
+
+# VS Code / OS settings
+.vscode/
+.DS_Store
