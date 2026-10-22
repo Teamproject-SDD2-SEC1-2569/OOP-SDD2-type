@@ -94,19 +94,19 @@
             </div>
 
             <nav class="nav-menu">
-                <a href="{{ url_for('classroom') }}" class="nav-item">
+                <a href="{{ url_for('api.classroom') }}" class="nav-item">
                     <span class="nav-icon">🏠</span>
                     <span>ห้องเรียน</span>
                 </a>
-                <a href="{{ url_for('progress') }}" class="nav-item">
+                <a href="{{ url_for('api.progress') }}" class="nav-item">
                     <span class="nav-icon">📊</span>
                     <span>พัฒนาการ</span>
                 </a>
-                <a href="{{ url_for('typing_history') }}" class="nav-item active">
+                <a href="{{ url_for('api.typing_history') }}" class="nav-item active">
                     <span class="nav-icon">📝</span>
                     <span>ประวัติการพิมพ์</span>
                 </a>
-                <a href="{{ url_for('login') }}" class="nav-item">
+                <a href="{{ url_for('api.login') }}" class="nav-item">
                     <span class="nav-icon">🚪</span>
                     <span>ออกจากระบบ</span>
                 </a>
@@ -193,7 +193,7 @@
 
     <!-- JAVASCRIPT สำหรับเปลี่ยนหน้า TABLE -->
     <script>
-        const detailUrl = "{{ url_for('typing_result') }}";
+        const detailUrl = "{{ url_for('api.typing_result') }}";
 
         // ข้อมูลตัวอย่างแบ่งตามหน้า (Page 1, 2, 3)
         const historyData = {

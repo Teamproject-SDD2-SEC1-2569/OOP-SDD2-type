@@ -77,7 +77,7 @@
 
             <div class="login-link">
                 มีบัญชีอยู่แล้ว?
-                <a href="{{ url_for('login') }}">เข้าสู่ระบบ</a>
+                <a href="{{ url_for('api.login') }}">เข้าสู่ระบบ</a>
             </div>
         </div>
 
@@ -102,7 +102,7 @@
         function handleRegister(e) {
             e.preventDefault();
             alert("สมัครสมาชิกสำเร็จ!");
-            window.location.href = "{{ url_for('login') }}";
+            window.location.href = "{{ url_for('api.login') }}";
         }
     </script>
 </body>

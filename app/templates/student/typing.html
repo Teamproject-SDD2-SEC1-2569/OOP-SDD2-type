@@ -106,19 +106,19 @@
             </div>
 
             <nav class="menu">
-                <a href="{{ url_for('classroom') }}" class="menu-item active">
+                <a href="{{ url_for('api.classroom') }}" class="menu-item active">
                     <span class="menu-icon">🏠</span>
                     <span>ห้องเรียน</span>
                 </a>
-                <a href="{{ url_for('progress') }}" class="menu-item">
+                <a href="{{ url_for('api.progress') }}" class="menu-item">
                     <span class="menu-icon">📊</span>
                     <span>พัฒนาการ</span>
                 </a>
-                <a href="{{ url_for('typing_history') }}" class="menu-item">
+                <a href="{{ url_for('api.typing_history') }}" class="menu-item">
                     <span class="menu-icon">📝</span>
                     <span>ประวัติการพิมพ์</span>
                 </a>
-                <a href="{{ url_for('login') }}" class="menu-item logout">
+                <a href="{{ url_for('api.login') }}" class="menu-item logout">
                     <span class="menu-icon">🚪</span>
                     <span>ออกจากระบบ</span>
                 </a>
@@ -128,7 +128,7 @@
         <!-- MAIN CONTENT -->
         <main class="main-content">
             <div class="top-bar">
-                <a href="{{ url_for('classroom') }}" class="back-button">
+                <a href="{{ url_for('api.classroom') }}" class="back-button">
                     <span>←</span>
                     <span>กลับ</span>
                 </a>
@@ -289,7 +289,7 @@
             clearInterval(timerInterval);
             typingInput.disabled = true;
             alert("จบการทดสอบพิมพ์แล้วค่ะ!");
-            window.location.href = "{{ url_for('typing_result') }}";
+            window.location.href = "{{ url_for('api.typing_result') }}";
         }
 
         // 4. ตรวจสอบข้อความเมื่อพิมพ์

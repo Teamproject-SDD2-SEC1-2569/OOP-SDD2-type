@@ -96,7 +96,7 @@
 
                 <p class="register">
                     ยังไม่มีบัญชี?
-                    <a href="{{ url_for('register') }}">สมัครสมาชิก</a>
+                    <a href="{{ url_for('api.register') }}">สมัครสมาชิก</a>
                 </p>
             </div>
         </section>
@@ -118,7 +118,7 @@
 
         function handleLogin(e) {
             if (e) e.preventDefault();
-            window.location.href = "{{ url_for('classroom') }}";
+            window.location.href = "{{ url_for('api.classroom') }}";
         }
     </script>
 </body>

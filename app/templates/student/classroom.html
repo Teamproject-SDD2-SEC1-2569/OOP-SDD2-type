@@ -72,19 +72,19 @@
             </div>
 
             <nav class="menu">
-                <a href="{{ url_for('classroom') }}" class="menu-item active">
+                <a href="{{ url_for('api.classroom') }}" class="menu-item active">
                     <span class="menu-icon">🏠</span>
                     <span>ห้องเรียน</span>
                 </a>
-                <a href="{{ url_for('progress') }}" class="menu-item">
+                <a href="{{ url_for('api.progress') }}" class="menu-item">
                     <span class="menu-icon">📊</span>
                     <span>พัฒนาการ</span>
                 </a>
-                <a href="{{ url_for('typing_history') }}" class="menu-item">
+                <a href="{{ url_for('api.typing_history') }}" class="menu-item">
                     <span class="menu-icon">📝</span>
                     <span>ประวัติการพิมพ์</span>
                 </a>
-                <a href="{{ url_for('login') }}" class="menu-item logout">
+                <a href="{{ url_for('api.login') }}" class="menu-item logout">
                     <span class="menu-icon">🚪</span>
                     <span>ออกจากระบบ</span>
                 </a>
@@ -169,7 +169,7 @@
                 alert("กรุณาใส่เลขห้อง");
                 return;
             }
-            window.location.href = "{{ url_for('typing') }}";
+            window.location.href = "{{ url_for('api.typing') }}";
         }
     </script>
 </body>
