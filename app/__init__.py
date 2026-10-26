@@ -5,13 +5,16 @@ from flask_cors import CORS
 socketio = SocketIO()
 
 def create_app():
-    # เมื่อไม่ระบุอะไรเลย Flask จะหาโฟลเดอร์ templates ในโฟลเดอร์ app/ โดยอัตโนมัติ
-    app = Flask(__name__) 
+    app = Flask(__name__)
     CORS(app)
     
-    from .route import api_bp
-    app.register_blueprint(api_bp) 
+    # 1. นำเข้า register_socket_events เพิ่มเติม
+    from .route import api_bp, register_socket_events  # 👈 แก้ไขบรรทัดนี้
+    app.register_blueprint(api_bp)
     
     socketio.init_app(app, cors_allowed_origins="*")
+    
+    # 2. สั่งให้ Socket.IO เริ่มรับฟัง Event ต่างๆ (start_typing, submit_score)
+    register_socket_events(socketio)  # 👈 เพิ่มบรรทัดนี้
     
     return app

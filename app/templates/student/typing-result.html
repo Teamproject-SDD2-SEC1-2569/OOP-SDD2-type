@@ -123,17 +123,20 @@
                     <div class="stat-card wpm">
                         <div class="stat-icon">⚡</div>
                         <div class="stat-name">WPM</div>
-                        <div class="stat-value">42</div>
+                        <!-- เพิ่ม ID res-wpm -->
+                        <div class="stat-value" id="res-wpm">0</div>
                     </div>
                     <div class="stat-card accuracy">
                         <div class="stat-icon">✓</div>
                         <div class="stat-name">Accuracy</div>
-                        <div class="stat-value">97%</div>
+                        <!-- เพิ่ม ID res-acc -->
+                        <div class="stat-value" id="res-acc">0%</div>
                     </div>
                     <div class="stat-card score">
                         <div class="stat-icon">⭐</div>
                         <div class="stat-name">Score</div>
-                        <div class="stat-value">980</div>
+                        <!-- เพิ่ม ID res-score -->
+                        <div class="stat-value" id="res-score">0</div>
                     </div>
                 </div>
 
@@ -142,23 +145,23 @@
                 <div class="detail-grid">
                     <div class="detail-item">
                         <span class="label">จำนวนตัวอักษร</span>
-                        <span class="value">89 ตัว</span>
+                        <span class="value" id="res-char-count">- ตัว</span>
                     </div>
                     <div class="detail-item">
                         <span class="label">เวลา</span>
-                        <span class="value">02:07 นาที</span>
+                        <span class="value" id="res-time">00:00 นาที</span>
                     </div>
                     <div class="detail-item">
                         <span class="label">ความเร็ว</span>
-                        <span class="value">42 WPM</span>
+                        <span class="value" id="res-detail-wpm">0 WPM</span>
                     </div>
                     <div class="detail-item">
                         <span class="label">ความแม่นยำ</span>
-                        <span class="value">97%</span>
+                        <span class="value" id="res-detail-acc">0%</span>
                     </div>
                     <div class="detail-item">
                         <span class="label">คะแนน</span>
-                        <span class="value">980</span>
+                        <span class="value" id="res-detail-score">0</span>
                     </div>
                     <div class="detail-item">
                         <span class="label">ห้องแข่งขัน</span>
@@ -166,7 +169,8 @@
                     </div>
                 </div>
 
-                <a href="{{ url_for('api.classroom') }}" class="finish-button">สิ้นสุดการพิมพ์</a>
+                <!-- เปลี่ยนปุ่มเป็น พิมพ์ต่อ และลิ้งก์ไปหน้า api.typing -->
+                <a href="{{ url_for('api.typing') }}" class="finish-button">พิมพ์ต่อ (Continue)</a>
             </section>
         </main>
 
@@ -220,6 +224,32 @@
         </aside>
     </div>
 
+    <!-- JAVASCRIPT สำหรับดึงค่าจาก URL มาแสดงผล -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            const wpm = urlParams.get('wpm') || '0';
+            const acc = urlParams.get('acc') || '0';
+            const score = urlParams.get('score') || '0';
+            const timeSec = parseInt(urlParams.get('time') || '0');
+
+            // แปลงวินาทีเป็นรูปแบบ MM:SS
+            const min = Math.floor(timeSec / 60).toString().padStart(2, '0');
+            const sec = (timeSec % 60).toString().padStart(2, '0');
+
+            // นำค่าไปใส่ในกล่องสถิติด้านบน
+            document.getElementById('res-wpm').innerText = wpm;
+            document.getElementById('res-acc').innerText = acc + "%";
+            document.getElementById('res-score').innerText = score;
+            
+            // นำค่าไปใส่ในตารางรายละเอียดด้านล่าง
+            document.getElementById('res-time').innerText = `${min}:${sec} นาที`;
+            document.getElementById('res-detail-wpm').innerText = `${wpm} WPM`;
+            document.getElementById('res-detail-acc').innerText = `${acc}%`;
+            document.getElementById('res-detail-score').innerText = score;
+        });
+    </script>
 </body>
 
 </html>
