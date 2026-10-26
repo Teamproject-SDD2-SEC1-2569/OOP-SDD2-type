@@ -165,39 +165,24 @@ def register_socket_events(socketio: SocketIO):
             )
             emit('room_leaderboard_update', sorted_leaderboard, room=room)
 
-    @socketio.on('submit_score')
-    def handle_submit_score(data):
-        """
-        รับผลคะแนนเมื่อพิมพ์เสร็จ แล้วบันทึกลงฐานข้อมูล Oracle
-        """
-        sid = request.sid
-        time_spent = data.get('time_spent', 0)
-        final_wpm = data.get('wpm', 0)
-        final_accuracy = data.get('accuracy', 0)
-        error_count = data.get('error_count', 0)
-        
-        # 1. Anti-Cheat: ป้องกัน WPM สูงเกินจริง (> 320 WPM)
-        if final_wpm > 320:
-            emit('submission_response', {
-                'status': 'error',
-                'message': 'Score flagged as invalid (Anti-Cheat triggered).'
-            })
-            return
-
-        # คำนวณคะแนนรวมตัวอย่าง (WPM * (Accuracy / 100))
-        score = round(final_wpm * (final_accuracy / 100.0), 2)
-
-        # 2. บันทึกลงตาราง Submission_Results ใน Oracle DB
+# 2. บันทึกลงตาราง Submission_Results ใน Oracle DB
         conn = get_db_connection()
         if conn:
             try:
                 cursor = conn.cursor()
-                # ปรับชื่อคอลัมน์ให้ตรงกับ Schema ของทีม Database (เช่น ACCURACY, TIME_SPENT, ERROR_COUNT, SCORE)
+                
+                # ⚠️ สมมติ ID ชั่วคราวไปก่อนจนกว่าระบบ Login จะสมบูรณ์
+                # หมายเหตุ: ในฐานข้อมูล Oracle ต้องมีข้อมูล Student_ID=1 และ Assignment_ID=1 อยู่จริง
+                dummy_assignment_id = 1 
+                dummy_student_id = 1    
+
+                # เพิ่มคอลัมน์ Assignment_ID, Student_ID และ Submitted_At ให้ตรงกับตาราง
                 sql = """
-                    INSERT INTO Submission_Results (Accuracy, Time_Spent, Error_Count, Score)
-                    VALUES (:1, :2, :3, :4)
+                    INSERT INTO Submission_Results 
+                    (Assignment_ID, Student_ID, Accuracy, Time_Spent, Error_Count, Score, Submitted_At)
+                    VALUES (:1, :2, :3, :4, :5, :6, CURRENT_TIMESTAMP)
                 """
-                cursor.execute(sql, (final_accuracy, time_spent, error_count, score))
+                cursor.execute(sql, (dummy_assignment_id, dummy_student_id, final_accuracy, time_spent, error_count, score))
                 conn.commit()
                 cursor.close()
                 print(f"✅ [DB] Successfully saved score: {score} for session: {sid}")
