@@ -4,6 +4,8 @@ import jwt
 from flask import Blueprint, request, render_template
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from .models import StandardTypingSession
+from .database import get_db_connection
+import logging
 
 api_bp = Blueprint('api', __name__)
 
@@ -164,24 +166,60 @@ def register_socket_events(socketio: SocketIO):
             emit('room_leaderboard_update', sorted_leaderboard, room=room)
 
     @socketio.on('submit_score')
-    def handle_submit_score():
-        session_id = request.sid
-        user_meta = active_sessions.get(session_id)
+    def handle_submit_score(data):
+        """
+        รับผลคะแนนเมื่อพิมพ์เสร็จ แล้วบันทึกลงฐานข้อมูล Oracle
+        """
+        sid = request.sid
+        time_spent = data.get('time_spent', 0)
+        final_wpm = data.get('wpm', 0)
+        final_accuracy = data.get('accuracy', 0)
+        error_count = data.get('error_count', 0)
         
-        if not user_meta or not user_meta['session']:
-            emit('error', {'msg': 'Session not found or already submitted.'})
+        # 1. Anti-Cheat: ป้องกัน WPM สูงเกินจริง (> 320 WPM)
+        if final_wpm > 320:
+            emit('submission_response', {
+                'status': 'error',
+                'message': 'Score flagged as invalid (Anti-Cheat triggered).'
+            })
             return
 
-        typing_session = user_meta['session']
-        final_result = typing_session.finalize_session()
-        
-        if final_result:
-            final_result['user_id'] = user_meta['user_id']
-            final_result['username'] = user_meta['username']
-            emit('score_finalized', final_result)
-            user_meta['session'] = None
+        # คำนวณคะแนนรวมตัวอย่าง (WPM * (Accuracy / 100))
+        score = round(final_wpm * (final_accuracy / 100.0), 2)
+
+        # 2. บันทึกลงตาราง Submission_Results ใน Oracle DB
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                # ปรับชื่อคอลัมน์ให้ตรงกับ Schema ของทีม Database (เช่น ACCURACY, TIME_SPENT, ERROR_COUNT, SCORE)
+                sql = """
+                    INSERT INTO Submission_Results (Accuracy, Time_Spent, Error_Count, Score)
+                    VALUES (:1, :2, :3, :4)
+                """
+                cursor.execute(sql, (final_accuracy, time_spent, error_count, score))
+                conn.commit()
+                cursor.close()
+                print(f"✅ [DB] Successfully saved score: {score} for session: {sid}")
+                
+                emit('submission_response', {
+                    'status': 'success',
+                    'message': 'Score saved successfully!',
+                    'score': score
+                })
+            except Exception as e:
+                print(f"❌ [DB] Error saving score: {e}")
+                emit('submission_response', {
+                    'status': 'error',
+                    'message': 'Database insertion failed.'
+                })
+            finally:
+                conn.close()
         else:
-            emit('error', {'msg': 'Session already completed.'})
+            emit('submission_response', {
+                'status': 'error',
+                'message': 'Database connection unavailable.'
+            })
 
     @socketio.on('disconnect')
     def handle_disconnect():
