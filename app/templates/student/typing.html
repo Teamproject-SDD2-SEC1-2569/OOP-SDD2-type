@@ -187,6 +187,24 @@
                 </div>
 
                 <!-- โจทย์ (แสดงสีไฮไลต์) -->
+                <div class="text-box" id="textDisplay" onclick="document.getElementById('typingInput').focus()">
+                    <!-- ข้อความโจทย์จะถูกสร้างด้วย JS -->
+                </div>
+
+                <!-- ช่องกรอกข้อความ (ถูกซ่อนด้วย CSS แล้ว) -->
+                <div class="typing-area-wrapper">
+                    <textarea id="typingInput" class="typing-area"></textarea>
+                    <div class="character-count"><span id="characterCount">0</span> / <span id="totalCharCount">0</span></div>
+                </div>
+
+                <!-- ซ่อน Status Row ไว้เช่นกัน -->
+                <div class="status-row"></div>
+
+                <!-- 🌟 ปุ่มสุ่มคำใหม่ (Restart) 🌟 -->
+                <button class="restart-btn" onclick="restartTyping()" title="เริ่มใหม่ (Restart)">↻</button>
+            </section>
+
+                <!-- โจทย์ (แสดงสีไฮไลต์) -->
                 <div class="text-box" id="textDisplay">
                     <!-- ข้อความโจทย์จะถูกสร้างด้วย JS -->
                     <div class="keyboard-decoration">⌨️</div>
@@ -516,15 +534,28 @@
 
         // ฟังก์ชันเมื่อกดปุ่ม ↻ เริ่มใหม่
         function restartTyping() {
+            // 1. หยุดเวลาและรีเซ็ตค่าพื้นฐาน
             clearInterval(timerInterval);
             timerStarted = false;
             timeLeft = 60;
-            document.getElementById("timer").textContent = "01:00";
-            document.getElementById("wpmDisplay").innerText = "0";
-            document.getElementById("accDisplay").innerText = "100%";
+            lastLength = 0; // รีเซ็ตความยาวคำ
+            
+            const timerEl = document.getElementById("timer");
+            if (timerEl) timerEl.textContent = "01:00";
+
+            // 2. ล้างช่องพิมพ์ข้อความ
             typingInput.disabled = false;
             typingInput.value = "";
-            socket.emit("start_typing"); // ขอคำศัพท์ชุดใหม่จาก Server
+            
+            // 3. รีเซ็ตสีตัวอักษร (ลบสีเขียว/แดงออก) และเลื่อนกล่องกลับไปบนสุด
+            charElements.forEach(span => span.classList.remove("correct", "incorrect", "active"));
+            if (charElements.length > 0) charElements[0].classList.add("active");
+            textDisplay.scrollTop = 0;
+
+            // 4. สั่ง Backend ให้สุ่มคำศัพท์ชุดใหม่ส่งมาให้
+            socket.emit("start_typing"); 
+            
+            // 5. โฟกัสกล่องข้อความให้พร้อมพิมพ์ต่อทันที
             typingInput.focus();
         }
 
