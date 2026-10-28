@@ -1,6 +1,6 @@
 import secrets
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 from flask_jwt_extended import get_jwt_identity
 
 from .auth_utils import require_role
@@ -413,3 +413,30 @@ def validate_room(room_code):
 
         if conn:
             conn.close()
+# ==================================================
+# 5. Routes สำหรับแสดงผลหน้าเว็บของอาจารย์ (Frontend Views)
+# ==================================================
+
+@teacher_bp.route("/login", methods=["GET"])
+def teacher_login_page():
+    return render_template("teacher/login.html")
+
+@teacher_bp.route("/register", methods=["GET"])
+def teacher_register_page():
+    return render_template("teacher/register.html")
+
+@teacher_bp.route("/dashboard", methods=["GET"])
+def teacher_dashboard_page():
+    return render_template("teacher/Dashboard.html")
+
+@teacher_bp.route("/create-room", methods=["GET"])
+def teacher_create_room_page():
+    return render_template("teacher/create-room.html")
+
+@teacher_bp.route("/manage-classroom", methods=["GET"])
+def teacher_manage_classroom_page():
+    return render_template("teacher/Manage-Classroom.html")
+
+@teacher_bp.route("/menu", methods=["GET"])
+def teacher_menu_page():
+    return render_template("teacher/menu.html")

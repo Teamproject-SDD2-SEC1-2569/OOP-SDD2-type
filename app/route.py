@@ -63,6 +63,22 @@ def typing_result():
     # หน้าสรุปผลคะแนน
     return render_template('student/typing-result.html')
 
+@api_bp.route('/teacher/dashboard')
+def teacher_dashboard():
+    return render_template('teacher/Dashboard.html')
+
+@api_bp.route('/teacher/create-room')
+def teacher_create_room():
+    return render_template('teacher/create-room.html')
+
+@api_bp.route('/teacher/manage-classroom')
+def teacher_manage_classroom():
+    return render_template('teacher/Manage-Classroom.html')
+
+@api_bp.route('/teacher/menu')
+def teacher_menu():
+    return render_template('teacher/menu.html')
+
 def register_socket_events(socketio: SocketIO):
     @socketio.on('connect')
     def handle_connect(auth):
