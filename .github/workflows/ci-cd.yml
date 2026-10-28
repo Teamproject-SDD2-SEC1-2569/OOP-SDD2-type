@@ -1,0 +1,53 @@
+name: CI/CD Pipeline
+
+# ทำงานเมื่อมีการ Push หรือสร้าง Pull Request เข้ากิ่ง dev หรือ main
+on:
+  push:
+    branches: [ "dev", "main" ]
+  pull_request:
+    branches: [ "dev", "main" ]
+
+jobs:
+  # ------------------------------------
+  # ส่วนที่ 1: CI (Continuous Integration)
+  # ------------------------------------
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Lint Code with Flake8 (ตรวจสอบคุณภาพโค้ด)
+      run: |
+        # ตรวจสอบ Syntax Error เบื้องต้น
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+    - name: Run Unit Tests
+      run: |
+        # รันสคริปต์เทสต์ที่เราสร้างไว้
+        pytest
+
+  # ------------------------------------
+  # ส่วนที่ 2: CD (Continuous Deployment)
+  # ------------------------------------
+  deploy:
+    needs: build-and-test # ต้องรอให้เทสต์ผ่านก่อนถึงจะ Deploy
+    runs-on: ubuntu-latest
+    # จะ Deploy เฉพาะตอนที่ Push โค้ดสำเร็จ ไม่รวมตอนทำ PR
+    if: github.event_name == 'push' 
+    steps:
+    - name: Trigger Server Deployment
+      run: |
+        # ยิง Webhook ไปที่ Server เพื่อสั่งให้ดึงโค้ดใหม่ (Pull) และรีสตาร์ตระบบ
+        curl -X POST ${{ secrets.DEPLOY_HOOK_URL }}
