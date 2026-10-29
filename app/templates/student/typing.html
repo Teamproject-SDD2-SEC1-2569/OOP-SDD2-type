@@ -2,6 +2,7 @@
 <html lang="th">
 
 <head>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>การแข่งขันพิมพ์ - ระบบห้องเรียนฝึกพิมพ์</title>
@@ -40,29 +41,39 @@
         .typing-title { display: flex; align-items: center; gap: 10px; color: #547697; font-size: 17px; font-weight: 600; margin-bottom: 17px; }
         .typing-title-icon { width: 35px; height: 35px; border-radius: 10px; background: #e7f5ff; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 
-        /* TEXT DISPLAY & HIGHLIGHTING */
-        .text-box { position: relative; background: #f8fbfd; border: 1px solid #e3edf3; border-radius: 14px; padding: 19px 21px; line-height: 2; font-size: 18px; min-height: 145px; padding-right: 90px; word-break: break-all; }
-        .char { color: #899bb0; transition: all 0.1s; display: inline; }
-        .char.correct { color: #2e7d32; background: #e8f5e9; border-radius: 3px; font-weight: 600; }
-        .char.incorrect { color: #c62828; background: #ffebee; border-radius: 3px; font-weight: 600; }
-        .char.active { border-bottom: 2px solid #579be8; }
+        /* =========================================
+           แก้ไข .text-box ให้เป็นแบบ Monkeytype
+           ========================================= */
+        .text-box { 
+            position: relative; 
+            background: #f8fbfd; 
+            border: 1px solid #e3edf3; 
+            border-radius: 14px; 
+            padding: 20px 25px; 
+            font-size: 26px;         /* ปรับตัวอักษรให้ใหญ่ขึ้นอ่านง่าย */
+            height: 145px;           /* 🌟 ล็อกความสูงไว้โชว์แค่ประมาณ 3 บรรทัด */
+            overflow: hidden;        /* 🌟 ซ่อนคำที่ล้นความสูง 145px ออกไป */
+            scroll-behavior: smooth; /* เวลาเลื่อนบรรทัดให้สมูท */
+            text-align: left;
+            cursor: text;
+        }
+        /* ซ่อนแถบ Scrollbar ที่หน้าจอ */
+        .text-box::-webkit-scrollbar { display: none; }
+        
+        /* จัดกลุ่มตัวอักษรเป็นคำๆ */
+        .word {
+            display: inline-block;
+            margin-right: 12px;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }        
 
-        .keyboard-decoration { position: absolute; right: 25px; bottom: 24px; font-size: 48px; opacity: 0.65; transform: rotate(-8deg); pointer-events: none; }
-
-        .typing-area-wrapper { position: relative; margin-top: 17px; }
-        .typing-area { width: 100%; height: 120px; resize: none; border: 1px solid #d8e5ed; border-radius: 14px; padding: 17px 19px; font-family: inherit; font-size: 16px; color: #506b7d; outline: none; background: #ffffff; }
-        .typing-area:focus { border-color: #8ebce0; box-shadow: 0 0 0 3px rgba(142, 188, 224, 0.14); }
-        .typing-area::placeholder { color: #b3c0ca; }
-        .typing-area:disabled { background: #f4f7fa; cursor: not-allowed; }
-
-        .character-count { position: absolute; right: 16px; bottom: 12px; color: #9baab5; font-size: 12px; pointer-events: none; }
-
-        .status-row { display: flex; gap: 16px; margin-top: 18px; flex-wrap: wrap; }
-        .status-item { display: flex; align-items: center; gap: 9px; padding: 10px 21px; border: 1px solid #d9e4eb; border-radius: 25px; background: #ffffff; color: #61788a; font-size: 13px; }
-        .status-dot { width: 13px; height: 13px; border-radius: 50%; display: block; }
-        .correct-dot { background: #57c878; }
-        .wrong-dot { background: #e57d7d; }
-        .waiting-dot { background: #7184a9; }
+        .char { color: #899bb0; transition: color 0.1s; border-radius: 3px; }
+        .char.correct { color: #2e7d32; }
+        .char.incorrect { color: #c62828; background: #ffebee; }
+        /* สไตล์ของตัวอักษรที่รอพิมพ์ (ทำขอบล่างให้คล้าย Cursor) */
+        .char.active { color: #3f5c72; border-bottom: 3px solid #579be8; font-weight: bold; }
+        .keyboard-decoration { display: none; /* ปิดไอคอนคีย์บอร์ดเพราะเกะกะตอนเลื่อนบรรทัด */ }
 
         /* RIGHT PANEL */
         .right-panel { width: 285px; min-height: 100vh; background: linear-gradient(180deg, #c9e9fa 0%, #b8e0f5 100%); padding: 30px 18px; flex-shrink: 0; }
@@ -88,6 +99,30 @@
         @media (max-width: 850px) {
             .typing-page { flex-wrap: wrap; } .sidebar { width: 100%; min-height: auto; } .menu { flex-direction: row; flex-wrap: wrap; }
             .logout { margin-top: 0; } .main-content { width: 100%; } .right-panel { width: 100%; min-height: auto; }
+        }
+        
+        /* ซ่อนกล่องพิมพ์และสถานะ (แต่ยังคงทำงานอยู่) */
+        .typing-area-wrapper, .status-row {
+            position: absolute;
+            opacity: 0;
+            z-index: -10;
+            pointer-events: none;
+        }
+
+        /* ปุ่มสุ่มคำศัพท์ใหม่ (Monkeytype Style) */
+        .restart-btn {
+            display: block;
+            margin: 30px auto 10px;
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #899bb0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .restart-btn:hover {
+            color: #579be8;
+            transform: rotate(180deg);
         }
     </style>
 </head>
@@ -150,6 +185,24 @@
                     <div class="typing-title-icon">⌨️</div>
                     <span>พิมพ์ข้อความต่อไปนี้</span>
                 </div>
+
+                <!-- โจทย์ (แสดงสีไฮไลต์) -->
+                <div class="text-box" id="textDisplay" onclick="document.getElementById('typingInput').focus()">
+                    <!-- ข้อความโจทย์จะถูกสร้างด้วย JS -->
+                </div>
+
+                <!-- ช่องกรอกข้อความ (ถูกซ่อนด้วย CSS แล้ว) -->
+                <div class="typing-area-wrapper">
+                    <textarea id="typingInput" class="typing-area"></textarea>
+                    <div class="character-count"><span id="characterCount">0</span> / <span id="totalCharCount">0</span></div>
+                </div>
+
+                <!-- ซ่อน Status Row ไว้เช่นกัน -->
+                <div class="status-row"></div>
+
+                <!-- 🌟 ปุ่มสุ่มคำใหม่ (Restart) 🌟 -->
+                <button class="restart-btn" onclick="restartTyping()" title="เริ่มใหม่ (Restart)">↻</button>
+            </section>
 
                 <!-- โจทย์ (แสดงสีไฮไลต์) -->
                 <div class="text-box" id="textDisplay">
@@ -234,7 +287,10 @@
 
     <!-- JAVASCRIPT -->
     <script>
-        const targetText = "apple banana computer desk window school friend family house book water plane train car chair table phone sun moon star happy sad";
+        // 1. เชื่อมต่อ WebSocket กับ Backend
+        const socket = io();
+
+        let targetText = "apple banana computer desk window school friend family house book water plane train car chair table phone sun moon star happy sad";
 
         const textDisplay = document.getElementById("textDisplay");
         const typingInput = document.getElementById("typingInput");
@@ -246,27 +302,146 @@
         let timeLeft = 60;
         let timerStarted = false;
         let timerInterval = null;
+        let lastLength = 0;
+        let currentLiveWpm = 0;
+        let currentLiveAccuracy = 100.0;
 
-        // 1. สร้างตัวอักษรโจทย์เป็น span แต่ละตัว
-        function initText() {
-            // ลบเนื้อหาเดิมยกเว้นไอคอนคีย์บอร์ด
-            const decoration = textDisplay.querySelector(".keyboard-decoration");
-            textDisplay.innerHTML = "";
-            
-            for (let i = 0; i < targetText.length; i++) {
-                const span = document.createElement("span");
-                span.classList.add("char");
-                span.textContent = targetText[i];
-                if (i === 0) span.classList.add("active");
-                textDisplay.appendChild(span);
+        // รับสัญญาณเชื่อมต่อสำเร็จ แล้วขอชุดคำศัพท์จาก Backend
+        socket.on("connect", () => {
+            console.log("Connected to Backend Socket Server!");
+            socket.emit("start_typing");
+        });
+
+        // รับคำศัพท์สุ่มจาก Backend มาอัปเดตหน้าจอ
+        socket.on("typing_started", (data) => {
+            if (data.status === "success" && data.text_data) {
+                targetText = data.text_data;
+                initText();
             }
-            if (decoration) textDisplay.appendChild(decoration);
+        });
 
-            totalCharCount.textContent = targetText.length;
-            typingInput.maxLength = targetText.length;
+        // รับสถิติแบบเรียลไทม์ (WPM / Accuracy) จาก Backend
+        socket.on("live_stats", (stats) => {
+            currentLiveWpm = stats.wpm;
+            currentLiveAccuracy = stats.accuracy;
+            const wpmElement = document.getElementById("wpmDisplay");
+            const accElement = document.getElementById("accDisplay");
+            if (wpmElement) wpmElement.innerText = stats.wpm;
+            if (accElement) accElement.innerText = stats.accuracy + "%";
+        });
+
+        // ผลตอบกลับหลังจากบันทึกคะแนนลง Oracle Database
+        socket.on("submission_response", (res) => {
+            if (res.status === "success") {
+                alert("บันทึกคะแนนลงระบบสำเร็จ! คะแนนของคุณ: " + res.score);
+                window.location.href = "{{ url_for('api.typing_result') }}";
+            } else {
+                alert("เกิดข้อผิดพลาดในการบันทึก: " + res.message);
+                window.location.href = "{{ url_for('api.typing_result') }}";
+            }
+        });
+
+        let charElements = []; // ตัวแปรเก็บ span ตัวอักษรทั้งหมดเพื่อให้ประมวลผลเร็วขึ้น
+
+        // ฟังก์ชันสร้างตัวอักษรโจทย์บนหน้าจอ (จัดกลุ่มเป็นคำๆ)
+        function initText() {
+            textDisplay.innerHTML = "";
+            charElements = []; 
+
+            // แยกข้อความยาวๆ ออกเป็นคำๆ (อิงตามช่องว่าง)
+            const words = targetText.split(" ");
+            
+            words.forEach((word, wordIndex) => {
+                const wordSpan = document.createElement("span");
+                wordSpan.className = "word";
+
+                // ใส่ตัวอักษรลงไปในแต่ละคำ
+                for (let i = 0; i < word.length; i++) {
+                    const charSpan = document.createElement("span");
+                    charSpan.className = "char";
+                    charSpan.textContent = word[i];
+                    wordSpan.appendChild(charSpan);
+                    charElements.push(charSpan);
+                }
+
+                // เติมช่องว่าง (Space) ไว้หลังคำ
+                if (wordIndex < words.length - 1) {
+                    const spaceSpan = document.createElement("span");
+                    spaceSpan.className = "char space-char";
+                    spaceSpan.textContent = " "; // ใช้ช่องว่างจริง
+                    wordSpan.appendChild(spaceSpan);
+                    charElements.push(spaceSpan);
+                }
+
+                textDisplay.appendChild(wordSpan);
+            });
+
+            totalCharCount.textContent = charElements.length;
+            typingInput.maxLength = charElements.length;
+            typingInput.value = "";
+            lastLength = 0;
+            textDisplay.scrollTop = 0; // รีเซ็ตการเลื่อนบรรทัดให้กลับไปบนสุด
+
+            if (charElements.length > 0) {
+                charElements[0].classList.add("active");
+            }
         }
 
-        // 2. ฟังก์ชันเริ่มนับถอยหลัง
+        // ตรวจสอบข้อความเมื่อผู้ใช้พิมพ์
+        typingInput.addEventListener("input", function () {
+            const userVal = this.value;
+
+            if (!timerStarted && userVal.length > 0) {
+                startTimer();
+            }
+
+            if (userVal.length > lastLength) {
+                const currentIndex = userVal.length - 1;
+                // เช็กความถูกต้องโดยเทียบกับ textContent ที่เราเก็บไว้
+                const targetChar = charElements[currentIndex].textContent;
+                const isCorrect = userVal[currentIndex] === targetChar;
+                socket.emit("keystroke", { is_correct: isCorrect });
+            }
+            lastLength = userVal.length;
+            characterCount.textContent = userVal.length;
+
+            // 1. อัปเดตสี (เขียว/แดง)
+            charElements.forEach((span, idx) => {
+                span.classList.remove("correct", "incorrect", "active");
+
+                if (idx < userVal.length) {
+                    if (userVal[idx] === span.textContent) {
+                        span.classList.add("correct");
+                    } else {
+                        span.classList.add("incorrect");
+                    }
+                } else if (idx === userVal.length) {
+                    span.classList.add("active");
+                }
+            });
+
+            // 2. 🌟 ระบบเลื่อนบรรทัดอัตโนมัติ (Monkeytype Style) 🌟
+            if (userVal.length < charElements.length) {
+                const activeChar = charElements[userVal.length];
+                const activeWord = activeChar.parentElement; // หาว่าเรากำลังพิมพ์อยู่คำไหน
+                
+                // คำนวณระยะห่างของคำนี้เทียบกับกล่อง
+                // ลบออกประมาณ 55px เพื่อดันให้บรรทัดที่พิมพ์อยู่ เด้งขึ้นไปอยู่บรรทัดที่ 1 หรือ 2 เสมอ
+                const targetScroll = activeWord.offsetTop - 55; 
+                
+                if (targetScroll > 0) {
+                    textDisplay.scrollTop = targetScroll; // สั่งกล่องเลื่อนซ่อนบรรทัดบน
+                } else {
+                    textDisplay.scrollTop = 0;
+                }
+            }
+
+            if (userVal.length >= charElements.length) {
+                endTyping();
+            }
+        });
+
+        // ฟังก์ชันเริ่มนับถอยหลัง
         function startTimer() {
             timerStarted = true;
             timerLabel.textContent = "เวลาที่เหลือ";
@@ -284,15 +459,32 @@
             }, 1000);
         }
 
-        // 3. ฟังก์ชันจบการพิมพ์
+        // ฟังก์ชันจบการพิมพ์และส่งคะแนนเข้า Oracle DB
         function endTyping() {
             clearInterval(timerInterval);
             typingInput.disabled = true;
-            alert("จบการทดสอบพิมพ์แล้วค่ะ!");
-            window.location.href = "{{ url_for('api.typing_result') }}";
+
+            const timeSpent = 60 - timeLeft;
+            const userVal = typingInput.value;
+
+            // คำนวณจำนวนตัวอักษรที่พิมพ์ผิด
+            let errorCount = 0;
+            for (let i = 0; i < userVal.length; i++) {
+                if (userVal[i] !== targetText[i]) errorCount++;
+            }
+
+            // ส่งผลคะแนนไปยัง route.py (handle_submit_score)
+            const payload = {
+                wpm: currentLiveWpm,
+                accuracy: currentLiveAccuracy,
+                time_spent: timeSpent > 0 ? timeSpent : 1,
+                error_count: errorCount
+            };
+
+            socket.emit("submit_score", payload);
         }
 
-        // 4. ตรวจสอบข้อความเมื่อพิมพ์
+        // ตรวจสอบข้อความเมื่อผู้ใช้พิมพ์
         typingInput.addEventListener("input", function () {
             const userVal = this.value;
 
@@ -300,6 +492,14 @@
             if (!timerStarted && userVal.length > 0) {
                 startTimer();
             }
+
+            // ส่ง Event ไปให้ Backend เมื่อมีการพิมพ์เพิ่ม (ไม่นับตอนกด Backspace ลบ)
+            if (userVal.length > lastLength) {
+                const currentIndex = userVal.length - 1;
+                const isCorrect = userVal[currentIndex] === targetText[currentIndex];
+                socket.emit("keystroke", { is_correct: isCorrect });
+            }
+            lastLength = userVal.length;
 
             characterCount.textContent = userVal.length;
 
@@ -325,11 +525,85 @@
             }
         });
 
-        // เริ่มต้นสร้างโจทย์เมื่อโหลดหน้าเว็บ
+        // เริ่มต้นทำงานเมื่อโหลดหน้าเว็บ
         window.addEventListener("load", function () {
             initText();
             typingInput.focus();
         });
+    let finalTimeSpent = 0; // เพิ่มตัวแปรเก็บเวลาที่ใช้ไป
+
+        // ฟังก์ชันเมื่อกดปุ่ม ↻ เริ่มใหม่
+        function restartTyping() {
+            // 1. หยุดเวลาและรีเซ็ตค่าพื้นฐาน
+            clearInterval(timerInterval);
+            timerStarted = false;
+            timeLeft = 60;
+            lastLength = 0; // รีเซ็ตความยาวคำ
+            
+            const timerEl = document.getElementById("timer");
+            if (timerEl) timerEl.textContent = "01:00";
+
+            // 2. ล้างช่องพิมพ์ข้อความ
+            typingInput.disabled = false;
+            typingInput.value = "";
+            
+            // 3. รีเซ็ตสีตัวอักษร (ลบสีเขียว/แดงออก) และเลื่อนกล่องกลับไปบนสุด
+            charElements.forEach(span => span.classList.remove("correct", "incorrect", "active"));
+            if (charElements.length > 0) charElements[0].classList.add("active");
+            textDisplay.scrollTop = 0;
+
+            // 4. สั่ง Backend ให้สุ่มคำศัพท์ชุดใหม่ส่งมาให้
+            socket.emit("start_typing"); 
+            
+            // 5. โฟกัสกล่องข้อความให้พร้อมพิมพ์ต่อทันที
+            typingInput.focus();
+        }
+
+        // ตอนกดจบการพิมพ์ ให้เก็บค่าเวลาไว้ด้วย
+        function endTyping() {
+            clearInterval(timerInterval);
+            typingInput.disabled = true;
+            finalTimeSpent = 60 - timeLeft; // เก็บเวลา
+            let errorCount = 0;
+            const userVal = typingInput.value;
+            for (let i = 0; i < userVal.length; i++) {
+                if (userVal[i] !== charElements[i]?.textContent) errorCount++;
+            }
+            socket.emit("submit_score", {
+                wpm: currentLiveWpm,
+                accuracy: currentLiveAccuracy,
+                time_spent: finalTimeSpent > 0 ? finalTimeSpent : 1,
+                error_count: errorCount
+            });
+        }
+
+        // เมื่อบันทึกลง DB เสร็จ (หรือ Error) ให้แนบค่าของจริงไปหน้า Result ด้วย URL
+        socket.on("submission_response", (res) => {
+            // ไม่ว่าจะบันทึกลง DB สำเร็จหรือ Error (เช่นที่คุณเจอ) ก็ให้ข้ามไปหน้าสรุปผลเลย
+            const scoreToPass = res.score || 0; 
+            window.location.href = `{{ url_for('api.typing_result') }}?wpm=${currentLiveWpm}&acc=${currentLiveAccuracy}&score=${scoreToPass}&time=${finalTimeSpent}`;
+        });
+    </script>
+    <script>
+        // ดึงค่าสถิติจาก URL ที่แนบมา
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        const wpm = urlParams.get('wpm') || '0';
+        const acc = urlParams.get('acc') || '0';
+        const score = urlParams.get('score') || '0';
+        const timeSec = parseInt(urlParams.get('time') || '0');
+
+        // แปลงวินาทีเป็นรูปแบบ MM:SS
+        const min = Math.floor(timeSec / 60).toString().padStart(2, '0');
+        const sec = (timeSec % 60).toString().padStart(2, '0');
+
+        // นำค่าไปใส่ใน HTML
+        document.getElementById('res-wpm').innerText = wpm;
+        document.getElementById('res-acc').innerText = acc + "%";
+        document.getElementById('res-score').innerText = score;
+        
+        const timeDisplay = document.getElementById('res-time');
+        if (timeDisplay) timeDisplay.innerText = `${min}:${sec} นาที`;
     </script>
 </body>
 

@@ -34,24 +34,30 @@ class BaseTypingMode(ABC):
 
     def get_current_stats(self) -> dict:
         if not self.is_started or self._total_chars_typed == 0:
-            return {"wpm": 0, "accuracy": 0.0, "is_flagged": self._is_flagged}
+            return {"wpm": 0, "accuracy": 0.0, "is_flagged": self._is_flagged, "time_spent": 0, "error_count": 0}
 
-        time_elapsed = (datetime.now() - self._start_time).total_seconds() / 60.0
+        # เวลาที่ใช้ไป (วินาที)
+        time_elapsed_sec = (datetime.now() - self._start_time).total_seconds()
+        time_elapsed_min = time_elapsed_sec / 60.0
         
-        if time_elapsed <= 0:
-            return {"wpm": 0, "accuracy": 0.0, "is_flagged": self._is_flagged}
+        if time_elapsed_min <= 0:
+            return {"wpm": 0, "accuracy": 0.0, "is_flagged": self._is_flagged, "time_spent": 0, "error_count": 0}
 
-        gross_wpm = (self._correct_chars / 5.0) / time_elapsed
+        gross_wpm = (self._correct_chars / 5.0) / time_elapsed_min
         accuracy = (self._correct_chars / self._total_chars_typed) * 100.0
+        
+        # คำนวณคำผิด (พิมพ์ทั้งหมด - พิมพ์ถูก)
+        error_count = self._total_chars_typed - self._correct_chars
 
-        # Anti-Cheat: ดักจับความเร็วเกิน 320 WPM หลังจากผ่านไปแล้วอย่างน้อย 2 วินาที (ป้องกัน Spike ช่วงแรก)
-        if (datetime.now() - self._start_time).total_seconds() > 2.0 and gross_wpm > 320:
+        if time_elapsed_sec > 2.0 and gross_wpm > 320:
             self._is_flagged = True
 
         return {
             "wpm": round(gross_wpm),
             "accuracy": round(accuracy, 2),
-            "is_flagged": self._is_flagged
+            "is_flagged": self._is_flagged,
+            "time_spent": round(time_elapsed_sec, 2), # เพิ่มเวลาที่ใช้
+            "error_count": error_count # เพิ่มจำนวนคำผิด
         }
 
 
