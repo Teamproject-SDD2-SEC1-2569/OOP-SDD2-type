@@ -1,5 +1,6 @@
 import secrets
-
+import random
+import string
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for
 from flask_jwt_extended import get_jwt_identity
 
@@ -13,7 +14,8 @@ teacher_bp = Blueprint("teacher", __name__)
 # เนื่องจากตาราง CLASSROOMS ยังไม่มีคอลัมน์ STATUS และ DURATION
 # ข้อมูลส่วนนี้จะหายไปเมื่อรีสตาร์ตแอปพลิเคชัน
 room_settings = {}
-
+# ตัวแปรจำลอง Database ชั่วคราว (In-Memory) ไว้เก็บข้อมูลห้อง
+active_rooms = {}
 
 def generate_room_code(cursor):
     """สร้างรหัสห้องที่ไม่ซ้ำกับข้อมูลใน Oracle"""
@@ -427,21 +429,50 @@ def teacher_register_page():
 
 @teacher_bp.route("/dashboard", methods=["GET"])
 def teacher_dashboard_page():
-    # เปลี่ยนชื่อไฟล์ให้ตรงกับไฟล์จริงของคุณ (แนะนำให้ใช้ตัวพิมพ์เล็กทั้งหมด)
     return render_template("teacher/dashboard.html")
 
 @teacher_bp.route("/create-room", methods=["GET", "POST"])
 def teacher_create_room_page():
     if request.method == 'POST':
-        # ถ้าส่งฟอร์ม (POST) สร้างห้องมา ให้ Redirect กลับไปหน้า Dashboard
-        return redirect(url_for('teacher.teacher_dashboard_page'))
-    
-    # ถ้าแค่คลิกเปิดหน้าเว็บ (GET) ให้แสดงหน้าสร้างห้อง
+        # 1. รับค่าแบบใหม่ที่ส่งมาจากฟอร์มหน้าสร้างห้อง
+        room_name = request.form.get('room_name', 'ห้องเรียนฝึกพิมพ์')
+        category = request.form.get('category', 'general') # เปลี่ยนเป็นหมวดหมู่
+        duration = request.form.get('duration', '60') # เวลาเป็นวินาที (15, 30, 60, 120)
+        max_participants = request.form.get('max_participants', '30')
+
+        # 2. สุ่มรหัสห้อง 6 หลัก (เช่น TYP-A9X2)
+        random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+        room_code = f"TYP-{random_str}"
+
+        # 3. บันทึกข้อมูลลง Memory
+        active_rooms[room_code] = {
+            "room_name": room_name,
+            "category": category,
+            "duration": duration,
+            "max_participants": max_participants,
+            "status": "waiting", # เปลี่ยนสถานะเริ่มต้นเป็น waiting (รอเด็กเข้าห้อง)
+            "students": [] 
+        }
+
+        # 4. Redirect ไปหน้าจัดการห้อง
+        return redirect(url_for('teacher.teacher_manage_classroom_page', room_code=room_code))
+
     return render_template("teacher/create-room.html")
+
 
 @teacher_bp.route("/manage-classroom", methods=["GET"])
 def teacher_manage_classroom_page():
-    return render_template("teacher/manage-classroom.html")
+    # รับรหัสห้องจาก URL (เช่น /manage-classroom?room_code=TYP-XXXX)
+    room_code = request.args.get('room_code', 'TYPE-99X')
+    
+    # ดึงข้อมูลห้องจาก Memory (ถ้าค้นไม่เจอ ให้แสดงค่าจำลอง)
+    room_data = active_rooms.get(room_code, {
+        "room_name": "สอบเก็บคะแนน Midterm (ข้อมูลจำลอง)",
+        "duration": "3",
+        "training_mode": "time_attack"
+    })
+
+    return render_template("teacher/manage-classroom.html", room_code=room_code, room_data=room_data)
 
 @teacher_bp.route("/menu", methods=["GET"])
 def teacher_menu_page():

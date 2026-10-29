@@ -150,7 +150,7 @@
     <div class="main-wrapper">
         <header class="topbar">
             <div class="breadcrumb">
-                <a href="dashboard.html">อาจารย์</a> <i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i> <a href="dashboard.html">จัดการห้องเรียน</a> <i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i> <span>Live ห้อง TYPE-99X</span>
+                <a href="dashboard.html">อาจารย์</a> <i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i> <a href="dashboard.html">จัดการห้องเรียน</a> <i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i> <span>Live ห้อง {{ room_code }}</span>
             </div>
             <div class="top-actions">
                 <button class="btn-noti"><i class="fa-regular fa-bell"></i></button>
@@ -162,12 +162,12 @@
             <!-- ส่วนหัวของห้องเรียน -->
             <div class="room-header">
                 <div class="room-info">
-                    <h1>สอบเก็บคะแนน Midterm</h1>
-                    <p><i class="fa-solid fa-book"></i> หมวดหมู่: คำศัพท์ทั่วไป &nbsp;|&nbsp; <i class="fa-regular fa-clock"></i> เวลา: 3 นาที</p>
+                    <h1>{{ room_data.room_name }}</h1>
+                    <p><i class="fa-solid fa-book"></i> หมวดหมู่: คำศัพท์ทั่วไป &nbsp;|&nbsp; <i class="fa-regular fa-clock"></i> เวลา: {{ room_data.duration }} นาที</p>
                 </div>
                 <div class="room-code-display">
                     <span>รหัสสำหรับให้นักศึกษาเข้าร่วม (Room Code)</span>
-                    <div class="code-box" id="roomCodeText" onclick="copyRoomCode()">TYPE-99X</div>
+                    <div class="code-box" id="roomCodeText" onclick="copyRoomCode()">{{ room_code }}</div>
                 </div>
             </div>
 
@@ -243,7 +243,7 @@
         // const socket = io('https://typeclass-backend.onrender.com'); 
         
         let isPlaying = false;
-        let roomCode = 'TYPE-99X';
+        let roomCode = '{{ room_code }}';
 
         // ฟังก์ชันจำลองเมื่อมีนักเรียนเข้าห้องมา
         function simulateStudentJoin(name, initials) {

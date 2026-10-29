@@ -52,20 +52,10 @@
         .char-count { position: absolute; right: 15px; top: 15px; color: #6F8DBA; font-size: 14px; }
         
         .radio-hidden { display: none; }
-        .mode-options { display: flex; gap: 15px; }
-        .mode-card { flex: 1; border: 1px solid #A0D5FA; border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.3s; }
-        .mode-icon { width: 40px; height: 40px; background: #EBF5FE; border-radius: 10px; display: flex; justify-content: center; align-items: center; color: #288CF0; font-size: 20px; }
-        .mode-text h4 { color: #063376; font-size: 15px; font-weight: 600; }
-        .mode-text p { color: #6F8DBA; font-size: 12px; }
-        .radio-circle { margin-left: auto; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #A0D5FA; display: flex; justify-content: center; align-items: center; }
-        .radio-hidden:checked + .mode-card { border: 2px solid #288CF0; background-color: #F4F9FF; }
-        .radio-hidden:checked + .mode-card .mode-icon { background: #288CF0; color: #fff; }
-        .radio-hidden:checked + .mode-card .radio-circle { border-color: #288CF0; }
-        .radio-hidden:checked + .mode-card .radio-circle::after { content: ""; width: 10px; height: 10px; background: #288CF0; border-radius: 50%; }
-
+        
         .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .pill-options { display: flex; gap: 10px; }
-        .pill-btn { flex: 1; height: 45px; border: 1px solid #A0D5FA; border-radius: 12px; display: flex; justify-content: center; align-items: center; color: #6F8DBA; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .pill-btn { flex: 1; height: 45px; border: 1px solid #A0D5FA; border-radius: 12px; display: flex; justify-content: center; align-items: center; color: #6F8DBA; font-weight: 600; cursor: pointer; transition: 0.3s; text-align: center; }
         .radio-hidden:checked + .pill-btn { background-color: #288CF0; color: #fff; border-color: #288CF0; }
 
         .counter-row { display: flex; justify-content: space-between; align-items: center; }
@@ -88,14 +78,6 @@
         .icon-box { width: 45px; height: 45px; background-color: #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 22px; color: #FFC648; }
         .card-header h3 { color: #063376; font-size: 18px; font-weight: 700; }
         .card-header p { color: #6F8DBA; font-size: 12px; font-weight: 500; }
-        .leaderboard-list { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .leaderboard-item { display: flex; align-items: center; padding: 10px 15px; border-radius: 12px; background-color: #fff; border: 1px solid #f0f0f0; gap: 15px; }
-        .rank-circle { width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 14px; font-weight: 700; color: #063376; }
-        .rank-1 { background-color: #FFE7A3; } .rank-2 { background-color: #DDE8F2; } .rank-3 { background-color: #F1D4BE; } 
-        .student-info { flex: 1; }
-        .student-info h4 { color: #063376; font-size: 15px; font-weight: 600; }
-        .student-info span { color: #6F8DBA; font-size: 12px; }
-        .score { color: #288CF0; font-size: 16px; font-weight: 700; }
         .tips-card { background-color: #EBF5FE; border-radius: 20px; padding: 20px; box-shadow: none; }
         .tips-card .card-header { background-color: transparent; padding: 0 0 15px 0; }
         .tips-card .icon-box { border-radius: 12px; }
@@ -113,7 +95,6 @@
             .sidebar, .right-sidebar { width: 100%; border-right: none; flex-direction: row; flex-wrap: wrap; justify-content: space-between; }
             .progress-card { flex: 1; min-width: 300px; }
             .grid-2col { grid-template-columns: 1fr; }
-            .mode-options { flex-direction: column; }
         }
     </style>
 </head>
@@ -183,63 +164,23 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <div class="form-label"><i class="fa-solid fa-keyboard"></i> โหมดการฝึก</div>
-                <div class="mode-options">
-                    <label>
-                        <input type="radio" name="training_mode" value="time_attack" class="radio-hidden" checked>
-                        <div class="mode-card">
-                            <div class="mode-icon"><i class="fa-solid fa-stopwatch"></i></div>
-                            <div class="mode-text">
-                                <h4>แข่งขันจับเวลา</h4>
-                                <p>จัดอันดับตามคะแนน</p>
-                            </div>
-                            <div class="radio-circle"></div>
-                        </div>
-                    </label>
-
-                    <label>
-                        <input type="radio" name="training_mode" value="lesson" class="radio-hidden">
-                        <div class="mode-card">
-                            <div class="mode-icon"><i class="fa-solid fa-book-open"></i></div>
-                            <div class="mode-text">
-                                <h4>ฝึกตามบทเรียน</h4>
-                                <p>เรียนตามลำดับเนื้อหา</p>
-                            </div>
-                            <div class="radio-circle"></div>
-                        </div>
-                    </label>
-
-                    <label>
-                        <input type="radio" name="training_mode" value="freeplay" class="radio-hidden">
-                        <div class="mode-card">
-                            <div class="mode-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-                            <div class="mode-text">
-                                <h4>ฝึกอิสระ</h4>
-                                <p>พิมพ์ตามจังหวะตนเอง</p>
-                            </div>
-                            <div class="radio-circle"></div>
-                        </div>
-                    </label>
-                </div>
-            </div>
-
             <div class="grid-2col">
                 <div class="form-group">
-                    <div class="form-label"><i class="fa-solid fa-gauge-high"></i> ระดับความยาก</div>
+                    <div class="form-label"><i class="fa-solid fa-list"></i> หมวดหมู่</div>
                     <div class="pill-options">
-                        <label style="flex: 1;"><input type="radio" name="difficulty" value="easy" class="radio-hidden"><div class="pill-btn">ง่าย</div></label>
-                        <label style="flex: 1;"><input type="radio" name="difficulty" value="medium" class="radio-hidden" checked><div class="pill-btn">ปานกลาง</div></label>
-                        <label style="flex: 1;"><input type="radio" name="difficulty" value="hard" class="radio-hidden"><div class="pill-btn">ยาก</div></label>
+                        <label style="flex: 1;"><input type="radio" name="category" value="general" class="radio-hidden" checked><div class="pill-btn">คำศัพท์ทั่วไป</div></label>
+                        <label style="flex: 1;"><input type="radio" name="category" value="code" class="radio-hidden"><div class="pill-btn">โค้ด</div></label>
+                        <label style="flex: 1;"><input type="radio" name="category" value="mixed" class="radio-hidden"><div class="pill-btn">รวม</div></label>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <div class="form-label"><i class="fa-regular fa-clock"></i> ระยะเวลา</div>
                     <div class="pill-options">
-                        <label style="flex: 1;"><input type="radio" name="duration" value="5" class="radio-hidden"><div class="pill-btn">5 นาที</div></label>
-                        <label style="flex: 1;"><input type="radio" name="duration" value="10" class="radio-hidden" checked><div class="pill-btn">10 นาที</div></label>
-                        <label style="flex: 1;"><input type="radio" name="duration" value="15" class="radio-hidden"><div class="pill-btn">15 นาที</div></label>
+                        <label style="flex: 1;"><input type="radio" name="duration" value="15" class="radio-hidden"><div class="pill-btn">15 วิ</div></label>
+                        <label style="flex: 1;"><input type="radio" name="duration" value="30" class="radio-hidden"><div class="pill-btn">30 วิ</div></label>
+                        <label style="flex: 1;"><input type="radio" name="duration" value="60" class="radio-hidden" checked><div class="pill-btn">60 วิ</div></label>
+                        <label style="flex: 1;"><input type="radio" name="duration" value="120" class="radio-hidden"><div class="pill-btn">120 วิ</div></label>
                     </div>
                 </div>
             </div>
@@ -259,7 +200,7 @@
 
             <div class="summary-box">
                 <i class="fa-solid fa-circle-check"></i>
-                <div class="summary-text" id="summaryText">แข่งขันจับเวลา • ปานกลาง • 10 นาที • สูงสุด 30 คน</div>
+                <div class="summary-text" id="summaryText">คำศัพท์ทั่วไป • 60 วิ • สูงสุด 30 คน</div>
                 <div class="status-badge">พร้อมสร้าง</div>
             </div>
 
@@ -271,41 +212,7 @@
 
     <!-- แถบวิดเจ็ตด้านขวา (Right Sidebar) -->
     <aside class="right-sidebar">
-        <div class="card">
-            <div class="card-header">
-                <div class="icon-box"><i class="fa-solid fa-trophy"></i></div>
-                <div>
-                    <h3>อันดับคะแนนสูงสุด</h3>
-                    <p>ห้องล่าสุดของคุณ</p>
-                </div>
-            </div>
-            <div class="leaderboard-list">
-                <div class="leaderboard-item">
-                    <div class="rank-circle rank-1">1</div>
-                    <div class="student-info">
-                        <h4>ณัฐชา พรหมดี</h4>
-                        <span>ความแม่นยำ 96%</span>
-                    </div>
-                    <div class="score">1,284</div>
-                </div>
-                <div class="leaderboard-item">
-                    <div class="rank-circle rank-2">2</div>
-                    <div class="student-info">
-                        <h4>กิตติพงศ์ ใจกล้า</h4>
-                        <span>ความแม่นยำ 96%</span>
-                    </div>
-                    <div class="score">1,120</div>
-                </div>
-                <div class="leaderboard-item">
-                    <div class="rank-circle rank-3">3</div>
-                    <div class="student-info">
-                        <h4>พิมพ์ชนก แสงทอง</h4>
-                        <span>ความแม่นยำ 96%</span>
-                    </div>
-                    <div class="score">986</div>
-                </div>
-            </div>
-        </div>
+        <!-- นำการ์ดตารางคะแนนสูงสุดออกไปแล้วตามที่ระบุ -->
 
         <div class="card tips-card">
             <div class="card-header">
@@ -333,12 +240,11 @@
 
         function updateSummary() {
             const count = document.getElementById('participantCount').value;
-            const mode = document.querySelector('input[name="training_mode"]:checked').nextElementSibling.querySelector('h4').innerText;
-            const diff = document.querySelector('input[name="difficulty"]:checked').nextElementSibling.innerText;
+            const category = document.querySelector('input[name="category"]:checked').nextElementSibling.innerText;
             const duration = document.querySelector('input[name="duration"]:checked').nextElementSibling.innerText;
             
-            // แก้ไขปัญหา JS แล้วให้เป็นบรรทัดเดียว
-            document.getElementById('summaryText').innerText = `${mode} • ${diff} • ${duration} • สูงสุด ${count} คน`;
+            // อัปเดตข้อความสรุปโดยดึงแค่หมวดหมู่, เวลา, จำนวนคน
+            document.getElementById('summaryText').innerText = `${category} • ${duration} • สูงสุด ${count} คน`;
         }
 
         document.querySelectorAll('input[type="radio"]').forEach(radio => {
