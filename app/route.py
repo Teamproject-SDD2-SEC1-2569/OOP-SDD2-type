@@ -38,6 +38,10 @@ def register():
     # สร้างเผื่อไว้สำหรับลิงก์สมัครสมาชิก
     return render_template('student/register.html')
 
+@api_bp.route("/join", methods=["GET"])
+def join_room_page():
+    return render_template("student/join.html")
+
 @api_bp.route('/classroom')
 def classroom():
     # สร้างเผื่อไว้เมื่อล็อกอินสำเร็จจะเด้งมาหน้านี้
@@ -62,22 +66,6 @@ def typing_history():
 def typing_result():
     # หน้าสรุปผลคะแนน
     return render_template('student/typing-result.html')
-
-@api_bp.route('/teacher/dashboard')
-def teacher_dashboard():
-    return render_template('teacher/Dashboard.html')
-
-@api_bp.route('/teacher/create-room')
-def teacher_create_room():
-    return render_template('teacher/create-room.html')
-
-@api_bp.route('/teacher/manage-classroom')
-def teacher_manage_classroom():
-    return render_template('teacher/Manage-Classroom.html')
-
-@api_bp.route('/teacher/menu')
-def teacher_menu():
-    return render_template('teacher/menu.html')
 
 def register_socket_events(socketio: SocketIO):
     @socketio.on('connect')
