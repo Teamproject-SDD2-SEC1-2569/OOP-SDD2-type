@@ -9,289 +9,83 @@
     <!-- นำเข้า FontAwesome สำหรับไอคอน -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Prompt', 'Inter', sans-serif;
-        }
-
-        body {
-            background-color: #F4F7FC;
-            min-height: 100vh;
-            display: flex;
-            overflow-x: hidden;
-            background-image: url('https://placehold.co/1440x171/EBF5FE/EBF5FE?text=Waves+Background');
-            background-position: bottom;
-            background-repeat: no-repeat;
-            background-size: 100% auto;
-        }
-
-        /* ================= แถบซ้าย (Sidebar) ================= */
-        .sidebar {
-            width: 280px;
-            background-color: #B2DCFA;
-            border-right: 4px solid #288CF0;
-            padding: 30px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 40px;
-            flex-shrink: 0;
-            z-index: 10;
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .avatar {
-            width: 50px;
-            height: 50px;
-            background-color: #fff;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #ccc;
-            font-size: 24px;
-            overflow: hidden;
-        }
-
-        .user-info .name {
-            color: #063376;
-            font-size: 16px;
-            font-weight: 700;
-        }
-
-        .user-info .role {
-            color: #6F8DBA;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        /* การ์ดความคืบหน้า (Progress) */
-        .progress-card {
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 8px 24px rgba(6, 51, 118, 0.05);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .progress-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #063376;
-            font-weight: 700;
-            font-size: 16px;
-        }
-
-        .step-item {
-            display: flex;
-            gap: 12px;
-            position: relative;
-        }
-
-        .step-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #fff;
-            font-weight: 700;
-            font-size: 14px;
-            z-index: 2;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Prompt', 'Inter', sans-serif; }
+        body { background-color: #F4F7FC; min-height: 100vh; display: flex; overflow-x: hidden; background-image: url('https://placehold.co/1440x171/EBF5FE/EBF5FE?text=Waves+Background'); background-position: bottom; background-repeat: no-repeat; background-size: 100% auto; }
+        
+        /* Sidebar */
+        .sidebar { width: 280px; background-color: #B2DCFA; border-right: 4px solid #288CF0; padding: 30px 20px; display: flex; flex-direction: column; gap: 40px; flex-shrink: 0; z-index: 10; }
+        .user-profile { display: flex; align-items: center; gap: 15px; }
+        .avatar { width: 50px; height: 50px; background-color: #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #ccc; font-size: 24px; }
+        .user-info .name { color: #063376; font-size: 16px; font-weight: 700; }
+        .user-info .role { color: #6F8DBA; font-size: 14px; font-weight: 600; }
+        .progress-card { background-color: rgba(255, 255, 255, 0.8); border-radius: 20px; padding: 20px; box-shadow: 0 8px 24px rgba(6, 51, 118, 0.05); display: flex; flex-direction: column; gap: 15px; }
+        .progress-header { display: flex; align-items: center; gap: 10px; color: #063376; font-weight: 700; font-size: 16px; }
+        .step-item { display: flex; gap: 12px; position: relative; }
+        .step-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #fff; font-weight: 700; font-size: 14px; z-index: 2; }
         .step-icon.done { background-color: #25A777; }
         .step-icon.active { background-color: #288CF0; }
-
-        .step-line {
-            position: absolute;
-            top: 32px;
-            left: 15px;
-            width: 2px;
-            height: 25px;
-            background-color: #D7EBFC;
-            z-index: 1;
-        }
-
+        .step-line { position: absolute; top: 32px; left: 15px; width: 2px; height: 25px; background-color: #D7EBFC; z-index: 1; }
         .step-text h4 { color: #063376; font-size: 15px; font-weight: 600; }
         .step-text p { color: #6F8DBA; font-size: 12px; line-height: 1.4; }
-
-        .system-status {
-            margin-top: auto;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #6F8DBA;
-            font-size: 14px;
-            font-weight: 500;
-        }
+        .system-status { margin-top: auto; display: flex; align-items: center; gap: 10px; color: #6F8DBA; font-size: 14px; font-weight: 500; }
         .status-dot { width: 10px; height: 10px; background-color: #25A777; border-radius: 50%; }
 
-        /* ================= ส่วนเนื้อหาตรงกลาง (Form Area) ================= */
-        .main-content {
-            flex: 1;
-            padding: 30px 40px;
-            overflow-y: auto;
-            z-index: 5;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .top-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .btn-back {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #6F8DBA;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .btn-back i {
-            width: 32px; height: 32px; background: #fff; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            border: 1px solid #A0D5FA; color: #063376;
-        }
-
-        .step-badge {
-            background-color: #EBF5FE;
-            color: #288CF0;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .step-badge::before {
-            content: ""; display: block; width: 8px; height: 8px; background: #288CF0; border-radius: 50%;
-        }
-
+        /* Main Content */
+        .main-content { flex: 1; padding: 30px 40px; overflow-y: auto; z-index: 5; display: flex; flex-direction: column; gap: 20px; }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; }
+        .btn-back { display: flex; align-items: center; gap: 10px; color: #6F8DBA; text-decoration: none; font-weight: 600; }
+        .btn-back i { width: 32px; height: 32px; background: #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 1px solid #A0D5FA; color: #063376; }
+        .step-badge { background-color: #EBF5FE; color: #288CF0; padding: 8px 15px; border-radius: 20px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .step-badge::before { content: ""; display: block; width: 8px; height: 8px; background: #288CF0; border-radius: 50%; }
         .page-header h1 { color: #063376; font-size: 32px; font-weight: 700; }
         .page-header p { color: #6F8DBA; font-size: 16px; margin-top: 5px; }
 
-        /* กล่องฟอร์ม */
-        .form-card {
-            background-color: #fff;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 8px 24px rgba(6, 51, 118, 0.05);
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
-
+        /* Form Card */
+        .form-card { background-color: #fff; border-radius: 20px; padding: 30px; box-shadow: 0 8px 24px rgba(6, 51, 118, 0.05); display: flex; flex-direction: column; gap: 25px; }
         .form-group { display: flex; flex-direction: column; gap: 10px; }
-        
-        .form-label {
-            display: flex; align-items: center; gap: 10px;
-            color: #063376; font-size: 16px; font-weight: 600;
-        }
+        .form-label { display: flex; align-items: center; gap: 10px; color: #063376; font-size: 16px; font-weight: 600; }
         .form-label i { color: #288CF0; }
         .form-label span.desc { color: #6F8DBA; font-size: 13px; font-weight: 400; margin-left: 10px; }
-
-        /* Input Text */
         .input-wrapper { position: relative; }
-        .form-input {
-            width: 100%; height: 50px; border-radius: 12px;
-            border: 1px solid #A0D5FA; padding: 0 15px;
-            font-size: 16px; color: #063376; font-weight: 500; outline: none;
-        }
+        .form-input { width: 100%; height: 50px; border-radius: 12px; border: 1px solid #A0D5FA; padding: 0 15px; font-size: 16px; color: #063376; font-weight: 500; outline: none; }
         .form-input:focus { border-color: #288CF0; }
         .char-count { position: absolute; right: 15px; top: 15px; color: #6F8DBA; font-size: 14px; }
-
-        /* Radio Buttons แบบ Custom (ซ่อน Input จริงไว้) */
+        
         .radio-hidden { display: none; }
-
-        /* ตัวเลือกโหมดการฝึก */
         .mode-options { display: flex; gap: 15px; }
-        .mode-card {
-            flex: 1; border: 1px solid #A0D5FA; border-radius: 12px; padding: 15px;
-            display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.3s;
-        }
-        .mode-icon {
-            width: 40px; height: 40px; background: #EBF5FE; border-radius: 10px;
-            display: flex; justify-content: center; align-items: center; color: #288CF0; font-size: 20px;
-        }
+        .mode-card { flex: 1; border: 1px solid #A0D5FA; border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.3s; }
+        .mode-icon { width: 40px; height: 40px; background: #EBF5FE; border-radius: 10px; display: flex; justify-content: center; align-items: center; color: #288CF0; font-size: 20px; }
         .mode-text h4 { color: #063376; font-size: 15px; font-weight: 600; }
         .mode-text p { color: #6F8DBA; font-size: 12px; }
-        .radio-circle {
-            margin-left: auto; width: 20px; height: 20px; border-radius: 50%;
-            border: 2px solid #A0D5FA; display: flex; justify-content: center; align-items: center;
-        }
-        /* เมื่อกดเลือกโหมดการฝึก */
+        .radio-circle { margin-left: auto; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #A0D5FA; display: flex; justify-content: center; align-items: center; }
         .radio-hidden:checked + .mode-card { border: 2px solid #288CF0; background-color: #F4F9FF; }
         .radio-hidden:checked + .mode-card .mode-icon { background: #288CF0; color: #fff; }
         .radio-hidden:checked + .mode-card .radio-circle { border-color: #288CF0; }
-        .radio-hidden:checked + .mode-card .radio-circle::after {
-            content: ""; width: 10px; height: 10px; background: #288CF0; border-radius: 50%;
-        }
+        .radio-hidden:checked + .mode-card .radio-circle::after { content: ""; width: 10px; height: 10px; background: #288CF0; border-radius: 50%; }
 
-        /* 2 คอลัมน์สำหรับ ความยาก และ เวลา */
         .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        
         .pill-options { display: flex; gap: 10px; }
-        .pill-btn {
-            flex: 1; height: 45px; border: 1px solid #A0D5FA; border-radius: 12px;
-            display: flex; justify-content: center; align-items: center;
-            color: #6F8DBA; font-weight: 600; cursor: pointer; transition: 0.3s;
-        }
-        /* เมื่อกดเลือกระดับ/เวลา */
+        .pill-btn { flex: 1; height: 45px; border: 1px solid #A0D5FA; border-radius: 12px; display: flex; justify-content: center; align-items: center; color: #6F8DBA; font-weight: 600; cursor: pointer; transition: 0.3s; }
         .radio-hidden:checked + .pill-btn { background-color: #288CF0; color: #fff; border-color: #288CF0; }
 
-        /* ตัวนับจำนวนคน */
         .counter-row { display: flex; justify-content: space-between; align-items: center; }
-        .counter-box {
-            display: flex; align-items: center; background: #EBF5FE; border-radius: 12px; padding: 5px; gap: 15px;
-        }
-        .counter-btn {
-            width: 35px; height: 35px; border: none; border-radius: 8px;
-            background: #fff; color: #288CF0; font-size: 18px; cursor: pointer;
-        }
+        .counter-box { display: flex; align-items: center; background: #EBF5FE; border-radius: 12px; padding: 5px; gap: 15px; }
+        .counter-btn { width: 35px; height: 35px; border: none; border-radius: 8px; background: #fff; color: #288CF0; font-size: 18px; cursor: pointer; }
         .counter-btn.plus { background: #288CF0; color: #fff; }
         .counter-value { color: #063376; font-size: 20px; font-weight: 700; width: 30px; text-align: center; border: none; background: transparent; pointer-events: none;}
         
-        /* สรุปและปุ่มสร้าง */
-        .summary-box {
-            background-color: #EBF5FE; border-radius: 12px; padding: 15px 20px;
-            display: flex; align-items: center; gap: 15px;
-        }
+        .summary-box { background-color: #EBF5FE; border-radius: 12px; padding: 15px 20px; display: flex; align-items: center; gap: 15px; }
         .summary-box i { color: #25A777; font-size: 20px; }
         .summary-text { flex: 1; color: #063376; font-size: 15px; font-weight: 500; }
         .status-badge { background: #DDF6ED; color: #25A777; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-
-        .btn-submit {
-            width: 100%; height: 60px; background-color: #288CF0; color: #fff; border: none; border-radius: 15px;
-            font-size: 20px; font-weight: 700; cursor: pointer; transition: 0.3s;
-            display: flex; justify-content: center; align-items: center; gap: 10px;
-            box-shadow: 0 5px 15px rgba(40, 140, 240, 0.3);
-        }
+        .btn-submit { width: 100%; height: 60px; background-color: #288CF0; color: #fff; border: none; border-radius: 15px; font-size: 20px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 10px; box-shadow: 0 5px 15px rgba(40, 140, 240, 0.3); }
         .btn-submit:hover { background-color: #1e70c4; }
 
-        /* ================= แถบขวา (Widgets) ================= */
-        .right-sidebar {
-            width: 340px; background-color: #B2DCFA; padding: 30px 20px; display: flex; flex-direction: column; gap: 20px; flex-shrink: 0; z-index: 10;
-        }
-
+        /* Right Sidebar */
+        .right-sidebar { width: 340px; background-color: #B2DCFA; padding: 30px 20px; display: flex; flex-direction: column; gap: 20px; flex-shrink: 0; z-index: 10; }
         .card { background-color: #fff; border-radius: 20px; box-shadow: 0 8px 24px rgba(6, 51, 118, 0.05); overflow: hidden; display: flex; flex-direction: column; }
         .card-header { background-color: #EBF5FE; padding: 20px; display: flex; align-items: center; gap: 15px; }
-        .icon-box { width: 45px; height: 45px; background-color: #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 22px; color: #FFC648; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .icon-box { width: 45px; height: 45px; background-color: #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 22px; color: #FFC648; }
         .card-header h3 { color: #063376; font-size: 18px; font-weight: 700; }
         .card-header p { color: #6F8DBA; font-size: 12px; font-weight: 500; }
         .leaderboard-list { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
@@ -302,7 +96,6 @@
         .student-info h4 { color: #063376; font-size: 15px; font-weight: 600; }
         .student-info span { color: #6F8DBA; font-size: 12px; }
         .score { color: #288CF0; font-size: 16px; font-weight: 700; }
-
         .tips-card { background-color: #EBF5FE; border-radius: 20px; padding: 20px; box-shadow: none; }
         .tips-card .card-header { background-color: transparent; padding: 0 0 15px 0; }
         .tips-card .icon-box { border-radius: 12px; }
@@ -310,13 +103,11 @@
         .tips-list li { display: flex; align-items: flex-start; gap: 10px; color: #6F8DBA; font-size: 14px; line-height: 1.5; }
         .tips-list li::before { content: "•"; color: #288CF0; font-size: 20px; line-height: 1; }
 
-        /* Responsive */
         @media (max-width: 1200px) {
             .sidebar { width: 220px; padding: 20px 15px; }
             .right-sidebar { width: 300px; padding: 20px 15px; }
             .main-content { padding: 20px; }
         }
-
         @media (max-width: 992px) {
             body { flex-direction: column; height: auto; }
             .sidebar, .right-sidebar { width: 100%; border-right: none; flex-direction: row; flex-wrap: wrap; justify-content: space-between; }
@@ -331,22 +122,15 @@
     <!-- แถบด้านซ้าย (Sidebar) -->
     <aside class="sidebar">
         <div class="user-profile">
-            <div class="avatar">
-                <!-- [BACKEND]: ดึงรูปภาพโปรไฟล์ -->
-                <i class="fa-solid fa-user"></i>
-            </div>
+            <div class="avatar"><i class="fa-solid fa-user"></i></div>
             <div class="user-info">
-                <!-- [BACKEND]: ดึงข้อมูลชื่อและบทบาท -->
-                <div class="name">Mr. Thanapat Disasro</div>
+                <div class="name">อ.ธนภัทร ดิษฐสโร</div>
                 <div class="role">อาจารย์</div>
             </div>
         </div>
 
         <div class="progress-card">
-            <div class="progress-header">
-                <i class="fa-solid fa-door-open" style="color: #288CF0; font-size: 20px;"></i> สร้างห้อง
-            </div>
-            <!-- Step 1 -->
+            <div class="progress-header"><i class="fa-solid fa-door-open" style="color: #288CF0; font-size: 20px;"></i> สร้างห้อง</div>
             <div class="step-item">
                 <div class="step-icon done"><i class="fa-solid fa-check"></i></div>
                 <div class="step-line"></div>
@@ -355,7 +139,6 @@
                     <p>เลือกเข้าสู่ขั้นตอนสร้างห้อง</p>
                 </div>
             </div>
-            <!-- Step 2 -->
             <div class="step-item">
                 <div class="step-icon active">2</div>
                 <div class="step-text">
@@ -374,7 +157,8 @@
     <main class="main-content">
         
         <div class="top-nav">
-            <a href="/dashboard" class="btn-back">
+            <!-- ปุ่ม Back: วิ่งกลับไปหน้า Dashboard -->
+            <a href="{{ url_for('teacher.teacher_dashboard_page') }}" class="btn-back">
                 <i class="fa-solid fa-arrow-left"></i> กลับไปหน้าหลัก
             </a>
             <div class="step-badge">ขั้นตอนที่ 2 จาก 2</div>
@@ -385,31 +169,23 @@
             <p>กำหนดรูปแบบการฝึกให้พร้อม แล้วจึงสร้างรหัสห้องสำหรับนักเรียน</p>
         </div>
 
-        <!-- [BACKEND]: Form Submit ไปยัง Controller สำหรับบันทึก Database -->
-        <form action="/api/room/create" method="POST" class="form-card" id="createRoomForm">
-            <!-- [BACKEND]: CSRF Token -->
-
-
-            <!-- 1. ชื่อห้อง -->
+        <!-- ฟอร์มส่งไปที่ฟังก์ชัน create_room -->
+        <form action="{{ url_for('teacher.teacher_create_room_page') }}" method="POST" class="form-card" id="createRoomForm">
+            
             <div class="form-group">
                 <div class="form-label">
                     <i class="fa-solid fa-font"></i> ชื่อห้อง 
                     <span class="desc">ชื่อนี้จะแสดงให้นักเรียนเห็น</span>
                 </div>
                 <div class="input-wrapper">
-                    <!-- [BACKEND]: name="room_name" -->
                     <input type="text" name="room_name" class="form-input" value="ห้องฝึกพิมพ์ ม.2/1" required maxlength="50">
                     <div class="char-count">20/50</div>
                 </div>
             </div>
 
-            <!-- 2. โหมดการฝึก -->
             <div class="form-group">
-                <div class="form-label">
-                    <i class="fa-solid fa-keyboard"></i> โหมดการฝึก
-                </div>
+                <div class="form-label"><i class="fa-solid fa-keyboard"></i> โหมดการฝึก</div>
                 <div class="mode-options">
-                    <!-- [BACKEND]: name="training_mode" -->
                     <label>
                         <input type="radio" name="training_mode" value="time_attack" class="radio-hidden" checked>
                         <div class="mode-card">
@@ -448,14 +224,10 @@
                 </div>
             </div>
 
-            <!-- 3. ความยาก & เวลา (Grid 2 คอลัมน์) -->
             <div class="grid-2col">
                 <div class="form-group">
-                    <div class="form-label">
-                        <i class="fa-solid fa-gauge-high"></i> ระดับความยาก
-                    </div>
+                    <div class="form-label"><i class="fa-solid fa-gauge-high"></i> ระดับความยาก</div>
                     <div class="pill-options">
-                        <!-- [BACKEND]: name="difficulty" -->
                         <label style="flex: 1;"><input type="radio" name="difficulty" value="easy" class="radio-hidden"><div class="pill-btn">ง่าย</div></label>
                         <label style="flex: 1;"><input type="radio" name="difficulty" value="medium" class="radio-hidden" checked><div class="pill-btn">ปานกลาง</div></label>
                         <label style="flex: 1;"><input type="radio" name="difficulty" value="hard" class="radio-hidden"><div class="pill-btn">ยาก</div></label>
@@ -463,11 +235,8 @@
                 </div>
 
                 <div class="form-group">
-                    <div class="form-label">
-                        <i class="fa-regular fa-clock"></i> ระยะเวลา
-                    </div>
+                    <div class="form-label"><i class="fa-regular fa-clock"></i> ระยะเวลา</div>
                     <div class="pill-options">
-                        <!-- [BACKEND]: name="duration" -->
                         <label style="flex: 1;"><input type="radio" name="duration" value="5" class="radio-hidden"><div class="pill-btn">5 นาที</div></label>
                         <label style="flex: 1;"><input type="radio" name="duration" value="10" class="radio-hidden" checked><div class="pill-btn">10 นาที</div></label>
                         <label style="flex: 1;"><input type="radio" name="duration" value="15" class="radio-hidden"><div class="pill-btn">15 นาที</div></label>
@@ -475,7 +244,6 @@
                 </div>
             </div>
 
-            <!-- 4. จำนวนผู้เข้าร่วม -->
             <div class="form-group counter-row">
                 <div class="form-label">
                     <i class="fa-solid fa-users"></i> จำนวนผู้เข้าร่วมสูงสุด
@@ -483,14 +251,12 @@
                 </div>
                 <div class="counter-box">
                     <button type="button" class="counter-btn" onclick="updateCount(-1)"><i class="fa-solid fa-minus"></i></button>
-                    <!-- [BACKEND]: name="max_participants" -->
                     <input type="text" name="max_participants" id="participantCount" class="counter-value" value="30" readonly>
                     <span style="color: #6F8DBA; font-size: 14px; font-weight: 500;">คน</span>
                     <button type="button" class="counter-btn plus" onclick="updateCount(1)"><i class="fa-solid fa-plus"></i></button>
                 </div>
             </div>
 
-            <!-- 5. สรุปและปุ่ม Submit -->
             <div class="summary-box">
                 <i class="fa-solid fa-circle-check"></i>
                 <div class="summary-text" id="summaryText">แข่งขันจับเวลา • ปานกลาง • 10 นาที • สูงสุด 30 คน</div>
@@ -501,13 +267,10 @@
                 <i class="fa-solid fa-door-open"></i> สร้างห้อง
             </button>
         </form>
-
     </main>
 
     <!-- แถบวิดเจ็ตด้านขวา (Right Sidebar) -->
     <aside class="right-sidebar">
-        
-        <!-- การ์ด 1: อันดับคะแนนสูงสุด -->
         <div class="card">
             <div class="card-header">
                 <div class="icon-box"><i class="fa-solid fa-trophy"></i></div>
@@ -517,7 +280,6 @@
                 </div>
             </div>
             <div class="leaderboard-list">
-                <!-- [BACKEND]: วน Loop แสดงข้อมูล Ranking (ตาราง score_history) -->
                 <div class="leaderboard-item">
                     <div class="rank-circle rank-1">1</div>
                     <div class="student-info">
@@ -542,11 +304,9 @@
                     </div>
                     <div class="score">986</div>
                 </div>
-                <!-- [BACKEND]: End Loop -->
             </div>
         </div>
 
-        <!-- การ์ด 2: คำแนะนำ -->
         <div class="card tips-card">
             <div class="card-header">
                 <div class="icon-box" style="color: #FFC648;"><i class="fa-regular fa-lightbulb"></i></div>
@@ -558,35 +318,29 @@
                 <li>แก้ไขการตั้งค่าได้ก่อนเริ่มกิจกรรม</li>
             </ul>
         </div>
-
     </aside>
 
-    <!-- สคริปต์เสริมสำหรับปุ่มเพิ่ม/ลดจำนวนคน เพื่อให้ UI ใช้งานได้จริง -->
     <script>
         function updateCount(change) {
             const countInput = document.getElementById('participantCount');
             let currentCount = parseInt(countInput.value);
             let newCount = currentCount + change;
-            
-            // กำหนดขอบเขตให้เลือกได้ 1 ถึง 50 คน
             if(newCount >= 1 && newCount <= 50) {
                 countInput.value = newCount;
                 updateSummary();
             }
         }
 
-        // ฟังก์ชันอัปเดตข้อความสรุป (ใช้ทดสอบการทำงานฝั่ง Frontend)
         function updateSummary() {
             const count = document.getElementById('participantCount').value;
-            // ดึงค่าจาก Radio Button ที่ถูกเลือก
             const mode = document.querySelector('input[name="training_mode"]:checked').nextElementSibling.querySelector('h4').innerText;
             const diff = document.querySelector('input[name="difficulty"]:checked').nextElementSibling.innerText;
             const duration = document.querySelector('input[name="duration"]:checked').nextElementSibling.innerText;
             
+            // แก้ไขปัญหา JS แล้วให้เป็นบรรทัดเดียว
             document.getElementById('summaryText').innerText = `${mode} • ${diff} • ${duration} • สูงสุด ${count} คน`;
         }
 
-        // แนบ Event Listener ให้ Radio buttons ทุกตัว เพื่อให้อัปเดตข้อความสรุปทันทีที่คลิก
         document.querySelectorAll('input[type="radio"]').forEach(radio => {
             radio.addEventListener('change', updateSummary);
         });

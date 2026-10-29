@@ -1,6 +1,6 @@
 import secrets
 
-from flask import Blueprint, request, jsonify, render_template
+from flask import Blueprint, request, jsonify, render_template, redirect, url_for
 from flask_jwt_extended import get_jwt_identity
 
 from .auth_utils import require_role
@@ -427,15 +427,21 @@ def teacher_register_page():
 
 @teacher_bp.route("/dashboard", methods=["GET"])
 def teacher_dashboard_page():
-    return render_template("teacher/Dashboard.html")
+    # เปลี่ยนชื่อไฟล์ให้ตรงกับไฟล์จริงของคุณ (แนะนำให้ใช้ตัวพิมพ์เล็กทั้งหมด)
+    return render_template("teacher/dashboard.html")
 
-@teacher_bp.route("/create-room", methods=["GET"])
+@teacher_bp.route("/create-room", methods=["GET", "POST"])
 def teacher_create_room_page():
+    if request.method == 'POST':
+        # ถ้าส่งฟอร์ม (POST) สร้างห้องมา ให้ Redirect กลับไปหน้า Dashboard
+        return redirect(url_for('teacher.teacher_dashboard_page'))
+    
+    # ถ้าแค่คลิกเปิดหน้าเว็บ (GET) ให้แสดงหน้าสร้างห้อง
     return render_template("teacher/create-room.html")
 
 @teacher_bp.route("/manage-classroom", methods=["GET"])
 def teacher_manage_classroom_page():
-    return render_template("teacher/Manage-Classroom.html")
+    return render_template("teacher/manage-classroom.html")
 
 @teacher_bp.route("/menu", methods=["GET"])
 def teacher_menu_page():
