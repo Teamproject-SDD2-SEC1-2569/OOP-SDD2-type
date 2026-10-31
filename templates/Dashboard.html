@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการห้องเรียนฝึกพิมพ์ - สำหรับอาจารย์</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Prompt', 'Inter', sans-serif; }
+        body { background-color: #F4F7FC; height: 100vh; display: flex; overflow: hidden; }
+        
+        /* ================= Sidebar ================= */
+        .sidebar { width: 265px; background-color: #B2DCFA; padding: 25px 20px; display: flex; flex-direction: column; flex-shrink: 0; z-index: 10; border-right: 2px solid #D8E7F4; }
+        .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 25px; cursor: pointer; }
+        .brand-icon { width: 42px; height: 42px; background-color: #063376; border-radius: 12px; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 20px; }
+        .brand-text h2 { color: #063376; font-size: 16px; font-weight: 700; }
+        .brand-text p { color: #6F8DBA; font-size: 11px; }
+        
+        .user-profile { background-color: #DDF0FD; padding: 12px; border-radius: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 25px; }
+        .avatar { width: 40px; height: 40px; background-color: #fff; border: 2px solid #288CF0; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #063376; font-size: 14px; font-weight: 700; }
+        .user-info .name { color: #063376; font-size: 14px; font-weight: 700; }
+        .user-info .role { color: #71829B; font-size: 12px; }
+        
+        .menu-label { color: #063376; font-size: 11px; font-weight: 700; opacity: 0.6; margin: 10px 0 8px 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .menu-list { list-style: none; display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto; }
+        .menu-item { display: flex; align-items: center; gap: 12px; padding: 11px 15px; border-radius: 12px; color: #063376; text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.25s; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; }
+        .menu-item:hover { background-color: rgba(255,255,255,0.6); }
+        .menu-item.active { background-color: #fff; color: #288CF0; font-weight: 700; box-shadow: 0 4px 10px rgba(6, 51, 118, 0.05); }
+        .menu-item.active i { color: #288CF0; }
+        .menu-item i { font-size: 17px; width: 24px; text-align: center; }
+        .menu-item .badge-count { margin-left: auto; background-color: #E95C68; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 700; }
+
+        .sidebar-footer { margin-top: auto; padding-top: 15px; border-top: 1px solid rgba(6, 51, 118, 0.1); display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #063376; }
+        .status-dot { width: 8px; height: 8px; background-color: #20A873; border-radius: 50%; display: inline-block; margin-right: 6px; }
+
+        /* ================= Main Wrapper & Topbar ================= */
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .topbar { background-color: #fff; height: 64px; padding: 0 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #D8E7F4; position: relative; }
+        .breadcrumb { color: #71829B; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .breadcrumb span { color: #063376; font-weight: 700; }
+        .top-actions { display: flex; align-items: center; gap: 15px; }
+        
+        .status-badge { background-color: #E4F7F0; color: #20A873; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s; user-select: none; }
+        .status-badge:hover { transform: scale(1.03); }
+        .status-badge.live { background-color: #FDEBED; color: #E95C68; }
+        .status-badge.live::before { content: ""; width: 8px; height: 8px; background-color: #E95C68; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+        .status-badge.closed { background-color: #F4F7FC; color: #71829B; }
+        
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(233, 92, 104, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(233, 92, 104, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(233, 92, 104, 0); }
+        }
+
+        .btn-noti { width: 40px; height: 40px; background-color: #E7F3FE; color: #288CF0; border: none; border-radius: 12px; font-size: 18px; cursor: pointer; position: relative; transition: 0.2s; }
+        .btn-noti:hover { background-color: #d0e8fc; }
+        .noti-dot { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background-color: #E95C68; border-radius: 50%; }
+        
+        /* Notification Dropdown */
+        .noti-dropdown { position: absolute; top: 70px; right: 30px; width: 320px; background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(6,51,118,0.12); border: 1px solid #D8E7F4; padding: 15px; display: none; z-index: 100; }
+        .noti-dropdown.show { display: block; }
+        .noti-header { font-size: 14px; font-weight: 700; color: #063376; padding-bottom: 10px; border-bottom: 1px solid #F4F7FC; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .noti-item { font-size: 13px; color: #17345C; padding: 8px 0; border-bottom: 1px solid #F4F7FC; }
+        .noti-item small { color: #71829B; display: block; font-size: 11px; margin-top: 2px; }
+
+        /* ================= Content & Views ================= */
+        .content-scroll { flex: 1; overflow-y: auto; padding: 25px 30px; }
+        .view-section { display: none; flex-direction: column; gap: 20px; animation: fadeIn 0.25s ease; }
+        .view-section.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px; }
+        .page-header h1 { color: #063376; font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+        .page-header p { color: #71829B; font-size: 14px; }
+        .term-badge { background-color: #fff; border: 1px solid #D8E7F4; color: #17345C; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+
+        /* Stats Row */
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .stat-box { padding: 18px 20px; border-radius: 16px; display: flex; align-items: center; gap: 15px; background: #fff; box-shadow: 0 4px 12px rgba(6, 51, 118, 0.03); }
+        .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 22px; }
+        .stat-info h4 { font-size: 24px; font-weight: 700; color: #063376; }
+        .stat-info p { font-size: 13px; color: #71829B; margin-top: 2px; }
+        .bg-blue { background-color: #E7F3FE; } .text-blue { color: #288CF0; }
+        .bg-green { background-color: #E4F7F0; } .text-green { color: #20A873; }
+        .bg-orange { background-color: #FFF3DD; } .text-orange { color: #F2A93B; }
+        .bg-purple { background-color: #F3E8FF; } .text-purple { color: #9333EA; }
+
+        /* Cards & Tables */
+        .card { background-color: #fff; border-radius: 18px; padding: 25px; box-shadow: 0 6px 18px rgba(6, 51, 118, 0.05); display: flex; flex-direction: column; gap: 20px; }
+        .card-title { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .card-title h3 { color: #063376; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .card-title p { color: #71829B; font-size: 13px; }
+
+        .filter-tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .search-box { position: relative; }
+        .search-box i { position: absolute; left: 15px; top: 12px; color: #71829B; }
+        .search-box input { padding: 10px 15px 10px 40px; border-radius: 12px; border: 1px solid #D8E7F4; outline: none; font-size: 14px; width: 230px; transition: 0.3s; }
+        .search-box input:focus { border-color: #288CF0; box-shadow: 0 0 0 3px rgba(40,140,240,0.1); }
+        .filter-select { padding: 10px 15px; border-radius: 12px; border: 1px solid #D8E7F4; outline: none; font-size: 14px; color: #063376; background-color: #fff; cursor: pointer; }
+
+        .btn-primary { background-color: #288CF0; color: #fff; padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: 0.25s; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(40, 140, 240, 0.2); }
+        .btn-primary:hover { background-color: #1e70c4; transform: translateY(-1px); }
+        .btn-success { background-color: #20A873; color: #fff; padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-danger { background-color: #FDEBED; color: #E95C68; padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-danger:hover { background-color: #E95C68; color: #fff; }
+
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background-color: #F4F7FC; padding: 14px 15px; color: #71829B; font-size: 13px; font-weight: 700; white-space: nowrap; }
+        td { padding: 14px 15px; border-bottom: 1px solid #D8E7F4; font-size: 14px; color: #17345C; font-weight: 500; vertical-align: middle; }
+        tr:hover td { background-color: #f9fbff; }
+        
+        .room-code-badge { background-color: #063376; color: #fff; padding: 5px 12px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 700; letter-spacing: 1px; font-size: 13px; }
+        .btn-action { padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; cursor: pointer; border: none; }
+        .btn-primary-sm { background-color: #288CF0; color: #fff; }
+        .btn-primary-sm:hover { background-color: #1e70c4; }
+        .btn-outline-sm { background-color: #fff; border: 1px solid #D8E7F4; color: #063376; }
+        .btn-outline-sm:hover { background-color: #F4F7FC; }
+
+        /* ================= Form & Settings Styles ================= */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-label { color: #063376; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .form-label i { color: #288CF0; }
+        .form-input, .form-textarea { width: 100%; padding: 12px 15px; border-radius: 12px; border: 1px solid #A0D5FA; font-size: 15px; color: #063376; outline: none; }
+        .form-input:focus, .form-textarea:focus { border-color: #288CF0; box-shadow: 0 0 0 3px rgba(40,140,240,0.1); }
+        
+        .pill-options { display: flex; gap: 10px; }
+        .radio-hidden { display: none; }
+        .pill-btn { flex: 1; height: 45px; border: 1px solid #A0D5FA; border-radius: 12px; display: flex; justify-content: center; align-items: center; color: #6F8DBA; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .radio-hidden:checked + .pill-btn { background-color: #288CF0; color: #fff; border-color: #288CF0; }
+
+        .counter-box { display: inline-flex; align-items: center; background: #EBF5FE; border-radius: 12px; padding: 5px; gap: 15px; width: fit-content; }
+        .counter-btn { width: 35px; height: 35px; border: none; border-radius: 8px; background: #fff; color: #288CF0; font-size: 16px; cursor: pointer; font-weight: 700; }
+        .counter-btn.plus { background: #288CF0; color: #fff; }
+        .counter-value { color: #063376; font-size: 18px; font-weight: 700; width: 40px; text-align: center; border: none; background: transparent; }
+
+        /* ================= Live Room Styles ================= */
+        .room-banner { background: linear-gradient(135deg, #063376 0%, #1e5bb0 100%); border-radius: 20px; padding: 25px 30px; color: #fff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .code-box { background-color: rgba(255,255,255,0.15); border: 2px dashed rgba(255,255,255,0.4); padding: 8px 22px; border-radius: 14px; font-family: 'Inter', sans-serif; font-size: 32px; font-weight: 800; letter-spacing: 3px; cursor: pointer; transition: 0.2s; }
+        .code-box:hover { background-color: #fff; color: #063376; }
+        .live-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .progress-wrapper { width: 100%; background-color: #E7F3FE; border-radius: 10px; height: 8px; overflow: hidden; }
+        .progress-bar { height: 100%; background-color: #288CF0; border-radius: 10px; transition: width 0.3s ease; }
+        .rank-circle { width: 28px; height: 28px; background-color: #F4F7FC; color: #063376; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: 700; font-size: 13px; }
+        .rank-1 { background-color: #FFF3DD; color: #F2A93B; }
+        .rank-2 { background-color: #E2E8F0; color: #475569; }
+        .rank-3 { background-color: #FDF0E6; color: #D28E5D; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(6, 51, 118, 0.4); display: none; justify-content: center; align-items: center; z-index: 200; }
+        .modal-overlay.show { display: flex; }
+        .modal-card { background: #fff; width: 100%; max-width: 460px; border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 15px 40px rgba(0,0,0,0.15); }
+
+        @media (max-width: 960px) {
+            body { flex-direction: column; overflow: auto; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 2px solid #D8E7F4; }
+            .menu-list { flex-direction: row; overflow-x: auto; white-space: nowrap; }
+            .form-grid, .live-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ================= SIDEBAR (ครบทุกเมนูตามคอมเมนต์) ================= -->
+    <aside class="sidebar">
+        <div class="brand" onclick="switchView('overview')">
+            <div class="brand-icon"><i class="fa-regular fa-keyboard"></i></div>
+            <div class="brand-text"><h2>ห้องเรียนฝึกพิมพ์</h2><p>ระบบจัดการสำหรับอาจารย์</p></div>
+        </div>
+        <div class="user-profile">
+            <div class="avatar">ธพ</div>
+            <div class="user-info">
+                <div class="name">อ.ธนภัทร ดิษฐสโร</div>
+                <div class="role">อาจารย์ผู้สอน</div>
+            </div>
+        </div>
+
+        <div class="menu-label">เมนูจัดการหลัก</div>
+        <div class="menu-list">
+            <button class="menu-item active" data-target="overview" onclick="switchView('overview')">
+                <i class="fa-solid fa-border-all"></i> ภาพรวมห้องเรียน
+            </button>
+            <button class="menu-item" data-target="create-room" onclick="switchView('create-room')">
+                <i class="fa-solid fa-plus-circle"></i> สร้างห้องเรียนใหม่
+            </button>
+            <button class="menu-item" data-target="live-monitor" onclick="switchView('live-monitor')">
+                <i class="fa-solid fa-tower-broadcast"></i> ติดตามผลการแข่งขัน
+                <span class="badge-count" id="sidebar-live-badge">1</span>
+            </button>
+            <button class="menu-item" data-target="students" onclick="switchView('students')">
+                <i class="fa-solid fa-users"></i> จัดการนักเรียน
+            </button>
+            <button class="menu-item" data-target="history" onclick="switchView('history')">
+                <i class="fa-solid fa-clock-rotate-left"></i> ประวัติการพิมพ์
+            </button>
+            <button class="menu-item" data-target="settings" onclick="switchView('settings')">
+                <i class="fa-solid fa-sliders"></i> การตั้งค่าห้องเรียน
+            </button>
+        </div>
+
+        <div class="sidebar-footer">
+            <div><span class="status-dot"></span>สถานะระบบ: ออนไลน์</div>
+            <span style="opacity: 0.6;">v2.0</span>
+        </div>
+    </aside>
+
+    <!-- ================= MAIN WRAPPER ================= -->
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="breadcrumb">
+                อาจารย์ <i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i> <span id="breadcrumb-current">ภาพรวมห้องเรียน</span>
+            </div>
+            <div class="top-actions">
+                <div class="status-badge live" id="topbar-live-count" onclick="switchView('live-monitor')">
+                    กำลังเปิดห้องเรียน 1 ห้อง
+                </div>
+                <button class="btn-noti" onclick="toggleNoti()">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="noti-dot" id="notiDot"></span>
+                </button>
+            </div>
+
+            <!-- กล่องแจ้งเตือน -->
+            <div class="noti-dropdown" id="notiDropdown">
+                <div class="noti-header">
+                    <span>การแจ้งเตือนล่าสุด</span>
+                    <a href="javascript:void(0)" onclick="clearNoti()" style="font-size: 12px; color: #288CF0; text-decoration: none;">อ่านทั้งหมด</a>
+                </div>
+                <div id="notiList">
+                    <div class="noti-item">🟢 ห้อง <b>TYPE-99X</b> กำลังเปิดใช้งาน (24 คน)<small>เมื่อสักครู่</small></div>
+                    <div class="noti-item">📊 บันทึกผลคะแนนห้อง <b>CODE-452</b> สำเร็จ<small>1 ชั่วโมงที่แล้ว</small></div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content-scroll">
+
+            <!-- ========================================================== -->
+            <!-- VIEW 1: ภาพรวมห้องเรียน (Dashboard Overview)                 -->
+            <!-- ========================================================== -->
+            <section id="view-overview" class="view-section active">
+                <div class="page-header">
+                    <div>
+                        <h1>ภาพรวมห้องเรียนฝึกพิมพ์</h1>
+                        <p>เข้าถึงทุกเมนูจัดการ สร้างห้องใหม่ หรือติดตามการแข่งขันสดได้จากหน้านี้</p>
+                    </div>
+                    <div class="term-badge"><i class="fa-regular fa-calendar-check" style="color: #288CF0;"></i> ภาคเรียนที่ 1 / 2569</div>
+                </div>
+
+                <!-- แถบทางลัดเข้าถึงด่วน (Quick Access Cards) -->
+                <div class="stats-row">
+                    <div class="stat-box" style="cursor: pointer;" onclick="switchView('overview')">
+                        <div class="stat-icon bg-blue text-blue"><i class="fa-solid fa-chalkboard-user"></i></div>
+                        <div class="stat-info">
+                            <h4 id="stat-total-rooms">3 ห้อง</h4>
+                            <p>ห้องเรียนในตาราง</p>
+                        </div>
+                    </div>
+                    <div class="stat-box" style="cursor: pointer;" onclick="switchView('students')">
+                        <div class="stat-icon bg-green text-green"><i class="fa-solid fa-users"></i></div>
+                        <div class="stat-info">
+                            <h4 id="stat-active-students">104 คน</h4>
+                            <p>นักเรียนที่เข้าร่วมทั้งหมด</p>
+                        </div>
+                    </div>
+                    <div class="stat-box" style="cursor: pointer;" onclick="switchView('history')">
+                        <div class="stat-icon bg-orange text-orange"><i class="fa-solid fa-gauge-high"></i></div>
+                        <div class="stat-info">
+                            <h4>68 WPM</h4>
+                            <p>ความเร็วเฉลี่ยรวมทุกห้อง</p>
+                        </div>
+                    </div>
+                    <div class="stat-box" style="cursor: pointer;" onclick="switchView('create-room')">
+                        <div class="stat-icon bg-purple text-purple"><i class="fa-solid fa-plus"></i></div>
+                        <div class="stat-info">
+                            <h4 style="font-size: 18px; color: #9333EA;">+ สร้างห้องใหม่</h4>
+                            <p>คลิกเพื่อตั้งค่าเปิดห้องทันที</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">
+                        <div>
+                            <h3>รายชื่อห้องเรียนทั้งหมด</h3>
+                            <p>คลิกที่ป้ายสถานะเพื่อ เปิด/ปิด ห้องด่วน หรือกด "ดูข้อมูล / Live" เพื่อเข้าควบคุมห้อง</p>
+                        </div>
+                        <div class="filter-tools">
+                            <div class="search-box">
+                                <i class="fa-solid fa-search"></i>
+                                <input type="text" id="searchInput" placeholder="ค้นหารหัส หรือชื่อห้อง...">
+                            </div>
+                            <select id="statusFilter" class="filter-select">
+                                <option value="all">สถานะทั้งหมด</option>
+                                <option value="live">เฉพาะที่กำลังเปิด (Live)</option>
+                                <option value="closed">ปิดการสอนแล้ว</option>
+                            </select>
+                            <button class="btn-primary" onclick="switchView('create-room')">
+                                <i class="fa-solid fa-plus"></i> สร้างห้องใหม่
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="roomsTable">
+                            <thead>
+                                <tr>
+                                    <th>รหัสเข้าห้อง</th>
+                                    <th>ชื่อห้องเรียน</th>
+                                    <th>หมวดหมู่</th>
+                                    <th>เวลา</th>
+                                    <th>สถานะ (คลิกสลับได้)</th>
+                                    <th>ผู้เข้าร่วม</th>
+                                    <th>จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="roomsTableBody">
+                                <tr class="room-row" data-status="live" data-code="TYPE-99X" data-name="สอบเก็บคะแนน Midterm" data-cat="คำศัพท์ทั่วไป" data-time="60">
+                                    <td><span class="room-code-badge">TYPE-99X</span></td>
+                                    <td style="font-weight: 700; color: #063376;">สอบเก็บคะแนน Midterm</td>
+                                    <td>คำศัพท์ทั่วไป</td>
+                                    <td>60 วิ</td>
+                                    <td><span class="status-badge live toggle-status-btn">เปิด (Live)</span></td>
+                                    <td class="student-count">24 คน</td>
+                                    <td>
+                                        <button class="btn-action btn-primary-sm" onclick="openLiveRoom('TYPE-99X', 'สอบเก็บคะแนน Midterm', 'คำศัพท์ทั่วไป', 60)">
+                                            <i class="fa-solid fa-tower-broadcast"></i> คุมห้องสอบ Live
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="room-row" data-status="closed" data-code="CODE-452" data-name="แบบฝึกหัด Python Syntax" data-cat="คำศัพท์ Coding" data-time="120">
+                                    <td><span class="room-code-badge" style="background-color: #71829B;">CODE-452</span></td>
+                                    <td style="font-weight: 700; color: #063376;">แบบฝึกหัด Python Syntax</td>
+                                    <td>คำศัพท์ Coding</td>
+                                    <td>120 วิ</td>
+                                    <td><span class="status-badge closed toggle-status-btn"><i class="fa-solid fa-power-off"></i> ปิดแล้ว</span></td>
+                                    <td class="student-count">42 คน</td>
+                                    <td>
+                                        <button class="btn-action btn-outline-sm" onclick="openLiveRoom('CODE-452', 'แบบฝึกหัด Python Syntax', 'คำศัพท์ Coding', 120)">
+                                            <i class="fa-solid fa-chart-simple"></i> ดูผลคะแนน
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="room-row" data-status="closed" data-code="JAVA-881" data-name="ทบทวนก่อนสอบ Java" data-cat="คำศัพท์ Coding" data-time="60">
+                                    <td><span class="room-code-badge" style="background-color: #71829B;">JAVA-881</span></td>
+                                    <td style="font-weight: 700; color: #063376;">ทบทวนก่อนสอบ Java</td>
+                                    <td>คำศัพท์ Coding</td>
+                                    <td>60 วิ</td>
+                                    <td><span class="status-badge closed toggle-status-btn"><i class="fa-solid fa-power-off"></i> ปิดแล้ว</span></td>
+                                    <td class="student-count">38 คน</td>
+                                    <td>
+                                        <button class="btn-action btn-outline-sm" onclick="openLiveRoom('JAVA-881', 'ทบทวนก่อนสอบ Java', 'คำศัพท์ Coding', 60)">
+                                            <i class="fa-solid fa-chart-simple"></i> ดูผลคะแนน
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================== -->
+            <!-- VIEW 2: สร้างห้องเรียนใหม่ (Create Room)                       -->
+            <!-- ========================================================== -->
+            <section id="view-create-room" class="view-section">
+                <div class="page-header">
+                    <div>
+                        <h1>ตั้งค่าก่อนเปิดห้องเรียนใหม่</h1>
+                        <p>กำหนดรูปแบบการฝึกพิมพ์เพื่อสร้างรหัสห้อง (Room Code) ให้นักเรียนเข้าร่วม</p>
+                    </div>
+                    <button class="btn-action btn-outline-sm" onclick="switchView('overview')">
+                        <i class="fa-solid fa-arrow-left"></i> กลับหน้าภาพรวม
+                    </button>
+                </div>
+
+                <form class="card" id="createRoomForm" onsubmit="handleCreateRoom(event)">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fa-solid fa-font"></i> ชื่อห้องเรียน</label>
+                        <input type="text" id="newRoomName" class="form-input" value="ห้องฝึกพิมพ์ พื้นฐานคอมพิวเตอร์" required maxlength="50" placeholder="ระบุชื่อห้องเรียน...">
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fa-solid fa-list"></i> หมวดหมู่คำศัพท์</label>
+                            <div class="pill-options">
+                                <label style="flex: 1;"><input type="radio" name="category" value="คำศัพท์ทั่วไป" class="radio-hidden" checked onchange="updateSummary()"><div class="pill-btn">คำศัพท์ทั่วไป</div></label>
+                                <label style="flex: 1;"><input type="radio" name="category" value="คำศัพท์ Coding" class="radio-hidden" onchange="updateSummary()"><div class="pill-btn">โค้ด (Coding)</div></label>
+                                <label style="flex: 1;"><input type="radio" name="category" value="แบบผสม" class="radio-hidden" onchange="updateSummary()"><div class="pill-btn">รวมหมวดหมู่</div></label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label"><i class="fa-regular fa-clock"></i> ระยะเวลาในการสอบ</label>
+                            <div class="pill-options">
+                                <label style="flex: 1;"><input type="radio" name="duration" value="30" class="radio-hidden" onchange="updateSummary()"><div class="pill-btn">30 วิ</div></label>
+                                <label style="flex: 1;"><input type="radio" name="duration" value="60" class="radio-hidden" checked onchange="updateSummary()"><div class="pill-btn">60 วิ</div></label>
+                                <label style="flex: 1;"><input type="radio" name="duration" value="120" class="radio-hidden" onchange="updateSummary()"><div class="pill-btn">120 วิ</div></label>
+                                <label style="flex: 1;"><input type="radio" name="duration" value="180" class="radio-hidden" onchange="updateSummary()"><div class="pill-btn">180 วิ</div></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="flex-direction: row; justify-content: space-between; align-items: center; background: #F4F7FC; padding: 15px 20px; border-radius: 14px;">
+                        <div>
+                            <div class="form-label"><i class="fa-solid fa-users"></i> จำนวนผู้เข้าร่วมสูงสุด</div>
+                            <span style="font-size: 13px; color: #71829B;">รองรับผู้เรียนในห้องนี้ได้สูงสุด 60 คน</span>
+                        </div>
+                        <div class="counter-box">
+                            <button type="button" class="counter-btn" onclick="updateCount(-5)">-</button>
+                            <input type="text" id="participantCount" class="counter-value" value="30" readonly>
+                            <span style="color: #6F8DBA; font-size: 14px; font-weight: 600; padding-right: 8px;">คน</span>
+                            <button type="button" class="counter-btn plus" onclick="updateCount(5)">+</button>
+                        </div>
+                    </div>
+
+                    <div style="background-color: #EBF5FE; border-radius: 12px; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="color: #063376; font-weight: 600;">
+                            <i class="fa-solid fa-circle-check" style="color: #20A873; margin-right: 8px;"></i>
+                            สรุปการตั้งค่า: <span id="summaryText">คำศัพท์ทั่วไป • 60 วิ • สูงสุด 30 คน</span>
+                        </div>
+                        <span class="status-badge">พร้อมเปิดห้อง</span>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="justify-content: center; height: 54px; font-size: 17px;">
+                        <i class="fa-solid fa-door-open"></i> สร้างห้องเรียนและเปิดรหัสเข้าห้อง
+                    </button>
+                </form>
+            </section>
+
+            <!-- ========================================================== -->
+            <!-- VIEW 3: ติดตามผลการแข่งขันสด (Live Monitor / Manage Room)   -->
+            <!-- ========================================================== -->
+            <section id="view-live-monitor" class="view-section">
+                <div class="room-banner">
+                    <div>
+                        <span style="background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">LIVE MONITOR</span>
+                        <h1 id="liveRoomTitle" style="font-size: 26px; margin-top: 8px;">สอบเก็บคะแนน Midterm</h1>
+                        <p id="liveRoomSub" style="opacity: 0.85; font-size: 14px; margin-top: 4px;">
+                            <i class="fa-solid fa-book"></i> หมวดหมู่: คำศัพท์ทั่วไป &nbsp;|&nbsp; <i class="fa-regular fa-clock"></i> เวลา: 60 วินาที
+                        </p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">รหัสเข้าห้อง (คลิกเพื่อคัดลอก)</div>
+                        <div class="code-box" id="liveRoomCode" onclick="copyRoomCode()">TYPE-99X</div>
+                    </div>
+                </div>
+
+                <!-- แถบควบคุมเวลาและการเริ่มสอบ -->
+                <div class="card" style="flex-direction: row; justify-content: space-between; align-items: center; padding: 18px 25px;">
+                    <div style="display: flex; align-items: center; gap: 12px; font-size: 28px; font-weight: 800; color: #063376; font-family: 'Inter', sans-serif;">
+                        <i class="fa-solid fa-stopwatch" style="color: #F2A93B;"></i>
+                        <span id="liveTimerDisplay">01:00</span>
+                    </div>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button class="btn-Action btn-outline-sm" onclick="simulateStudentJoin()">
+                            <i class="fa-solid fa-user-plus"></i> จำลองนักเรียนเข้าห้อง
+                        </button>
+                        <button class="btn-success" id="btnStartMatch" onclick="startLiveMatch()">
+                            <i class="fa-solid fa-play"></i> เริ่มการแข่งขัน
+                        </button>
+                        <button class="btn-danger" onclick="endLiveMatch()">
+                            <i class="fa-solid fa-power-off"></i> จบและบันทึกผล
+                        </button>
+                    </div>
+                </div>
+
+                <div class="live-grid">
+                    <!-- ตาราง Leaderboard สด -->
+                    <div class="card">
+                        <div class="card-title">
+                            <h3><i class="fa-solid fa-trophy" style="color: #F2A93B;"></i> กระดานคะแนนสด (Real-time Leaderboard)</h3>
+                            <span class="status-badge" id="livePlayerBadge">ผู้เข้าแข่งขัน 3 คน</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>อันดับ</th>
+                                        <th>ชื่อนักเรียน</th>
+                                        <th>ความเร็ว (WPM)</th>
+                                        <th>ความแม่นยำ</th>
+                                        <th>ความคืบหน้า</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="liveLeaderboardBody">
+                                    <!-- Render by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ห้องพักคอย (Lobby) -->
+                    <div class="card">
+                        <div class="card-title">
+                            <h3><i class="fa-solid fa-person-shelter" style="color: #288CF0;"></i> ห้องพักคอย (Lobby)</h3>
+                        </div>
+                        <div id="liveLobbyList" style="display: flex; flex-direction: column; gap: 10px; max-height: 360px; overflow-y: auto;">
+                            <!-- Render by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================== -->
+            <!-- VIEW 4: จัดการนักเรียน (Student Management)                  -->
+            <!-- ========================================================== -->
+            <section id="view-students" class="view-section">
+                <div class="page-header">
+                    <div>
+                        <h1>จัดการข้อมูลนักเรียน</h1>
+                        <p>ดูรายชื่อนักเรียนทั้งหมด เพิ่มรายชื่อใหม่ หรือตรวจสอบสถิติรายบุคคล</p>
+                    </div>
+                    <button class="btn-primary" onclick="openStudentModal()">
+                        <i class="fa-solid fa-user-plus"></i> เพิ่มนักเรียนใหม่
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">
+                        <div>
+                            <h3>รายชื่อนักเรียนในระบบ (<span id="studentTotalCount">4</span> คน)</h3>
+                        </div>
+                        <div class="filter-tools">
+                            <div class="search-box">
+                                <i class="fa-solid fa-search"></i>
+                                <input type="text" id="studentSearchInput" placeholder="ค้นหารหัส หรือชื่อนักเรียน..." oninput="renderStudents()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>รหัสนักเรียน</th>
+                                    <th>ชื่อ - นามสกุล</th>
+                                    <th>ชั้นเรียน / กลุ่ม</th>
+                                    <th>เข้าสอบแล้ว</th>
+                                    <th>WPM เฉลี่ย</th>
+                                    <th>ความแม่นยำเฉลี่ย</th>
+                                    <th>จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentTableBody">
+                                <!-- Render by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================== -->
+            <!-- VIEW 5: ประวัติการพิมพ์ (Typing History & Reports)           -->
+            <!-- ========================================================== -->
+            <section id="view-history" class="view-section">
+                <div class="page-header">
+                    <div>
+                        <h1>ประวัติการพิมพ์และรายงานผลคะแนน</h1>
+                        <p>ตรวจสอบผลการแข่งขันย้อนหลังของแต่ละห้องเรียนและส่งออกเป็นไฟล์ CSV</p>
+                    </div>
+                    <button class="btn-primary" onclick="exportHistoryCSV()">
+                        <i class="fa-solid fa-file-csv"></i> ส่งออกรายงาน (Export CSV)
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">
+                        <div>
+                            <h3>บันทึกประวัติการแข่งขันทั้งหมด</h3>
+                        </div>
+                        <div class="filter-tools">
+                            <select id="historyRoomFilter" class="filter-select" onchange="renderHistory()">
+                                <option value="all">ทุกห้องเรียน</option>
+                                <option value="TYPE-99X">TYPE-99X (สอบเก็บคะแนน Midterm)</option>
+                                <option value="CODE-452">CODE-452 (แบบฝึกหัด Python Syntax)</option>
+                                <option value="JAVA-881">JAVA-881 (ทบทวนก่อนสอบ Java)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>วันที่ - เวลา</th>
+                                    <th>รหัสห้อง</th>
+                                    <th>ชื่อนักเรียน</th>
+                                    <th>ความเร็ว (WPM)</th>
+                                    <th>ความแม่นยำ (%)</th>
+                                    <th>สถานะผลการประเมิน</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <!-- Render by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================== -->
+            <!-- VIEW 6: การตั้งค่าห้องเรียน (Classroom Settings)              -->
+            <!-- ========================================================== -->
+            <section id="view-settings" class="view-section">
+                <div class="page-header">
+                    <div>
+                        <h1>การตั้งค่าห้องเรียนและเกณฑ์การให้คะแนน</h1>
+                        <p>กำหนดค่าเริ่มต้นของห้องเรียน เกณฑ์ผ่านขั้นต่ำ และคลังคำศัพท์สำหรับการทดสอบ</p>
+                    </div>
+                </div>
+
+                <form class="card" onsubmit="saveSettings(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fa-solid fa-gauge"></i> เกณฑ์ความเร็วผ่านขั้นต่ำ (WPM)</label>
+                            <input type="number" id="settingMinWpm" class="form-input" value="45" min="10" max="150">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><i class="fa-solid fa-bullseye"></i> เกณฑ์ความแม่นยำขั้นต่ำ (%)</label>
+                            <input type="number" id="settingMinAcc" class="form-input" value="85" min="50" max="100">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><i class="fa-solid fa-book-open"></i> คลังคำศัพท์กำหนดเอง (คั่นด้วยเครื่องหมายจุลภาค ,)</label>
+                        <textarea id="settingCustomWords" class="form-textarea" rows="4">function, variable,array, python, database, network, algorithm, interface, frontend, backend, socket, template</textarea>
+                    </div>
+
+                    <div class="form-group" style="gap: 12px;">
+                        <label class="form-label"><i class="fa-solid fa-shield-halved"></i> ระบบควบคุมการสอบ</label>
+                        <label style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: #17345C; cursor: pointer;">
+                            <input type="checkbox" checked style="width: 18px; height: 18px;"> ป้องกันการกด Copy / Paste ในหน้าจอของนักเรียน
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: #17345C; cursor: pointer;">
+                            <input type="checkbox" checked style="width: 18px; height: 18px;"> แสดงอันดับ Leaderboard แบบเรียลไทม์ให้นักเรียนเห็นระหว่างพิมพ์
+                        </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button type="submit" class="btn-primary">
+                            <i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่าทั้งหมด
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ================= MODAL: เพิ่มนักเรียนใหม่ ================= -->
+    <div class="modal-overlay" id="studentModal">
+        <div class="modal-card">
+            <h3 style="color: #063376; font-size: 18px;">เพิ่มรายชื่อนักเรียนใหม่</h3>
+            <div class="form-group">
+                <label class="form-label" style="font-size: 14px;">รหัสนักเรียน / รหัสนักศึกษา</label>
+                <input type="text" id="modalStudentId" class="form-input" placeholder="เช่น 68030116">
+            </div>
+            <div class="form-group">
+                <label class="form-label" style="font-size: 14px;">ชื่อ - นามสกุล</label>
+                <input type="text" id="modalStudentName" class="form-input" placeholder="เช่น กัญญารัตน์ ศรีสุข">
+            </div>
+            <div class="form-group">
+                <label class="form-label" style="font-size: 14px;">ชั้นเรียน / กลุ่มเรียน</label>
+                <input type="text" id="modalStudentGroup" class="form-input" value="ทค.2/1">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                <button class="btn-action btn-outline-sm" onclick="closeStudentModal()">ยกเลิก</button>
+                <button class="btn-primary" onclick="addStudent()">บันทึกข้อมูล</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT CONTROLLER ================= -->
+    <script>
+        // 1. ข้อมูลจำลองสำหรับหน้าจัดการนักเรียน, ประวัติการพิมพ์ และ Live Leaderboard
+        let studentsData = [
+            { id: '68030101', name: 'กัญญารัตน์ ศรีสุข', group: 'ทค.2/1', tests: 5, wpm: 82, acc: 98.2 },
+            { id: '68030102', name: 'ธนกฤต วงศ์สวัสดิ์', group: 'ทค.2/1', tests: 5, wpm: 75, acc: 95.0 },
+            { id: '68030103', name: 'สมชาย ใจดี', group: 'ทค.2/1', tests: 4, wpm: 60, acc: 90.1 },
+            { id: '68030104', name: 'ณัฐวุฒิ เก่งกาจ', group: 'ทค.2/2', tests: 3, wpm: 54, acc: 88.5 }
+        ];
+
+        let historyData = [
+            { date: '31/10/2569 14:20', room: 'TYPE-99X', name: 'กัญญารัตน์ ศรีสุข', wpm: 82, acc: 98.2 },
+            { date: '31/10/2569 14:20', room: 'TYPE-99X', name: 'ธนกฤต วงศ์สวัสดิ์', wpm: 75, acc: 95.0 },
+            { date: '29/10/2569 10:15', room: 'CODE-452', name: 'สมชาย ใจดี', wpm: 60, acc: 90.1 },
+            { date: '25/10/2569 09:30', room: 'JAVA-881', name: 'ณัฐวุฒิ เก่งกาจ', wpm: 54, acc: 88.5 }
+        ];
+
+        let livePlayers = [
+            { name: 'กัญญารัตน์ ศรีสุข', initials: 'กศ', wpm: 82, acc: 98.2, progress: 80 },
+            { name: 'ธนกฤต วงศ์สวัสดิ์', initials: 'ธว', wpm: 75, acc: 95.0, progress: 65 },
+            { name: 'สมชาย ใจดี', initials: 'สจ', wpm: 60, acc: 90.1, progress: 50 }
+        ];
+
+        let liveTimerInterval = null;
+        let currentRoomDuration = 60;
+
+        // 2. ฟังก์ชันสลับหน้า (Navigation สำหรับเมนูซ้ายทั้งหมด)
+        const viewTitles = {
+            'overview': 'ภาพรวมห้องเรียน',
+            'create-room': 'สร้างห้องเรียนใหม่',
+            'live-monitor': 'ติดตามผลการแข่งขัน (Live)',
+            'students': 'จัดการนักเรียน',
+            'history': 'ประวัติการพิมพ์',
+            'settings': 'การตั้งค่าห้องเรียน'
+        };
+
+        function switchView(targetId) {
+            // ซ่อนทุกหน้าและแสดงหน้าที่เลือก
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById(`view-${targetId}`).classList.add('active');
+
+            // อัปเดตปุ่ม Active ที่ Sidebar
+            document.querySelectorAll('.menu-item').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.target === targetId);
+            });
+
+            // อัปเดต Breadcrumb
+            document.getElementById('breadcrumb-current').innerText = viewTitles[targetId] || 'จัดการห้องเรียน';
+        }
+
+        // 3. ฟังก์ชันค้นหา กรอง และสลับสถานะห้องในหน้า Overview
+        function updateDashboard() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filterValue = document.getElementById('statusFilter').value;
+            const rows = document.querySelectorAll('.room-row');
+            
+            let visibleRooms = 0;
+            let totalStudents = 0;
+            let totalLiveRooms = 0;
+
+            rows.forEach(row => {
+                const roomCode = row.dataset.code.toLowerCase();
+                const roomName = row.dataset.name.toLowerCase();
+                const currentStatus = row.dataset.status;
+                const studentCount = parseInt(row.querySelector('.student-count').innerText.replace(/[^0-9]/g, '')) || 0;
+
+                const matchSearch = roomCode.includes(searchTerm) || roomName.includes(searchTerm);
+                const matchFilter = (filterValue === 'all') || (filterValue === currentStatus);
+
+                if (matchSearch && matchFilter) {
+                    row.style.display = '';
+                    visibleRooms++;
+                    totalStudents += studentCount;
+                } else {
+                    row.style.display = 'none';
+                }
+
+                if (currentStatus === 'live') totalLiveRooms++;
+            });
+
+            document.getElementById('stat-total-rooms').innerText = `${visibleRooms} ห้อง`;
+            document.getElementById('stat-active-students').innerText = `${totalStudents} คน`;
+            document.getElementById('sidebar-live-badge').innerText = totalLiveRooms;
+            
+            const topbarLive = document.getElementById('topbar-live-count');
+            if (totalLiveRooms > 0) {
+                topbarLive.style.display = 'inline-flex';
+                topbarLive.innerText = `กำลังเปิดห้องเรียน ${totalLiveRooms} ห้อง`;
+            } else {
+                topbarLive.style.display = 'none';
+            }
+        }
+
+        function bindToggleStatusEvents() {
+            document.querySelectorAll('.toggle-status-btn').forEach(btn => {
+                btn.onclick = function() {
+                    const row = this.closest('tr');
+                    const badge = row.querySelector('.room-code-badge');
+                    if (row.dataset.status === 'live') {
+                        row.dataset.status = 'closed';
+                        badge.style.backgroundColor = '#71829B';
+                        this.className = 'status-badge closed toggle-status-btn';
+                        this.innerHTML = '<i class="fa-solid fa-power-off"></i> ปิดแล้ว';
+                    } else {
+                        row.dataset.status = 'live';
+                        badge.style.backgroundColor = '#063376';
+                        this.className = 'status-badge live toggle-status-btn';
+                        this.innerHTML = 'เปิด (Live)';
+                    }
+                    updateDashboard();
+                };
+            });
+        }
+
+        // 4. ฟังก์ชันหน้าสร้างห้องเรียนใหม่ (Create Room)
+        function updateCount(change) {
+            const countInput = document.getElementById('participantCount');
+            let newCount = parseInt(countInput.value) + change;
+            if (newCount >= 5 && newCount <= 60) {
+                countInput.value = newCount;
+                updateSummary();
+            }
+        }
+
+        function updateSummary() {
+            const count = document.getElementById('participantCount').value;
+            const category = document.querySelector('input[name="category"]:checked').value;
+            const duration = document.querySelector('input[name="duration"]:checked').value;
+            document.getElementById('summaryText').innerText = `${category} • ${duration} วิ • สูงสุด ${count} คน`;
+        }
+
+        async function handleCreateRoom(e) {
+            e.preventDefault();
+            const roomName = document.getElementById('newRoomName').value;
+            const category = document.querySelector('input[name="category"]:checked').value;
+            const duration = parseInt(document.querySelector('input[name="duration"]:checked').value);
+            const maxPlayers = document.getElementById('participantCount').value;
+
+            // สุ่มสร้างรหัสห้องใหม่
+            const randomCode = 'ROOM-' + Math.floor(100 + Math.random() * 900);
+
+            /* 
+            // โค้ดสำหรับยิงไปที่ Backend Flask API ของจริง:
+            const res = await fetch('/api/teacher/rooms', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ room_name: roomName, category, duration, max_participants: maxPlayers })
+            });
+            */
+
+            // เพิ่มแถวใหม่ลงในตาราง Dashboard ทันที
+            const tbody = document.getElementById('roomsTableBody');
+            const tr = document.createElement('tr');
+            tr.className = 'room-row';
+            tr.dataset.status = 'live';
+            tr.dataset.code = randomCode;
+            tr.dataset.name = roomName;
+            tr.dataset.cat = category;
+            tr.dataset.time = duration;
+            tr.innerHTML = `
+                <td><span class="room-code-badge">${randomCode}</span></td>
+                <td style="font-weight: 700; color: #063376;">${roomName}</td>
+                <td>${category}</td>
+                <td>${duration} วิ</td>
+                <td><span class="status-badge live toggle-status-btn">เปิด (Live)</span></td>
+                <td class="student-count">0 คน</td>
+                <td>
+                    <button class="btn-action btn-primary-sm" onclick="openLiveRoom('${randomCode}', '${roomName}', '${category}', ${duration})">
+                        <i class="fa-solid fa-tower-broadcast"></i> คุมห้องสอบ Live
+                    </button>
+                </td>
+            `;
+            tbody.prepend(tr);
+            bindToggleStatusEvents();
+            updateDashboard();
+
+            // พาไปหน้าคุมห้อง Live ทันที
+            openLiveRoom(randomCode, roomName, category, duration);
+        }
+
+        // 5. ฟังก์ชันหน้าควบคุมการแข่งขันสด (Live Monitor)
+        function openLiveRoom(code, name, category, duration) {
+            currentRoomDuration = duration;
+            document.getElementById('liveRoomCode').innerText = code;
+            document.getElementById('liveRoomTitle').innerText = name;
+            document.getElementById('liveRoomSub').innerHTML = `<i class="fa-solid fa-book"></i> หมวดหมู่: ${category} &nbsp;|&nbsp; <i class="fa-regular fa-clock"></i> เวลา: ${duration} วินาที`;
+            
+            const mins = String(Math.floor(duration / 60)).padStart(2, '0');
+            const secs = String(duration % 60).padStart(2, '0');
+            document.getElementById('liveTimerDisplay').innerText = `${mins}:${secs}`;
+
+            renderLiveMonitor();
+            switchView('live-monitor');
+        }
+
+        function renderLiveMonitor() {
+            const tbody = document.getElementById('liveLeaderboardBody');
+            const lobby = document.getElementById('liveLobbyList');
+            document.getElementById('livePlayerBadge').innerText = `ผู้เข้าแข่งขัน ${livePlayers.length} คน`;
+
+            // เรียงตาม WPM
+            const sorted = [...livePlayers].sort((a, b) => b.wpm - a.wpm);
+            tbody.innerHTML = sorted.map((p, idx) => `
+                <tr>
+                    <td><div class="rank-circle rank-${idx + 1}">${idx + 1}</div></td>
+                    <td style="font-weight: 600; color: #063376;">${p.name}</td>
+                    <td style="color: #288CF0; font-weight: 700;">${p.wpm} WPM</td>
+                    <td style="color: #20A873; font-weight: 600;">${p.acc}%</td>
+                    <td><div class="progress-wrapper"><div class="progress-bar" style="width: ${p.progress}%;"></div></div></td>
+                </tr>
+            `).join('');
+
+            lobby.innerHTML = livePlayers.map(p => `
+                <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #F4F7FC; border-radius: 12px;">
+                    <div style="width: 35px; height: 35px; background: #DDF0FD; color: #288CF0; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: 700; font-size: 12px;">${p.initials}</div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 600; color: #063376;">${p.name}</div>
+                        <div style="font-size: 11px; color: #20A873;"><i class="fa-solid fa-circle-check"></i> เชื่อมต่อพร้อมแล้ว</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function simulateStudentJoin() {
+            const sampleNames = ['ปิยะพงษ์ เจริญดี', 'วรัญญา สุขใจ', 'กิตติพัฒน์ สายชล', 'ชลธิชา น่ารัก'];
+            const pick = sampleNames[Math.floor(Math.random() * sampleNames.length)];
+            livePlayers.push({
+                name: pick,
+                initials: pick.substring(0, 2),
+                wpm: Math.floor(45 + Math.random() * 40),
+                acc: (88 + Math.random() * 11).toFixed(1),
+                progress: Math.floor(20 + Math.random() * 70)
+            });
+            renderLiveMonitor();
+        }
+
+        function startLiveMatch() {
+            clearInterval(liveTimerInterval);
+            let timeLeft = currentRoomDuration;
+            const btn = document.getElementById('btnStartMatch');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังแข่งขัน...';
+
+            liveTimerInterval = setInterval(() => {
+                timeLeft--;
+                const mins = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+                const secs = String(timeLeft % 60).padStart(2, '0');
+                document.getElementById('liveTimerDisplay').innerText = `${mins}:${secs}`;
+
+                // จำลองความคืบหน้าเพิ่มขึ้นแบบเรียลไทม์
+                livePlayers.forEach(p => {
+                    if (p.progress < 100) p.progress = Math.min(100, p.progress + Math.floor(Math.random() * 8));
+                });
+                renderLiveMonitor();
+
+                if (timeLeft <= 0) {
+                    clearInterval(liveTimerInterval);
+                    btn.innerHTML = '<i class="fa-solid fa-play"></i> เริ่มการแข่งขัน';
+                    alert('หมดเวลาการแข่งขัน! ระบบบันทึกคะแนนเรียบร้อยแล้ว');
+                }
+            }, 1000);
+        }
+
+        function endLiveMatch() {
+            clearInterval(liveTimerInterval);
+            document.getElementById('btnStartMatch').innerHTML = '<i class="fa-solid fa-play"></i> เริ่มการแข่งขัน';
+            const currentCode = document.getElementById('liveRoomCode').innerText;
+
+            // บันทึกผลลงประวัติการพิมพ์
+            livePlayers.forEach(p => {
+                historyData.unshift({
+                    date: '31/10/2569 17:40',
+                    room: currentCode,
+                    name: p.name,
+                    wpm: p.wpm,
+                    acc: p.acc
+                });
+            });
+            renderHistory();
+            alert(`จบการแข่งขันห้อง ${currentCode} และบันทึกคะแนนลงในเมนู "ประวัติการพิมพ์" เรียบร้อยแล้ว!`);
+            switchView('history');
+        }
+
+        function copyRoomCode() {
+            const box = document.getElementById('liveRoomCode');
+            navigator.clipboard.writeText(box.innerText);
+            const old = box.innerText;
+            box.innerText = 'COPIED!';
+            setTimeout(() => box.innerText = old, 1200);
+        }
+
+        // 6. ฟังก์ชันหน้าจัดการนักเรียน (Students)
+        function renderStudents() {
+            const q = document.getElementById('studentSearchInput').value.toLowerCase();
+            const tbody = document.getElementById('studentTableBody');
+            const filtered = studentsData.filter(s => s.id.includes(q) || s.name.toLowerCase().includes(q));
+            
+            document.getElementById('studentTotalCount').innerText = filtered.length;
+            tbody.innerHTML = filtered.map((s, idx) => `
+                <tr>
+                    <td><span class="room-code-badge" style="background: #288CF0;">${s.id}</span></td>
+                    <td style="font-weight: 600; color: #063376;">${s.name}</td>
+                    <td>${s.group}</td>
+                    <td>${s.tests} ครั้ง</td>
+                    <td style="color: #288CF0; font-weight: 700;">${s.wpm} WPM</td>
+                    <td style="color: #20A873; font-weight: 600;">${s.acc}%</td>
+                    <td>
+                        <button class="btn-action btn-outline-sm" onclick="removeStudent('${s.id}')">
+                            <i class="fa-solid fa-trash" style="color: #E95C68;"></i> ลบ
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openStudentModal() { document.getElementById('studentModal').classList.add('show'); }
+        function closeStudentModal() { document.getElementById('studentModal').classList.remove('show'); }
+        function addStudent() {
+            const id = document.getElementById('modalStudentId').value.trim();
+            const name = document.getElementById('modalStudentName').value.trim();
+            const group = document.getElementById('modalStudentGroup').value.trim();
+            if (!id || !name) return alert('กรุณากรอกรหัสและชื่อนักเรียนให้ครบถ้วน');
+
+            studentsData.unshift({ id, name, group, tests: 0, wpm: 0, acc: 0 });
+            renderStudents();
+            closeStudentModal();
+        }
+        function removeStudent(id) {
+            studentsData = studentsData.filter(s => s.id !== id);
+            renderStudents();
+        }
+
+        // 7. ฟังก์ชันหน้าประวัติการพิมพ์ (Typing History)
+        function renderHistory() {
+            const roomFilter = document.getElementById('historyRoomFilter').value;
+            const minWpm = parseInt(document.getElementById('settingMinWpm').value) || 45;
+            const tbody = document.getElementById('historyTableBody');
+
+            const filtered = historyData.filter(h => roomFilter === 'all' || h.room === roomFilter);
+            tbody.innerHTML = filtered.map(h => {
+                const passed = h.wpm >= minWpm;
+                return `
+                    <tr>
+                        <td>${h.date}</td>
+                        <td><span class="room-code-badge">${h.room}</span></td>
+                        <td style="font-weight: 600; color: #063376;">${h.name}</td>
+                        <td style="color: #288CF0; font-weight: 700;">${h.wpm} WPM</td>
+                        <td style="color: #20A873; font-weight: 600;">${h.acc}%</td>
+                        <td>
+                            <span class="status-badge ${passed ? '' : 'live'}">
+                                ${passed ? 'ผ่านเกณฑ์' : 'ต่ำกว่าเกณฑ์'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function exportHistoryCSV() {
+            let csv = 'Date,Room,Student,WPM,Accuracy\n';
+            historyData.forEach(h => {
+                csv += `"${h.date}","${h.room}","${h.name}",${h.wpm},${h.acc}\n`;
+            });
+            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'typing_history_report.csv';
+            a.click();
+        }
+
+        // 8. การตั้งค่าและแจ้งเตือน
+        function saveSettings(e) {
+            e.preventDefault();
+            renderHistory();
+            alert('บันทึกเกณฑ์การให้คะแนนและการตั้งค่าห้องเรียนเรียบร้อยแล้ว!');
+        }
+
+        function toggleNoti() {
+            document.getElementById('notiDropdown').classList.toggle('show');
+        }
+        function clearNoti() {
+            document.getElementById('notiDot').style.display = 'none';
+            document.getElementById('notiDropdown').classList.remove('show');
+        }
+
+        // เริ่มต้นการทำงานทั้งหมดเมื่อโหลดหน้าเว็บ
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('searchInput').addEventListener('input', updateDashboard);
+            document.getElementById('statusFilter').addEventListener('change', updateDashboard);
+            bindToggleStatusEvents();
+            updateDashboard();
+            renderLiveMonitor();
+            renderStudents();
+            renderHistory();
+        });
+    </script>
+</body>
+</html>
