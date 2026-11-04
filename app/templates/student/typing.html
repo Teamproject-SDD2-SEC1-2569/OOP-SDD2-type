@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>การแข่งขันพิมพ์ - ระบบห้องเรียนฝึกพิมพ์</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", Tahoma, sans-serif; background: #f7fbff; color: #4f6172; }
+        .typing-page { min-height: 100vh; display: flex; background: radial-gradient(circle at 12% 88%, rgba(126, 191, 238, 0.12) 0 75px, transparent 76px), radial-gradient(circle at 92% 90%, rgba(126, 191, 238, 0.12) 0 90px, transparent 91px), #f8fcff; }
+        
+        /* SIDEBAR */
+        .sidebar { width: 250px; min-height: 100vh; background: linear-gradient(180deg, #cfeeff 0%, #bce4f8 100%); padding: 28px 18px; flex-shrink: 0; display: flex; flex-direction: column; }
+        .profile { display: flex; align-items: center; gap: 12px; padding: 8px 12px 28px; }
+        .profile-avatar { width: 52px; height: 52px; border-radius: 50%; background: #f6a8bf; display: flex; align-items: center; justify-content: center; font-size: 27px; box-shadow: 0 4px 10px rgba(90, 130, 160, 0.12); }
+        .profile-info strong { display: block; color: #3f5c72; font-size: 14px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;}
+        .profile-info span { color: #6f899d; font-size: 12px; }
+        .menu { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+        .menu-item { display: flex; align-items: center; gap: 14px; padding: 15px 17px; border-radius: 12px; color: #4d6a7e; font-size: 15px; text-decoration: none; transition: 0.2s; }
+        .menu-item:hover { background: rgba(255, 255, 255, 0.55); }
+        .menu-item.active { background: #ffffff; color: #4d78a3; font-weight: 600; box-shadow: 0 4px 12px rgba(70, 130, 170, 0.08); }
+        .menu-icon { width: 24px; text-align: center; font-size: 19px; }
+        .logout { margin-top: auto; }
+
+        /* MAIN CONTENT */
+        .main-content { flex: 1; min-width: 0; padding: 30px 22px 40px; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+        .back-button { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: 1px solid #b7cddd; border-radius: 24px; background: #ffffff; color: #5c7285; font-size: 14px; text-decoration: none; cursor: pointer; transition: 0.2s; }
+        .back-button:hover { background: #f2f8fc; }
+        .room-badge { padding: 10px 22px; background: #ffffff; border: 1px solid #b7cddd; border-radius: 24px; color: #506d82; font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .timer-section { text-align: center; margin: 4px 0 22px; }
+        .timer { display: flex; justify-content: center; align-items: center; gap: 10px; color: #5c83c4; font-size: 40px; font-weight: 700; letter-spacing: 1px; }
+        .timer-icon { font-size: 39px; }
+        .timer-label { margin-top: 1px; color: #8da1b2; font-size: 13px; }
+
+        /* TYPING CARD */
+        .typing-card { position: relative; background: #ffffff; border: 1px solid #e4edf3; border-radius: 20px; padding: 27px 28px; box-shadow: 0 8px 25px rgba(77, 126, 160, 0.08); }
+        .typing-title { display: flex; align-items: center; gap: 10px; color: #547697; font-size: 17px; font-weight: 600; margin-bottom: 17px; }
+        .typing-title-icon { width: 35px; height: 35px; border-radius: 10px; background: #e7f5ff; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+
+        .text-box { 
+            position: relative; 
+            background: #f8fbfd; 
+            border: 1px solid #e3edf3; 
+            border-radius: 14px; 
+            padding: 20px 25px; 
+            font-size: 26px;        
+            height: 145px;          
+            overflow: hidden;       
+            scroll-behavior: smooth; 
+            text-align: left;
+            cursor: text;
+        }
+        .text-box::-webkit-scrollbar { display: none; }
+        
+        .word {
+            display: inline-block;
+            margin-right: 12px;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }        
+
+        .char { color: #899bb0; transition: color 0.1s; border-radius: 3px; }
+        .char.correct { color: #2e7d32; }
+        .char.incorrect { color: #c62828; background: #ffebee; }
+        .char.active { color: #3f5c72; border-bottom: 3px solid #579be8; font-weight: bold; }
+
+        /* RIGHT PANEL */
+        .right-panel { width: 285px; min-height: 100vh; background: linear-gradient(180deg, #c9e9fa 0%, #b8e0f5 100%); padding: 30px 18px; flex-shrink: 0; }
+        .side-card { background: rgba(255, 255, 255, 0.94); border-radius: 18px; padding: 18px 17px; margin-bottom: 16px; box-shadow: 0 6px 18px rgba(75, 127, 160, 0.07); }
+        .side-card-title { display: flex; align-items: center; gap: 10px; color: #55718a; font-size: 15px; font-weight: 600; margin-bottom: 17px; }
+        .side-title-icon { width: 34px; height: 34px; border-radius: 50%; background: #dfeeff; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+        .participant-list { display: flex; flex-direction: column; gap: 10px; }
+        .participant { display: flex; align-items: center; gap: 10px; color: #617789; font-size: 12px; }
+        .participant-avatar { width: 31px; height: 31px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+        .participant-avatar.pink { background: #f4c5d2; } .participant-avatar.yellow { background: #f4e39c; } .participant-avatar.blue { background: #b8d9ef; }
+        .participant-count { text-align: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid #edf2f5; color: #9aaab6; font-size: 11px; }
+
+        .score-card { min-height: 235px; }
+        .score-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .score-title-row .side-card-title { margin-bottom: 0; }
+        .score-label { padding: 5px 9px; border-radius: 12px; background: #edf6fc; color: #87a0b1; font-size: 10px; }
+        .score-empty { min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #93a5b2; }
+        .score-empty .trophy { font-size: 52px; margin-bottom: 8px; opacity: 0.7; }
+        .score-empty strong { color: #71899b; font-size: 13px; margin-bottom: 7px; }
+        .score-empty p { color: #a0afb9; font-size: 11px; line-height: 1.7; }
+
+        @media (max-width: 1100px) { .sidebar { width: 210px; } .right-panel { width: 250px; } .main-content { padding-left: 18px; padding-right: 18px; } }
+        @media (max-width: 850px) {
+            .typing-page { flex-wrap: wrap; } .sidebar { width: 100%; min-height: auto; } .menu { flex-direction: row; flex-wrap: wrap; }
+            .logout { margin-top: 0; } .main-content { width: 100%; } .right-panel { width: 100%; min-height: auto; }
+        }
+        
+        .typing-area-wrapper, .status-row {
+            position: absolute;
+            opacity: 0;
+            z-index: -10;
+            pointer-events: none;
+        }
+
+        .restart-btn {
+            display: block;
+            margin: 30px auto 10px;
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #899bb0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .restart-btn:hover {
+            color: #579be8;
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="typing-page">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="profile">
+                <div class="profile-avatar">👩🏻</div>
+                <div class="profile-info">
+                    <!-- เพิ่ม ID ให้แสดงชื่อจากระบบ -->
+                    <strong id="studentNameDisplay">กำลังโหลดชื่อ...</strong>
+                    <span>นักเรียน</span>
+                </div>
+            </div>
+
+            <nav class="menu">
+                <a href="#" class="menu-item active">
+                    <span class="menu-icon">🏠</span>
+                    <span>ห้องเรียน</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <span class="menu-icon">📊</span>
+                    <span>พัฒนาการ</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <span class="menu-icon">📝</span>
+                    <span>ประวัติการพิมพ์</span>
+                </a>
+                <a href="#" class="menu-item logout">
+                    <span class="menu-icon">🚪</span>
+                    <span>ออกจากระบบ</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <div class="top-bar">
+                <!-- กดกลับไปหน้ากรอกรหัส -->
+                <a href="javascript:history.back()" class="back-button">
+                    <span>←</span>
+                    <span>เปลี่ยนห้อง</span>
+                </a>
+                <!-- เพิ่ม ID ให้แสดงรหัสห้องจากระบบ -->
+                <div class="room-badge" id="roomBadgeDisplay">ห้อง -</div>
+            </div>
+
+            <!-- TIMER -->
+            <section class="timer-section">
+                <div class="timer">
+                    <span class="timer-icon">⏱</span>
+                    <span id="timer">01:00</span>
+                </div>
+                <div class="timer-label" id="timerLabel">เริ่มพิมพ์เพื่อเริ่มจับเวลา</div>
+            </section>
+
+            <!-- TYPING CARD -->
+            <section class="typing-card">
+                <div class="typing-title">
+                    <div class="typing-title-icon">⌨️</div>
+                    <span>พิมพ์ข้อความต่อไปนี้</span>
+                </div>
+
+                <!-- โจทย์ (แสดงสีไฮไลต์) -->
+                <div class="text-box" id="textDisplay" onclick="document.getElementById('typingInput').focus()">
+                    <!-- ข้อความโจทย์จะถูกสร้างด้วย JS -->
+                </div>
+
+                <!-- ช่องกรอกข้อความ (ถูกซ่อนด้วย CSS) -->
+                <div class="typing-area-wrapper">
+                    <textarea id="typingInput" class="typing-area"></textarea>
+                    <div class="character-count"><span id="characterCount">0</span> / <span id="totalCharCount">0</span></div>
+                </div>
+
+                <!-- 🌟 ปุ่มสุ่มคำใหม่ (Restart) 🌟 -->
+                <button class="restart-btn" onclick="restartTyping()" title="เริ่มใหม่ (Restart)">↻</button>
+            </section>
+        </main>
+
+        <!-- RIGHT PANEL -->
+        <aside class="right-panel">
+            <section class="side-card">
+                <div class="side-card-title">
+                    <span class="side-title-icon">👥</span>
+                    <span>ผู้เข้าร่วม</span>
+                </div>
+
+                <div class="participant-list">
+                    <!-- รายชื่อจำลอง รอผูกกับ Socket -->
+                    <div class="participant">
+                        <div class="participant-avatar pink">👩🏻</div>
+                        <span id="lobbySelfName">คุณ (Me)</span>
+                    </div>
+                </div>
+
+                <div class="participant-count">ผู้เข้าร่วม 1 คน</div>
+            </section>
+
+            <section class="side-card score-card">
+                <div class="score-title-row">
+                    <div class="side-card-title">
+                        <span class="side-title-icon">🏆</span>
+                        <span>อันดับคะแนน</span>
+                    </div>
+                    <span class="score-label">ล่าสุด</span>
+                </div>
+
+                <div class="score-empty">
+                    <div class="trophy">🏆</div>
+                    <strong>ยังไม่มีคะแนน</strong>
+                    <p>คะแนนจะแสดงหลังจาก<br>ทำการแข่งขันเสร็จสิ้น</p>
+                </div>
+            </section>
+        </aside>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // -----------------------------------------------------------------
+        // 1. ดึงข้อมูล "รหัสห้อง" และ "ชื่อ" จาก URL (ที่มาจากหน้า join.html)
+        // -----------------------------------------------------------------
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomCode = urlParams.get('room_code') || 'ไม่ระบุห้อง';
+        const studentName = urlParams.get('student_name') || 'นักเรียนนิรนาม';
+
+        // นำข้อมูลไปอัปเดตบนหน้าจอทันที
+        document.getElementById('studentNameDisplay').innerText = studentName;
+        document.getElementById('lobbySelfName').innerText = studentName + ' (Me)';
+        document.getElementById('roomBadgeDisplay').innerText = 'ห้อง ' + roomCode;
+
+        // -----------------------------------------------------------------
+        // 2. ระบบพิมพ์และการเชื่อมต่อ
+        // -----------------------------------------------------------------
+        const socket = io();
+
+        let targetText = "apple banana computer desk window school friend family house book water plane train car chair table phone sun moon star happy sad";
+
+        const textDisplay = document.getElementById("textDisplay");
+        const typingInput = document.getElementById("typingInput");
+        const timerElement = document.getElementById("timer");
+        const timerLabel = document.getElementById("timerLabel");
+        const characterCount = document.getElementById("characterCount");
+        const totalCharCount = document.getElementById("totalCharCount");
+
+        // ตัวแปรจับเวลา (เดี๋ยวเราจะปรับให้รับค่า 15, 30, 60 จาก Backend ในอนาคต)
+        let defaultTime = 60; 
+        let timeLeft = defaultTime;
+        let timerStarted = false;
+        let timerInterval = null;
+        let lastLength = 0;
+        let currentLiveWpm = 0;
+        let currentLiveAccuracy = 100.0;
+        let finalTimeSpent = 0;
+
+        // รับสัญญาณเชื่อมต่อสำเร็จ แจ้ง Backend ว่าใครเข้าห้องไหน
+        socket.on("connect", () => {
+            console.log("Connected! Joining room:", roomCode);
+            // แจ้งเตือน Backend ให้อัปเดต Lobby ของอาจารย์
+            socket.emit("student_join", { room_code: roomCode, student_name: studentName });
+            // ขอคำศัพท์
+            socket.emit("start_typing");
+        });
+
+        // รับคำศัพท์สุ่มจาก Backend
+        socket.on("typing_started", (data) => {
+            if (data.status === "success" && data.text_data) {
+                targetText = data.text_data;
+                // ถ้าระบบส่งเวลามาด้วย ให้อัปเดตเวลาตามที่อาจารย์ตั้งค่า
+                if(data.duration) {
+                    defaultTime = parseInt(data.duration);
+                    timeLeft = defaultTime;
+                    updateTimerDisplay(defaultTime);
+                }
+                initText();
+            }
+        });
+
+        // ผลตอบกลับหลังจากส่งคะแนน
+        socket.on("submission_response", (res) => {
+            const scoreToPass = res.score || 0; 
+            window.location.href = `/typing-result?wpm=${currentLiveWpm}&acc=${currentLiveAccuracy}&score=${scoreToPass}&time=${finalTimeSpent}`;
+        });
+
+        let charElements = []; 
+
+        function initText() {
+            textDisplay.innerHTML = "";
+            charElements = []; 
+
+            const words = targetText.split(" ");
+            
+            words.forEach((word, wordIndex) => {
+                const wordSpan = document.createElement("span");
+                wordSpan.className = "word";
+
+                for (let i = 0; i < word.length; i++) {
+                    const charSpan = document.createElement("span");
+                    charSpan.className = "char";
+                    charSpan.textContent = word[i];
+                    wordSpan.appendChild(charSpan);
+                    charElements.push(charSpan);
+                }
+
+                if (wordIndex < words.length - 1) {
+                    const spaceSpan = document.createElement("span");
+                    spaceSpan.className = "char space-char";
+                    spaceSpan.textContent = " "; 
+                    wordSpan.appendChild(spaceSpan);
+                    charElements.push(spaceSpan);
+                }
+
+                textDisplay.appendChild(wordSpan);
+            });
+
+            totalCharCount.textContent = charElements.length;
+            typingInput.maxLength = charElements.length;
+            typingInput.value = "";
+            lastLength = 0;
+            textDisplay.scrollTop = 0; 
+
+            if (charElements.length > 0) {
+                charElements[0].classList.add("active");
+            }
+        }
+
+        function updateTimerDisplay(secondsLeft) {
+            const minutes = Math.floor(secondsLeft / 60);
+            const seconds = secondsLeft % 60;
+            timerElement.textContent = String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
+        }
+
+        function startTimer() {
+            timerStarted = true;
+            timerLabel.textContent = "เวลาที่เหลือ";
+
+            timerInterval = setInterval(function () {
+                timeLeft--;
+                updateTimerDisplay(timeLeft);
+
+                if (timeLeft <= 0) {
+                    endTyping();
+                }
+            }, 1000);
+        }
+
+        function endTyping() {
+            clearInterval(timerInterval);
+            typingInput.disabled = true;
+            finalTimeSpent = defaultTime - timeLeft; 
+
+            let errorCount = 0;
+            const userVal = typingInput.value;
+            for (let i = 0; i < userVal.length; i++) {
+                if (userVal[i] !== charElements[i]?.textContent) errorCount++;
+            }
+            
+            socket.emit("submit_score", {
+                wpm: currentLiveWpm,
+                accuracy: currentLiveAccuracy,
+                time_spent: finalTimeSpent > 0 ? finalTimeSpent : 1,
+                error_count: errorCount
+            });
+            
+            // กรณีไม่มี Database ให้ Redirect จำลองไปเลย
+            setTimeout(() => {
+                window.location.href = `/typing-result?wpm=${currentLiveWpm}&acc=${currentLiveAccuracy}&score=150&time=${finalTimeSpent}`;
+            }, 1000);
+        }
+
+        typingInput.addEventListener("input", function () {
+            const userVal = this.value;
+
+            if (!timerStarted && userVal.length > 0) {
+                startTimer();
+            }
+
+            if (userVal.length > lastLength) {
+                const currentIndex = userVal.length - 1;
+                const isCorrect = userVal[currentIndex] === targetText[currentIndex];
+                socket.emit("keystroke", { is_correct: isCorrect });
+            }
+            lastLength = userVal.length;
+
+            characterCount.textContent = userVal.length;
+
+            charElements.forEach((span, idx) => {
+                span.classList.remove("correct", "incorrect", "active");
+
+                if (idx < userVal.length) {
+                    if (userVal[idx] === targetText[idx]) {
+                        span.classList.add("correct");
+                    } else {
+                        span.classList.add("incorrect");
+                    }
+                } else if (idx === userVal.length) {
+                    span.classList.add("active");
+                }
+            });
+
+            // Monkeytype Auto-scroll Logic
+            if (userVal.length < charElements.length) {
+                const activeChar = charElements[userVal.length];
+                const activeWord = activeChar.parentElement; 
+                const targetScroll = activeWord.offsetTop - 55; 
+                
+                if (targetScroll > 0) {
+                    textDisplay.scrollTop = targetScroll; 
+                } else {
+                    textDisplay.scrollTop = 0;
+                }
+            }
+
+            if (userVal.length >= charElements.length) {
+                endTyping();
+            }
+        });
+
+        window.addEventListener("load", function () {
+            initText();
+            typingInput.focus();
+        });
+
+        function restartTyping() {
+            clearInterval(timerInterval);
+            timerStarted = false;
+            timeLeft = defaultTime;
+            lastLength = 0; 
+            
+            updateTimerDisplay(timeLeft);
+            timerLabel.textContent = "เริ่มพิมพ์เพื่อเริ่มจับเวลา";
+
+            typingInput.disabled = false;
+            typingInput.value = "";
+            
+            charElements.forEach(span => span.classList.remove("correct", "incorrect", "active"));
+            if (charElements.length > 0) charElements[0].classList.add("active");
+            textDisplay.scrollTop = 0;
+
+            socket.emit("start_typing"); 
+            typingInput.focus();
+        }
+    </script>
+</body>
+
+</html>
