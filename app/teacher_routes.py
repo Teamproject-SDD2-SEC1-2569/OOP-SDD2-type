@@ -434,15 +434,18 @@ def teacher_dashboard_page():
 @teacher_bp.route("/create-room", methods=["GET", "POST"])
 def teacher_create_room_page():
     if request.method == 'POST':
-        # 1. รับค่าแบบใหม่ที่ส่งมาจากฟอร์มหน้าสร้างห้อง
+        # 1. รับค่าที่ส่งมาจากฟอร์ม (ปรับค่าเริ่มต้นให้ตรงกับหน้าเว็บใหม่)
         room_name = request.form.get('room_name', 'ห้องเรียนฝึกพิมพ์')
-        category = request.form.get('category', 'general') # เปลี่ยนเป็นหมวดหมู่
-        duration = request.form.get('duration', '60') # เวลาเป็นวินาที (15, 30, 60, 120)
+        category = request.form.get('category', 'english') # เปลี่ยนค่าเริ่มต้นเป็นภาษาอังกฤษ
+        duration = request.form.get('duration', '60') # ตัวเลือก 15, 30, 60, 120
         max_participants = request.form.get('max_participants', '30')
 
-        # 2. สุ่มรหัสห้อง 6 หลัก (เช่น TYP-A9X2)
-        random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-        room_code = f"TYP-{random_str}"
+        # 2. สุ่มรหัสห้อง 6 หลัก และเช็กว่าต้องไม่ซ้ำกับห้องที่เปิดอยู่ (Prevent Collision)
+        while True:
+            random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+            room_code = f"TYP-{random_str}"
+            if room_code not in active_rooms:
+                break # ถ้ารหัสไม่ซ้ำ ให้หยุดสุ่มและไปต่อ
 
         # 3. บันทึกข้อมูลลง Memory
         active_rooms[room_code] = {
@@ -450,14 +453,15 @@ def teacher_create_room_page():
             "category": category,
             "duration": duration,
             "max_participants": max_participants,
-            "status": "waiting", # เปลี่ยนสถานะเริ่มต้นเป็น waiting (รอเด็กเข้าห้อง)
+            "status": "waiting",
             "students": [] 
         }
 
-        # 4. Redirect ไปหน้าจัดการห้อง
+        # 4. สร้างเสร็จ ให้ Redirect ไปหน้าจัดการห้องเรียน
         return redirect(url_for('teacher.teacher_manage_classroom_page', room_code=room_code))
 
-    return render_template("teacher/create-room.html")
+    # ถ้ามีคนเผลอพิมพ์ URL /teacher/create-room เข้ามาตรงๆ (GET Request) ให้เด้งกลับไปที่หน้า Dashboard แทน
+    return redirect(url_for('teacher.teacher_dashboard_page'))
 
 
 @teacher_bp.route("/manage-classroom", methods=["GET"])
@@ -477,3 +481,18 @@ def teacher_manage_classroom_page():
 @teacher_bp.route("/menu", methods=["GET"])
 def teacher_menu_page():
     return render_template("teacher/menu.html")
+
+@teacher_bp.route("/students", methods=["GET"])
+def teacher_students_page():
+    # ในอนาคตจะดึงข้อมูลรายชื่อนักศึกษาจาก Database ส่งไปแสดงผลที่นี่
+    return render_template("teacher/students.html")
+
+@teacher_bp.route("/history", methods=["GET"])
+def teacher_history_page():
+    # ในอนาคตจะดึงข้อมูลคะแนนสอบจาก Database ส่งไปแสดงผลที่นี่
+    return render_template("teacher/history.html")
+
+@teacher_bp.route("/profile", methods=["GET"])
+def teacher_profile_page():
+    # ในอนาคตสามารถส่งข้อมูล User Profile จาก Database ไปแสดงผลได้
+    return render_template("teacher/profile.html")
