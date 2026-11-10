@@ -145,6 +145,62 @@
             background: linear-gradient(135deg, #5d91df 0%, #3b82f6 100%);
             box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
         }
+
+        /* Password Checklist */
+        .password-checklist {
+            grid-column: 1 / -1;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 14px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .password-checklist-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 2px;
+        }
+        .checklist-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 8px 16px;
+        }
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13.5px;
+            color: #64748b;
+            transition: color 0.2s ease;
+        }
+        .checklist-item .chk-badge {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1.5px solid #cbd5e1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: transparent;
+            background: #ffffff;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .checklist-item.valid {
+            color: #059669;
+            font-weight: 600;
+        }
+        .checklist-item.valid .chk-badge {
+            background: #10b981;
+            border-color: #10b981;
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.28);
+        }
     </style>
 </head>
 
@@ -164,13 +220,13 @@
             <form onsubmit="handleRegister(event)" novalidate>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>ชื่อจริง</label>
-                        <input type="text" id="regFirstName" placeholder="กรอกชื่อจริง">
+                        <label>ชื่อจริง <span style="font-size:12px; color:#777; font-weight:normal;">(3-30 ตัวอักษร)</span></label>
+                        <input type="text" id="regFirstName" placeholder="กรอกชื่อจริง (3-30 ตัวอักษร)" maxlength="30">
                     </div>
 
                     <div class="form-group">
-                        <label>นามสกุล</label>
-                        <input type="text" id="regLastName" placeholder="กรอกนามสกุล">
+                        <label>นามสกุล <span style="font-size:12px; color:#777; font-weight:normal;">(3-30 ตัวอักษร)</span></label>
+                        <input type="text" id="regLastName" placeholder="กรอกนามสกุล (3-30 ตัวอักษร)" maxlength="30">
                     </div>
 
                     <div class="form-group" id="studentCodeGroup">
@@ -188,23 +244,41 @@
                     </div>
 
                     <div class="form-group">
-                        <label>ชื่อผู้ใช้</label>
-                        <input type="text" id="regUsername" placeholder="กรอกชื่อผู้ใช้">
+                        <label>ชื่อผู้ใช้ <span style="font-size:12px; color:#777; font-weight:normal;">(3-30 ตัวอักษร)</span></label>
+                        <input type="text" id="regUsername" placeholder="กรอกชื่อผู้ใช้ (3-30 ตัวอักษร)" maxlength="30">
                     </div>
 
                     <div class="form-group">
                         <label>อีเมล</label>
-                        <input type="email" id="regEmail" placeholder="กรอกอีเมล">
+                        <input type="email" id="regEmail" placeholder="กรอกอีเมล" oninput="if(!this.readOnly) this.value = this.value.replace(/[^\x21-\x7E]/g, '')">
                     </div>
 
                     <div class="form-group">
                         <label>รหัสผ่าน</label>
-                        <input type="password" id="regPassword" placeholder="อย่างน้อย 8 ตัวอักษร">
+                        <input type="password" id="regPassword" placeholder="อย่างน้อย 8 ตัว และมีตัวอักษร ≥ 1 ตัว" oninput="updatePasswordChecklist()">
                     </div>
 
                     <div class="form-group">
                         <label>ยืนยันรหัสผ่าน</label>
-                        <input type="password" id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน">
+                        <input type="password" id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน" oninput="updatePasswordChecklist()">
+                    </div>
+
+                    <div class="password-checklist" id="passwordChecklist">
+                        <div class="password-checklist-title">เงื่อนไขรหัสผ่าน:</div>
+                        <div class="checklist-items">
+                            <div class="checklist-item" id="chkLen">
+                                <span class="chk-badge">✓</span>
+                                <span>มีความยาวอย่างน้อย 8 ตัวอักษร</span>
+                            </div>
+                            <div class="checklist-item" id="chkLetter">
+                                <span class="chk-badge">✓</span>
+                                <span>มีตัวอักษรอย่างน้อย 1 ตัว</span>
+                            </div>
+                            <div class="checklist-item" id="chkMatch">
+                                <span class="chk-badge">✓</span>
+                                <span>รหัสผ่านและยืนยันรหัสผ่านตรงกัน</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -361,6 +435,19 @@
             }
         });
 
+        function updatePasswordChecklist() {
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+            const hasMinLen = password.length >= 8;
+            const hasLetter = /[A-Za-z\u0E00-\u0E7F]/.test(password);
+            const isMatched = password.length > 0 && password === confirmPassword;
+
+            document.getElementById('chkLen').classList.toggle('valid', hasMinLen);
+            document.getElementById('chkLetter').classList.toggle('valid', hasLetter);
+            document.getElementById('chkMatch').classList.toggle('valid', isMatched);
+        }
+
         function markFieldError(fieldId, title, message) {
             document.querySelectorAll('.form-group input, .form-group select').forEach(el => el.classList.remove('input-error'));
             const el = document.getElementById(fieldId);
@@ -391,12 +478,12 @@
             const email = document.getElementById('regEmail').value.trim();
             const confirmPassword = document.getElementById('regConfirmPassword').value;
 
-            if (!firstName) {
-                markFieldError('regFirstName', 'ยังไม่ได้กรอกชื่อจริง', 'กรุณากรอกชื่อจริงของคุณให้ครบถ้วน');
+            if (!firstName || firstName.length < 3 || firstName.length > 30) {
+                markFieldError('regFirstName', 'ความยาวชื่อจริงไม่ถูกต้อง', 'ชื่อจริงต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร');
                 return;
             }
-            if (!lastName) {
-                markFieldError('regLastName', 'ยังไม่ได้กรอกนามสกุล', 'กรุณากรอกนามสกุลของคุณให้ครบถ้วน');
+            if (!lastName || lastName.length < 3 || lastName.length > 30) {
+                markFieldError('regLastName', 'ความยาวนามสกุลไม่ถูกต้อง', 'นามสกุลต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร');
                 return;
             }
             if (selectedRole === 'Student' && !/^\d{8}$/.test(studentCode)) {
@@ -407,8 +494,8 @@
                 markFieldError('regMajor', 'ยังไม่ได้เลือกสาขาวิชา', 'กรุณาเลือกสาขาวิชาของคุณจากรายการ');
                 return;
             }
-            if (!username) {
-                markFieldError('regUsername', 'ยังไม่ได้กรอกชื่อผู้ใช้', 'กรุณากำหนดชื่อผู้ใช้ (Username) สำหรับเข้าสู่ระบบ');
+            if (!username || username.length < 3 || username.length > 30) {
+                markFieldError('regUsername', 'ความยาวชื่อผู้ใช้ไม่ถูกต้อง', 'ชื่อผู้ใช้ (Username) ต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร');
                 return;
             }
             if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -417,6 +504,10 @@
             }
             if (!password || password.length < 8) {
                 markFieldError('regPassword', 'รหัสผ่านสั้นเกินไป', 'รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
+                return;
+            }
+            if (!/[A-Za-z\u0E00-\u0E7F]/.test(password)) {
+                markFieldError('regPassword', 'รูปแบบรหัสผ่านไม่ครบถ้วน', 'รหัสผ่านต้องมีตัวอักษรอย่างน้อย 1 ตัว');
                 return;
             }
             if (!confirmPassword || password !== confirmPassword) {

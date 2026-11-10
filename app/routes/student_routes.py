@@ -414,30 +414,66 @@ def get_student_classrooms():
 
             cursor.execute(
                 """
-                SELECT c.CLASSROOM_ID, c.ROOM_NAME, c.ROOM_CODE,
-                       u.FULL_NAME AS TEACHER_NAME,
-                       cm.JOINED_AT,
-                       (
-                           SELECT NVL(MAX(sr.WPM), 0)
-                           FROM U.SUBMISSION_RESULTS sr
-                           JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID
-                           WHERE sr.STUDENT_ID = :user_id AND a.CLASSROOM_ID = c.CLASSROOM_ID
-                       ) AS BEST_WPM
-                FROM U.CLASSROOM_MEMBERS cm
-                JOIN U.CLASSROOMS c ON cm.CLASSROOM_ID = c.CLASSROOM_ID
-                LEFT JOIN U.USERS u ON c.TEACHER_ID = u.USER_ID
-                WHERE cm.STUDENT_ID = :user_id
-                ORDER BY cm.JOINED_AT DESC
-                """,
-                {"user_id": user_id}
+                SELECT COUNT(*)
+                FROM all_tab_columns
+                WHERE owner = 'U'
+                  AND table_name = 'CLASSROOMS'
+                  AND column_name IN ('STATUS', 'DURATION')
+                """
             )
+            has_classroom_cols = (cursor.fetchone()[0] or 0) == 2
+
+            if has_classroom_cols:
+                cursor.execute(
+                    """
+                    SELECT c.CLASSROOM_ID, c.ROOM_NAME, c.ROOM_CODE,
+                           u.FULL_NAME AS TEACHER_NAME,
+                           cm.JOINED_AT,
+                           (
+                               SELECT NVL(MAX(sr.WPM), 0)
+                               FROM U.SUBMISSION_RESULTS sr
+                               JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID
+                               WHERE sr.STUDENT_ID = :user_id AND a.CLASSROOM_ID = c.CLASSROOM_ID
+                           ) AS BEST_WPM,
+                           c.STATUS,
+                           c.DURATION
+                    FROM U.CLASSROOM_MEMBERS cm
+                    JOIN U.CLASSROOMS c ON cm.CLASSROOM_ID = c.CLASSROOM_ID
+                    LEFT JOIN U.USERS u ON c.TEACHER_ID = u.USER_ID
+                    WHERE cm.STUDENT_ID = :user_id
+                    ORDER BY cm.JOINED_AT DESC
+                    """,
+                    {"user_id": user_id}
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT c.CLASSROOM_ID, c.ROOM_NAME, c.ROOM_CODE,
+                           u.FULL_NAME AS TEACHER_NAME,
+                           cm.JOINED_AT,
+                           (
+                               SELECT NVL(MAX(sr.WPM), 0)
+                               FROM U.SUBMISSION_RESULTS sr
+                               JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID
+                               WHERE sr.STUDENT_ID = :user_id AND a.CLASSROOM_ID = c.CLASSROOM_ID
+                           ) AS BEST_WPM
+                    FROM U.CLASSROOM_MEMBERS cm
+                    JOIN U.CLASSROOMS c ON cm.CLASSROOM_ID = c.CLASSROOM_ID
+                    LEFT JOIN U.USERS u ON c.TEACHER_ID = u.USER_ID
+                    WHERE cm.STUDENT_ID = :user_id
+                    ORDER BY cm.JOINED_AT DESC
+                    """,
+                    {"user_id": user_id}
+                )
             rooms = []
             for row in cursor.fetchall():
                 room_code = row[2]
                 mem_room = active_rooms.get(room_code, {})
                 settings = room_settings.get(room_code, {})
-                duration = mem_room.get("duration") or settings.get("duration") or 60
-                status = settings.get("status") or ("open" if room_code in active_rooms else "open")
+                db_status = row[6] if has_classroom_cols and len(row) > 6 and row[6] else None
+                db_duration = row[7] if has_classroom_cols and len(row) > 7 and row[7] is not None else None
+                duration = db_duration or mem_room.get("duration") or settings.get("duration") or 60
+                status = db_status or settings.get("status") or ("open" if room_code in active_rooms else "open")
 
                 rooms.append({
                     "classroom_id": row[0],

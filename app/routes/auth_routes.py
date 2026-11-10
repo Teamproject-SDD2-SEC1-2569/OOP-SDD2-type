@@ -49,20 +49,32 @@ def register():
     username = username.strip()
     password = password
     full_name = full_name.strip()
-    email = email.strip().lower()
+    email = re.sub(r"[^\x21-\x7E]", "", email).strip().lower()
     role = role.strip().capitalize()
 
     if not username or not password or not full_name or not email:
         return jsonify({"error": "ห้ามเว้นช่องข้อมูลว่าง"}), 400
 
-    if len(username) > 50 or len(full_name) > 100 or len(email) > 100:
+    if first_name and (len(first_name) < 3 or len(first_name) > 30):
+        return jsonify({"error": "ชื่อจริงต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร"}), 400
+
+    if last_name and (len(last_name) < 3 or len(last_name) > 30):
+        return jsonify({"error": "นามสกุลต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร"}), 400
+
+    if len(username) < 3 or len(username) > 30:
+        return jsonify({"error": "ชื่อผู้ใช้ต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร"}), 400
+
+    if len(full_name) > 100 or len(email) > 100:
         return jsonify({"error": "ความยาวข้อมูลเกินกว่าที่กำหนด"}), 400
 
-    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
-        return jsonify({"error": "รูปแบบอีเมลไม่ถูกต้อง"}), 400
+    if not re.fullmatch(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", email):
+        return jsonify({"error": "รูปแบบอีเมลไม่ถูกต้อง (กรุณาใช้ตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น)"}), 400
 
     if len(password) < 8:
         return jsonify({"error": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"}), 400
+
+    if not re.search(r"[A-Za-z\u0E00-\u0E7F]", password):
+        return jsonify({"error": "รหัสผ่านต้องมีตัวอักษรอย่างน้อย 1 ตัว"}), 400
 
     if len(password.encode("utf-8")) > 72:
         return jsonify({"error": "รหัสผ่านยาวเกินกว่าที่ระบบรองรับ"}), 400
@@ -544,14 +556,7 @@ def google_login():
 
     user_id, db_username, _, db_full_name, db_email, role = user
 
-    # ตรวจสอบว่า Role ของบัญชีตรงกับปุ่มที่เลือกหรือไม่
-    if role.strip().lower() != requested_role.strip().lower():
-        role_th = "อาจารย์" if role.strip().lower() == "teacher" else "นักเรียน"
-        selected_th = "อาจารย์" if requested_role.strip().lower() == "teacher" else "นักเรียน"
-        return jsonify({
-            "error": f"ไม่สามารถเข้าสู่ระบบโหมด{selected_th}ได้ เนื่องจากบัญชี Google นี้ผูกไว้เป็นบัญชี{role_th}"
-        }), 403
-
+    # ใช้ Role ของบัญชีจากฐานข้อมูลโดยอัตโนมัติ (ไม่ต้องบังคับให้เลือกปุ่มตรงกันก่อนกด Google Login)
     access_token = create_access_token(
         identity=str(user_id),
         expires_delta=timedelta(hours=1),
@@ -649,12 +654,7 @@ def google_oauth_callback():
 
         user_id, db_username, _, db_full_name, db_email, role = user
 
-        if role.strip().lower() != requested_role.strip().lower():
-            role_th = "อาจารย์" if role.strip().lower() == "teacher" else "นักเรียน"
-            selected_th = "อาจารย์" if requested_role.strip().lower() == "teacher" else "นักเรียน"
-            msg = f"ไม่สามารถเข้าสู่ระบบโหมด{selected_th}ได้ เนื่องจากบัญชี Google นี้ผูกไว้เป็นบัญชี{role_th}"
-            return f"<script>alert({json.dumps(msg)}); window.location.href='/';</script>"
-
+        # ใช้ Role ของบัญชีจากฐานข้อมูลโดยอัตโนมัติและพาดิ่งไปยังหน้าของ Role นั้นทันที
         jwt_token = create_access_token(
             identity=str(user_id),
             expires_delta=timedelta(hours=1),
