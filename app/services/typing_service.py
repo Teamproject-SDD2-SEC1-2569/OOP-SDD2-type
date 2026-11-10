@@ -85,11 +85,11 @@ class TypingService:
         return current_stats, sorted_leaderboard, room
 
     def submit_score(self, sid: str, data: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
-        """ตรวจสอบ Anti-Cheat คำนวณคะแนน และบันทึกลงฐานข้อมูล Oracle"""
-        time_spent = data.get("time_spent", 0)
-        final_wpm = data.get("wpm", 0)
-        final_accuracy = data.get("accuracy", 0)
-        error_count = data.get("error_count", 0)
+        """ตรวจสอบ Anti-Cheat คำนวณคะแนน และบันทึกลงฐานข้อมูล Oracle (U.SUBMISSION_RESULTS)"""
+        time_spent = max(1, int(float(data.get("time_spent") or 60)))
+        final_wpm = max(0, int(float(data.get("wpm") or 0)))
+        final_accuracy = max(0.0, min(100.0, float(data.get("accuracy") or 0)))
+        error_count = max(0, int(float(data.get("error_count") or 0)))
 
         # 1. Anti-Cheat: ป้องกัน WPM สูงเกินจริง (> MAX_WPM_THRESHOLD)
         if final_wpm > MAX_WPM_THRESHOLD:
@@ -99,28 +99,39 @@ class TypingService:
             }
 
         # คำนวณคะแนนรวม
-        score = round(final_wpm * (final_accuracy / 100.0), 2)
+        score = int(round(final_wpm * (final_accuracy / 100.0) * 10, 0))
 
-        # 2. บันทึกลงตาราง Submission_Results ใน Oracle DB
+        user_meta = self.active_sessions.get(sid) or {}
+        raw_uid = data.get("user_id") or user_meta.get("user_id")
+        room_code = (data.get("room_code") or user_meta.get("room") or "").strip().upper()
+
+        student_id = None
+        try:
+            student_id = int(raw_uid)
+        except (TypeError, ValueError):
+            student_id = None
+
+        # 2. บันทึกลงตาราง U.SUBMISSION_RESULTS ใน Oracle DB
         conn = get_db_connection()
-        if conn:
+        if conn and student_id is not None:
             try:
+                from ..routes.student_routes import _ensure_student_record, _resolve_assignment_id
                 cursor = conn.cursor()
-                dummy_assignment_id = 2
-                dummy_student_id = 42
+                _ensure_student_record(cursor, student_id)
+                assignment_id = _resolve_assignment_id(cursor, room_code)
 
                 sql = """
-                    INSERT INTO Submission_Results 
-                    (Assignment_ID, Student_ID, Accuracy, Time_Spent, Error_Count, Score, Submitted_At)
-                    VALUES (:1, :2, :3, :4, :5, :6, CURRENT_TIMESTAMP)
+                    INSERT INTO U.SUBMISSION_RESULTS 
+                    (ASSIGNMENT_ID, STUDENT_ID, WPM, ACCURACY, TIME_SPENT, ERROR_COUNT, GRADE_OR_SCORE, SUBMITTED_AT)
+                    VALUES (:1, :2, :3, :4, :5, :6, :7, CURRENT_TIMESTAMP)
                 """
                 cursor.execute(
                     sql,
-                    (dummy_assignment_id, dummy_student_id, final_accuracy, time_spent, error_count, score)
+                    (assignment_id, student_id, final_wpm, final_accuracy, time_spent, error_count, score)
                 )
                 conn.commit()
                 cursor.close()
-                print(f"✅ [DB] Successfully saved score: {score} for session: {sid}")
+                print(f"✅ [DB] Successfully saved score: {score} for student_id: {student_id}")
                 return True, {
                     "status": "success",
                     "message": "Score saved successfully!",
@@ -130,14 +141,18 @@ class TypingService:
                 print(f"❌ [DB] Error saving score: {e}")
                 return False, {
                     "status": "error",
-                    "message": "Database insertion failed."
+                    "message": f"Database insertion failed: {e}",
+                    "score": score
                 }
             finally:
                 conn.close()
         else:
-            return False, {
-                "status": "error",
-                "message": "Database connection unavailable."
+            if conn:
+                conn.close()
+            return True, {
+                "status": "success",
+                "message": "Score calculated (session mode).",
+                "score": score
             }
 
     def remove_session(self, sid: str) -> None:

@@ -21,20 +21,20 @@ def register_socket_events(socketio: SocketIO):
         if auth and isinstance(auth, dict):
             token = auth.get('token')
 
-        secret_key = os.getenv('SECRET_KEY', 'typeclass-super-secret-key')
+        secret_key = os.getenv('JWT_SECRET_KEY') or os.getenv('SECRET_KEY', 'typeclass-super-secret-key')
 
         try:
             if token:
                 payload = jwt.decode(token, secret_key, algorithms=["HS256"])
-                user_id = payload.get("user_id")
+                user_id = payload.get("sub") or payload.get("user_id")
                 username = payload.get("username", "Anonymous")
             else:
                 # โหมดทดสอบชั่วคราวหากยังไม่มี token จาก frontend
                 user_id = f"guest_{request.sid[:5]}"
                 username = f"Student_{request.sid[:4]}"
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-            emit('error', {'msg': 'Unauthorized: Invalid or expired token.'})
-            return False
+            user_id = f"guest_{request.sid[:5]}"
+            username = f"Student_{request.sid[:4]}"
 
         typing_service.register_user_session(request.sid, str(user_id), username)
         emit('server_message', {'msg': f'Welcome {username}! Connected to server.'})

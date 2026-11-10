@@ -139,14 +139,17 @@
             <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
             
             <div class="dropdown-menu" id="profileDropdown">
-                <a href="#" onclick="alert('ระบบดูโปรไฟล์เตรียมเปิดใช้งาน')"><i class="fa-solid fa-user-pen"></i> ดูโปรไฟล์ส่วนตัว</a>
-                <a href="{{ url_for('api.login') }}" class="text-danger" onclick="event.stopPropagation();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
+                <a href="{{ url_for('api.student_profile_page') }}"><i class="fa-solid fa-user-pen"></i> ดูโปรไฟล์ส่วนตัว</a>
+                <a href="{{ url_for('api.login') }}" class="text-danger" onclick="event.stopPropagation(); localStorage.clear();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
         </div>
 
         <div class="menu-list">
             <a href="{{ url_for('api.typing') }}" class="menu-item active">
-                <i class="fa-solid fa-house"></i> ห้องฝึกพิมพ์
+                <i class="fa-solid fa-keyboard"></i> ห้องฝึกพิมพ์
+            </a>
+            <a href="{{ url_for('api.student_classrooms_page') }}" class="menu-item">
+                <i class="fa-solid fa-door-open"></i> ห้องเรียนของฉัน
             </a>
             <a href="{{ url_for('api.typing_history') }}" class="menu-item">
                 <i class="fa-solid fa-chart-simple"></i> ประวัติการพิมพ์
@@ -156,7 +159,6 @@
 
     <div class="main-wrapper">
         <header class="topbar">
-            <!-- ว่างไว้ จัด Layout ให้สมดุล -->
             <div></div>
         </header>
 
@@ -167,7 +169,7 @@
                 <div class="result-card">
                     <div class="trophy-icon"><i class="fa-solid fa-trophy"></i></div>
                     <h1 class="result-title">ทำได้ดีมาก!</h1>
-                    <p class="result-subtitle">คุณพิมพ์เสร็จเรียบร้อยแล้ว ระบบได้บันทึกคะแนนของคุณแล้ว</p>
+                    <p class="result-subtitle">คุณพิมพ์เสร็จเรียบร้อยแล้ว ระบบได้บันทึกคะแนนของคุณลงฐานข้อมูลแล้ว</p>
                     
                     <!-- การ์ด 3 กล่องหลัก -->
                     <div class="main-stats-grid">
@@ -208,8 +210,8 @@
                             <div class="detail-val" id="res-detail-score">0</div>
                         </div>
                         <div class="detail-item">
-                            <div class="detail-label">คำผิด (คาดคะเน)</div>
-                            <div class="detail-val" id="res-errors" style="color: #E95C68;">0 คำ</div>
+                            <div class="detail-label">จำนวนตัวอักษรผิด</div>
+                            <div class="detail-val" id="res-errors" style="color: #E95C68;">0 ครั้ง</div>
                         </div>
                         <div class="detail-item">
                             <div class="detail-label">สถานะ</div>
@@ -222,38 +224,19 @@
                 </div>
             </div>
 
-            <!-- Leaderboard ของห้อง (ฝั่งขวา) -->
+            <!-- Leaderboard ของห้อง (ฝั่งขวา ดึงจาก Oracle DB จริง) -->
             <div class="side-panels">
                 <div class="side-card">
                     <div class="side-title">
-                        อันดับคะแนนสูงสุด <span style="font-size: 11px; background: #F4F7FC; padding: 4px 8px; border-radius: 8px; color: #71829B; font-weight: 600;">ห้องปัจจุบัน</span>
+                        อันดับคะแนนสูงสุด <span id="leaderboardRoomLabel" style="font-size: 11px; background: #F4F7FC; padding: 4px 8px; border-radius: 8px; color: #71829B; font-weight: 600;">ทั้งหมด</span>
                     </div>
                     
-                    <div class="rank-list">
-                        <!-- ตัวอย่าง Mock Data ผู้เล่นคนอื่น -->
-                        <div class="rank-item">
-                            <div class="rank-badge rank-1">1</div>
-                            <div class="rank-avatar">👩🏻</div>
-                            <div class="rank-info"><div class="rank-name">ธนกฤต วงศ์สวัสดิ์</div></div>
-                            <div class="rank-score">1200</div>
-                        </div>
-                        <div class="rank-item">
-                            <div class="rank-badge rank-2">2</div>
-                            <div class="rank-avatar">👦🏽</div>
-                            <div class="rank-info"><div class="rank-name">สมชาย ใจดี</div></div>
-                            <div class="rank-score">1100</div>
-                        </div>
-                        <!-- ข้อมูลผู้เล่นปัจจุบัน (คุณ) -->
-                        <div class="rank-item highlight">
-                            <div class="rank-badge rank-3">3</div>
-                            <div class="rank-avatar">👩🏻</div>
-                            <div class="rank-info"><div class="rank-name" id="rankSelfName">คุณ</div></div>
-                            <div class="rank-score" id="rankSelfScore">0</div>
-                        </div>
+                    <div class="rank-list" id="rankListContainer">
+                        <div style="text-align:center; padding:20px; color:#71829B; font-size:13px;">กำลังโหลดอันดับคะแนน...</div>
                     </div>
                     
-                    <div class="rank-status">
-                        ✌️ สู้ๆ นะ!<br>อันดับของคุณคือ <strong>3</strong>
+                    <div class="rank-status" id="rankStatusText">
+                        ✌️ สู้ๆ นะ!
                     </div>
                 </div>
             </div>
@@ -262,7 +245,6 @@
     </div>
 
     <script>
-        // ควบคุม Profile Dropdown
         function toggleProfileMenu(event) {
             event.stopPropagation();
             document.getElementById('profileDropdown').classList.toggle('show');
@@ -276,44 +258,88 @@
             }
         }
 
-        // ---------------------------------------------------------
-        // ดึงข้อมูลคะแนนจาก URL Parameters
-        // ---------------------------------------------------------
-        document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("DOMContentLoaded", async () => {
             const urlParams = new URLSearchParams(window.location.search);
-            
-            // ดึงค่ามาพักไว้
+            const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+
             const wpm = urlParams.get('wpm') || '0';
             const acc = urlParams.get('acc') || '0';
-            const score = urlParams.get('score') || '0';
+            const score = urlParams.get('score') || String(Math.round(parseFloat(wpm) * (parseFloat(acc) / 100) * 10));
             const timeSpent = parseInt(urlParams.get('time')) || 0;
-            
-            // ชื่อนักศึกษา (ถ้ามีแนบมาด้วย) หรือใช้ชื่อ Default
-            const studentName = urlParams.get('student_name') || 'นักเรียนนิรนาม';
+            const errorsParam = urlParams.get('errors');
+            const roomCode = urlParams.get('room_code') || '';
 
-            // แสดงผลกล่องหลัก
+            const studentName = urlParams.get('student_name') || storedUser.full_name || storedUser.username || localStorage.getItem('username') || 'นักเรียน';
+
             document.getElementById('res-wpm').innerText = wpm;
             document.getElementById('res-acc').innerText = acc + '%';
             document.getElementById('res-score').innerText = score;
             
-            // แสดงผลกล่องรายละเอียด
             document.getElementById('res-detail-wpm').innerText = wpm;
             document.getElementById('res-detail-acc').innerText = acc + '%';
             document.getElementById('res-detail-score').innerText = score;
             
-            // ประเมินคำผิดคร่าวๆ จาก Accuracy
-            const estimatedErrors = Math.max(0, Math.floor((100 - parseFloat(acc)) / 2));
-            document.getElementById('res-errors').innerText = estimatedErrors + ' คำ';
+            const errCount = errorsParam !== null ? parseInt(errorsParam) : Math.max(0, Math.floor((100 - parseFloat(acc)) / 2));
+            document.getElementById('res-errors').innerText = errCount + ' ครั้ง';
 
-            // จัดรูปแบบเวลา (วินาที -> นาที:วินาที)
             const mins = Math.floor(timeSpent / 60).toString().padStart(2, '0');
             const secs = (timeSpent % 60).toString().padStart(2, '0');
             document.getElementById('res-time').innerText = `${mins}:${secs} นาที`;
 
-            // อัปเดตข้อมูล Leaderboard & Profile ด้วย
             document.getElementById('studentNameDisplay').innerText = studentName;
-            document.getElementById('rankSelfName').innerText = studentName + " (คุณ)";
-            document.getElementById('rankSelfScore').innerText = score;
+            if (roomCode) {
+                document.getElementById('leaderboardRoomLabel').innerText = roomCode;
+            }
+
+            // ดึงข้อมูล Leaderboard จริงจาก Oracle Database
+            try {
+                const res = await fetch(`/api/student/leaderboard?room_code=${encodeURIComponent(roomCode)}`);
+                const data = await res.json();
+                const list = data.leaderboard || [];
+                const container = document.getElementById('rankListContainer');
+                const statusEl = document.getElementById('rankStatusText');
+
+                if (list.length === 0) {
+                    container.innerHTML = `
+                        <div class="rank-item highlight">
+                            <div class="rank-badge rank-1">1</div>
+                            <div class="rank-avatar">👤</div>
+                            <div class="rank-info"><div class="rank-name">${studentName} (คุณ)</div></div>
+                            <div class="rank-score">${score}</div>
+                        </div>
+                    `;
+                    statusEl.innerHTML = `✌️ สู้ๆ นะ!<br>อันดับของคุณคือ <strong>1</strong>`;
+                    return;
+                }
+
+                let myRank = null;
+                container.innerHTML = list.map((item, index) => {
+                    const isMe = (storedUser.user_id && item.user_id === storedUser.user_id) ||
+                                 item.full_name === studentName ||
+                                 item.username === storedUser.username;
+                    if (isMe && myRank === null) myRank = index + 1;
+                    const badgeClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+                    return `
+                        <div class="rank-item ${isMe ? 'highlight' : ''}">
+                            <div class="rank-badge ${badgeClass}">${index + 1}</div>
+                            <div class="rank-avatar">${index === 0 ? '🏆' : '👤'}</div>
+                            <div class="rank-info">
+                                <div class="rank-name">${item.full_name}${isMe ? ' (คุณ)' : ''}</div>
+                                <div style="font-size:11px; color:#71829B;">${item.wpm} WPM</div>
+                            </div>
+                            <div class="rank-score">${item.score}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                if (myRank) {
+                    statusEl.innerHTML = `✌️ สู้ๆ นะ!<br>อันดับของคุณคือ <strong>${myRank}</strong>`;
+                } else {
+                    statusEl.innerHTML = `✌️ บันทึกผลคะแนนเรียบร้อย!`;
+                }
+            } catch (err) {
+                console.error("Leaderboard fetch error:", err);
+            }
         });
     </script>
 </body>

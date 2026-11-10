@@ -83,14 +83,14 @@
         <div class="user-profile" onclick="toggleProfileMenu(event)">
             <div class="avatar"><i class="fa-regular fa-face-smile"></i></div>
             <div class="user-info">
-                <div class="name">นักเรียนนิรนาม</div>
+                <div class="name" id="sidebarStudentName">นักเรียนนิรนาม</div>
                 <div class="role"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> กำลังออนไลน์</div>
             </div>
             <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
             
             <div class="dropdown-menu" id="profileDropdown">
                 <a href="{{ url_for('api.student_profile_page') }}"><i class="fa-solid fa-user-pen"></i> ดูโปรไฟล์ส่วนตัว</a>
-                <a href="{{ url_for('api.login') }}" class="text-danger" onclick="event.stopPropagation();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
+                <a href="{{ url_for('api.login') }}" class="text-danger" onclick="event.stopPropagation(); localStorage.clear();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
         </div>
 
@@ -112,7 +112,6 @@
 
     <div class="main-wrapper">
         <header class="topbar">
-            <!-- ว่างไว้จัด Layout -->
             <div></div>
         </header>
         
@@ -128,13 +127,14 @@
                 <div class="profile-header-sec">
                     <div class="big-avatar"><i class="fa-regular fa-face-smile"></i></div>
                     <div class="prof-info">
-                        <h2>นักเรียนนิรนาม</h2>
-                        <p><i class="fa-solid fa-id-card"></i> รหัสนักศึกษา: 68030103</p>
-                        <p><i class="fa-solid fa-users"></i> กลุ่มเรียน: ทค.2/1</p>
+                        <h2 id="profFullName">กำลังโหลด...</h2>
+                        <p><i class="fa-solid fa-id-card"></i> รหัสนักศึกษา: <span id="profStudentCode">-</span></p>
+                        <p><i class="fa-solid fa-users"></i> สาขา / กลุ่มเรียน: <span id="profMajor">-</span></p>
                         
                         <div class="profile-stats-mini">
-                            <div class="mini-stat"><i class="fa-solid fa-bolt" style="color: #F2A93B;"></i> Avg WPM: 40</div>
-                            <div class="mini-stat"><i class="fa-solid fa-bullseye" style="color: #20A873;"></i> Avg Acc: 94%</div>
+                            <div class="mini-stat"><i class="fa-solid fa-bolt" style="color: #F2A93B;"></i> Avg WPM: <span id="statAvgWpm">0</span></div>
+                            <div class="mini-stat"><i class="fa-solid fa-bullseye" style="color: #20A873;"></i> Avg Acc: <span id="statAvgAcc">0%</span></div>
+                            <div class="mini-stat"><i class="fa-solid fa-trophy" style="color: #288CF0;"></i> Best WPM: <span id="statBestWpm">0</span></div>
                         </div>
                     </div>
                 </div>
@@ -142,25 +142,25 @@
                 <div class="info-grid">
                     <div class="info-group">
                         <span class="info-label">ชื่อ - นามสกุล</span>
-                        <div class="info-val">นักเรียนนิรนาม</div>
+                        <div class="info-val" id="infoFullName">-</div>
                     </div>
                     <div class="info-group">
                         <span class="info-label">รหัสนักศึกษา</span>
-                        <div class="info-val">68030103</div>
+                        <div class="info-val" id="infoStudentCode">-</div>
                     </div>
                     <div class="info-group">
-                        <span class="info-label">สถานศึกษา / องค์กร</span>
-                        <div class="info-val">สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง</div>
+                        <span class="info-label">อีเมลบัญชีผู้ใช้</span>
+                        <div class="info-val" id="infoEmail">-</div>
                     </div>
                     <div class="info-group">
                         <span class="info-label">วันที่สมัครใช้งาน</span>
-                        <div class="info-val">15 ตุลาคม 2569</div>
+                        <div class="info-val" id="infoCreatedAt">-</div>
                     </div>
                 </div>
 
                 <div class="action-buttons">
-                    <button class="btn btn-primary" onclick="alert('ระบบแก้ไขข้อมูลเตรียมเปิดใช้งาน')">
-                        <i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูล
+                    <button class="btn btn-primary" onclick="openEditModal()">
+                        <i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูลส่วนตัว
                     </button>
                     <button class="btn btn-danger" onclick="deleteAccount()">
                         <i class="fa-solid fa-trash-can"></i> ลบบัญชีผู้ใช้
@@ -170,7 +170,50 @@
         </main>
     </div>
 
+    <!-- Modal แก้ไขข้อมูลส่วนตัว -->
+    <div id="editModal" style="display:none; position:fixed; inset:0; background:rgba(23,52,92,0.5); z-index:200; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#fff; width:100%; max-width:460px; border-radius:24px; padding:35px; box-shadow:0 15px 40px rgba(0,0,0,0.18);">
+            <h3 style="color:#17345C; font-size:20px; margin-bottom:20px;"><i class="fa-solid fa-user-pen" style="color:#288CF0;"></i> แก้ไขข้อมูลส่วนตัว</h3>
+            <form onsubmit="saveProfile(event)" style="display:flex; flex-direction:column; gap:15px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="display:block; font-size:13px; font-weight:600; color:#17345C; margin-bottom:6px;">ชื่อจริง</label>
+                        <input type="text" id="editFirstName" required placeholder="ชื่อจริง" style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:13px; font-weight:600; color:#17345C; margin-bottom:6px;">นามสกุล</label>
+                        <input type="text" id="editLastName" required placeholder="นามสกุล" style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none;">
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; color:#17345C; margin-bottom:6px;">
+                        อีเมลบัญชีผู้ใช้ <span style="font-size:11px; color:#71829B; font-weight:500;"><i class="fa-solid fa-lock"></i> ล็อก (ไม่สามารถแก้ไขได้)</span>
+                    </label>
+                    <input type="email" id="editEmail" readonly disabled style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none; background:#EEF2F7; color:#71829B; cursor:not-allowed;">
+                </div>
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; color:#17345C; margin-bottom:6px;">รหัสนักศึกษา (8 หลัก)</label>
+                    <input type="text" id="editStudentCode" required maxlength="8" minlength="8" inputmode="numeric" pattern="\d{8}" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 8)" style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none;">
+                </div>
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; color:#17345C; margin-bottom:6px;">สาขาวิชา</label>
+                    <select id="editMajor" required style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none; background:#fff; color:#17345C;">
+                        <option value="คอมพิวเตอร์เทคโนโลยี">คอมพิวเตอร์เทคโนโลยี</option>
+                        <option value="อิเล็กทรอนิกส์และโทรคมนาคม">อิเล็กทรอนิกส์และโทรคมนาคม</option>
+                    </select>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button type="button" onclick="closeEditModal()" style="flex:1; padding:12px; border:1px solid #D8E7F4; background:#fff; color:#71829B; border-radius:12px; font-weight:600; cursor:pointer;">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1;">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        const authToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        let currentProfile = {};
+
         function toggleProfileMenu(event) {
             event.stopPropagation();
             document.getElementById('profileDropdown').classList.toggle('show');
@@ -185,13 +228,124 @@
             }
         }
 
-        function deleteAccount() {
-            const confirmMsg = prompt("คำเตือน: การลบบัญชีจะทำให้ประวัติการพิมพ์หายไปอย่างถาวร\nพิมพ์คำว่า 'ยืนยัน' เพื่อดำเนินการลบ:");
-            if (confirmMsg === "ยืนยัน") {
-                alert("ลบบัญชีเรียบร้อย");
+        async function loadProfile() {
+            if (!authToken) {
                 window.location.href = "{{ url_for('api.login') }}";
+                return;
+            }
+            try {
+                const res = await fetch('/api/student/profile', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (res.status === 401 || res.status === 422) {
+                    localStorage.clear();
+                    window.location.href = "{{ url_for('api.login') }}";
+                    return;
+                }
+                const data = await res.json();
+                if (!res.ok) return;
+
+                const p = data.profile || {};
+                const s = data.stats || {};
+                currentProfile = p;
+
+                document.getElementById('sidebarStudentName').innerText = p.full_name || p.username || 'นักเรียน';
+                document.getElementById('profFullName').innerText = p.full_name || p.username || '-';
+                document.getElementById('profStudentCode').innerText = p.student_code || '-';
+                document.getElementById('profMajor').innerText = p.major || '-';
+
+                document.getElementById('statAvgWpm').innerText = s.avg_wpm ?? 0;
+                document.getElementById('statAvgAcc').innerText = `${s.avg_accuracy ?? 0}%`;
+                document.getElementById('statBestWpm').innerText = s.best_wpm ?? 0;
+
+                document.getElementById('infoFullName').innerText = p.full_name || '-';
+                document.getElementById('infoStudentCode').innerText = p.student_code || '-';
+                document.getElementById('infoEmail').innerText = p.email || '-';
+                document.getElementById('infoCreatedAt').innerText = p.created_at || '-';
+
+                // Sync ชื่อใน localStorage
+                const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+                storedUser.full_name = p.full_name;
+                localStorage.setItem('user', JSON.stringify(storedUser));
+            } catch (err) {
+                console.error("Load profile error:", err);
             }
         }
+
+        function openEditModal() {
+            const parts = (currentProfile.full_name || '').trim().split(/\s+/);
+            document.getElementById('editFirstName').value = currentProfile.first_name || parts[0] || '';
+            document.getElementById('editLastName').value = currentProfile.last_name || parts.slice(1).join(' ') || '';
+            document.getElementById('editEmail').value = currentProfile.email || '';
+            document.getElementById('editStudentCode').value = currentProfile.student_code || '';
+            document.getElementById('editMajor').value = currentProfile.major || '';
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        async function saveProfile(e) {
+            e.preventDefault();
+            const firstName = document.getElementById('editFirstName').value.trim();
+            const lastName = document.getElementById('editLastName').value.trim();
+            const fullName = `${firstName} ${lastName}`.trim();
+            const studentCode = document.getElementById('editStudentCode').value.trim();
+            const major = document.getElementById('editMajor').value.trim();
+
+            try {
+                const res = await fetch('/api/student/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        first_name: firstName,
+                        last_name: lastName,
+                        full_name: fullName,
+                        student_code: studentCode,
+                        major: major
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert('บันทึกข้อมูลโปรไฟล์สำเร็จ!');
+                    closeEditModal();
+                    await loadProfile();
+                } else {
+                    alert(data.error || 'ไม่สามารถบันทึกข้อมูลได้');
+                }
+            } catch (err) {
+                console.error("Save profile error:", err);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+            }
+        }
+
+        async function deleteAccount() {
+            const confirmMsg = prompt("คำเตือน: การลบบัญชีจะทำให้ประวัติการพิมพ์หายไปอย่างถาวร\nพิมพ์คำว่า 'ยืนยัน' เพื่อดำเนินการลบ:");
+            if (confirmMsg === "ยืนยัน") {
+                try {
+                    const res = await fetch('/api/student/profile', {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    if (res.ok) {
+                        localStorage.clear();
+                        alert("ลบบัญชีเรียบร้อยแล้ว");
+                        window.location.href = "{{ url_for('api.login') }}";
+                    } else {
+                        const data = await res.json();
+                        alert(data.error || "ไม่สามารถลบบัญชีได้");
+                    }
+                } catch (err) {
+                    alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadProfile);
     </script>
 </body>
 </html>

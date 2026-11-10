@@ -157,15 +157,17 @@
             <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
             
             <div class="dropdown-menu" id="profileDropdown">
-                <!-- ลิงก์ไปหน้าโปรไฟล์นักเรียนที่จะสร้างต่อไป -->
                 <a href="{{ url_for('api.student_profile_page') }}"><i class="fa-solid fa-user-gear"></i> ดูโปรไฟล์ส่วนตัว</a>
-                <a href="{{ url_for('api.login') }}" class="text-danger" onclick="event.stopPropagation();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
+                <a href="{{ url_for('api.login') }}" class="text-danger" onclick="event.stopPropagation(); localStorage.clear();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
         </div>
 
         <div class="menu-list">
-            <a href="#" class="menu-item active">
-                <i class="fa-solid fa-house"></i> ห้องฝึกพิมพ์
+            <a href="{{ url_for('api.typing') }}" class="menu-item active">
+                <i class="fa-solid fa-keyboard"></i> ห้องฝึกพิมพ์
+            </a>
+            <a href="{{ url_for('api.student_classrooms_page') }}" class="menu-item">
+                <i class="fa-solid fa-door-open"></i> ห้องเรียนของฉัน
             </a>
             <a href="{{ url_for('api.typing_history') }}" class="menu-item">
                 <i class="fa-solid fa-chart-simple"></i> ประวัติการพิมพ์
@@ -297,15 +299,40 @@
 
         let isExamMode = false;
         let currentRoom = '';
-        let studentName = localStorage.getItem('username') || 'นักเรียน (คุณ)';
+        const authToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        let studentName = storedUser.full_name || storedUser.username || localStorage.getItem('username') || 'นักเรียน';
         document.getElementById('studentNameDisplay').innerText = studentName;
         document.getElementById('lobbySelfName').innerText = studentName;
 
-        function submitJoinRoom() {
+        async function submitJoinRoom() {
             const code = document.getElementById('inputRoomCode').value.trim();
             if(!code) return alert('กรุณากรอกรหัสห้อง');
 
-            currentRoom = code.toUpperCase();
+            const roomCodeUpper = code.toUpperCase();
+
+            // บันทึกการเข้าร่วมห้องเรียนลง Oracle Database (U.CLASSROOM_MEMBERS) หากมี Token
+            if (authToken) {
+                try {
+                    const joinRes = await fetch('/api/student/classrooms/join', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify({ room_code: roomCodeUpper })
+                    });
+                    if (joinRes.status === 404) {
+                        const errData = await joinRes.json();
+                        alert(errData.error || `ไม่พบห้องเรียนรหัส ${roomCodeUpper}`);
+                        return;
+                    }
+                } catch (e) {
+                    console.warn("Join classroom API warning:", e);
+                }
+            }
+
+            currentRoom = roomCodeUpper;
             isExamMode = true;
             
             // อัปเดต UI ให้เปลี่ยนเป็นโหมดสอบ
@@ -450,27 +477,64 @@
             }, 1000);
         }
 
-        function endTyping() {
+        async function endTyping() {
             clearInterval(timerInterval);
             typingInput.disabled = true;
-            finalTimeSpent = defaultTime - timeLeft; 
+            finalTimeSpent = defaultTime - timeLeft;
+            const timeToSend = finalTimeSpent > 0 ? finalTimeSpent : 1;
 
             let errorCount = 0;
             const userVal = typingInput.value;
             for (let i = 0; i < userVal.length; i++) {
                 if (userVal[i] !== charElements[i]?.textContent) errorCount++;
             }
-            
-            socket.emit("submit_score", {
+
+            let finalScore = Math.round(currentLiveWpm * (currentLiveAccuracy / 100) * 10);
+
+            // บันทึกผลคะแนนลงฐานข้อมูล Oracle (U.SUBMISSION_RESULTS)
+            if (authToken) {
+                try {
+                    const res = await fetch('/api/student/submissions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify({
+                            wpm: currentLiveWpm,
+                            accuracy: currentLiveAccuracy,
+                            time_spent: timeToSend,
+                            error_count: errorCount,
+                            room_code: currentRoom
+                        })
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.result) {
+                        finalScore = data.result.score;
+                    }
+                } catch (e) {
+                    console.error("Save submission error:", e);
+                }
+            } else {
+                socket.emit("submit_score", {
+                    wpm: currentLiveWpm,
+                    accuracy: currentLiveAccuracy,
+                    time_spent: timeToSend,
+                    error_count: errorCount,
+                    room_code: currentRoom
+                });
+            }
+
+            const params = new URLSearchParams({
                 wpm: currentLiveWpm,
-                accuracy: currentLiveAccuracy,
-                time_spent: finalTimeSpent > 0 ? finalTimeSpent : 1,
-                error_count: errorCount
+                acc: currentLiveAccuracy,
+                score: finalScore,
+                time: timeToSend,
+                errors: errorCount,
+                room_code: currentRoom,
+                student_name: studentName
             });
-            
-            setTimeout(() => {
-                window.location.href = `/result?wpm=${currentLiveWpm}&acc=${currentLiveAccuracy}&score=150&time=${finalTimeSpent}`;
-            }, 1000);
+            window.location.href = `/result?${params.toString()}`;
         }
 
         typingInput.addEventListener("input", function () {

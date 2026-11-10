@@ -274,7 +274,6 @@
 
                 if (response.ok) {
                     if (data.needs_registration && data.redirect_url) {
-                        alert(data.message || "บัญชี Google นี้ยังไม่เคยสมัครสมาชิก กรุณากรอกข้อมูลเพื่อสมัครสมาชิกก่อน");
                         window.location.href = data.redirect_url;
                         return;
                     }

@@ -29,7 +29,15 @@ def register():
     password = data.get("password")
     email = data.get("email")
     role = data.get("role", "Student")
-    full_name = data.get("full_name") or username
+    first_name = (data.get("first_name") or "").strip()
+    last_name = (data.get("last_name") or "").strip()
+    combined_name = f"{first_name} {last_name}".strip()
+    full_name = combined_name or (data.get("full_name") or "").strip() or username
+
+    if not first_name and isinstance(full_name, str) and full_name.strip():
+        name_parts = full_name.strip().split(None, 1)
+        first_name = name_parts[0]
+        last_name = name_parts[1] if len(name_parts) > 1 else ""
 
     # ตรวจสอบข้อมูลพื้นฐาน
     if not all(
@@ -71,33 +79,32 @@ def register():
     faculty = None
 
     if role == "Student":
-        student_code = data.get("student_code") or f"STD{random.randint(10000, 99999)}"
+        student_code = data.get("student_code")
         major = data.get("major")
 
         if not isinstance(student_code, str) or not student_code.strip():
             return jsonify({
-                "error": "กรุณากรอกรหัสนักศึกษา"
+                "error": "กรุณากรอกรหัสนักศึกษา 8 หลัก"
             }), 400
 
         student_code = student_code.strip()
 
-        if len(student_code) > 20:
+        if not re.fullmatch(r"\d{8}", student_code):
             return jsonify({
-                "error": "รหัสนักศึกษาต้องไม่เกิน 20 ตัวอักษร"
+                "error": "รหัสนักศึกษาต้องเป็นตัวเลข 8 หลักเท่านั้น"
             }), 400
 
-        if major is not None:
-            if not isinstance(major, str):
-                return jsonify({
-                    "error": "ข้อมูลสาขาวิชาไม่ถูกต้อง"
-                }), 400
+        if not isinstance(major, str) or not major.strip():
+            return jsonify({
+                "error": "กรุณาเลือกสาขาวิชา"
+            }), 400
 
-            major = major.strip() or None
-
-            if major and len(major) > 100:
-                return jsonify({
-                    "error": "สาขาวิชาต้องไม่เกิน 100 ตัวอักษร"
-                }), 400
+        major = major.strip()
+        allowed_majors = ("คอมพิวเตอร์เทคโนโลยี", "อิเล็กทรอนิกส์และโทรคมนาคม")
+        if major not in allowed_majors:
+            return jsonify({
+                "error": "สาขาวิชาต้องเป็น คอมพิวเตอร์เทคโนโลยี หรือ อิเล็กทรอนิกส์และโทรคมนาคม เท่านั้น"
+            }), 400
 
     else:
         academic_title = data.get("academic_title")
@@ -142,33 +149,86 @@ def register():
                     "error": "ชื่อผู้ใช้หรืออีเมลนี้ถูกใช้งานแล้ว"
                 }), 409
 
+            if role == "Student" and student_code:
+                cursor.execute("""
+                    SELECT STUDENT_ID
+                    FROM U.STUDENTS
+                    WHERE STUDENT_CODE = :student_code
+                """, student_code=student_code)
+                if cursor.fetchone():
+                    return jsonify({
+                        "error": "รหัสนักศึกษานี้ถูกใช้งานแล้ว"
+                    }), 409
+
+            # ตรวจสอบว่าตาราง U.USERS มีคอลัมน์ FIRST_NAME และ LAST_NAME หรือไม่
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM all_tab_columns
+                WHERE owner = 'U'
+                  AND table_name = 'USERS'
+                  AND column_name IN ('FIRST_NAME', 'LAST_NAME')
+            """)
+            has_split_name_cols = (cursor.fetchone()[0] or 0) == 2
+
             # เพิ่มบัญชีผู้ใช้และรับ USER_ID ที่ Oracle สร้างให้อัตโนมัติ
             user_id_var = cursor.var(int)
 
-            cursor.execute("""
-                INSERT INTO U.USERS (
-                    USERNAME,
-                    PASSWORD_HASH,
-                    FULL_NAME,
-                    EMAIL,
-                    ROLE
+            if has_split_name_cols:
+                cursor.execute("""
+                    INSERT INTO U.USERS (
+                        USERNAME,
+                        PASSWORD_HASH,
+                        FULL_NAME,
+                        FIRST_NAME,
+                        LAST_NAME,
+                        EMAIL,
+                        ROLE
+                    )
+                    VALUES (
+                        :username,
+                        :password_hash,
+                        :full_name,
+                        :first_name,
+                        :last_name,
+                        :email,
+                        :role
+                    )
+                    RETURNING USER_ID INTO :user_id
+                """,
+                    username=username,
+                    password_hash=password_hash,
+                    full_name=full_name,
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    role=role,
+                    user_id=user_id_var
                 )
-                VALUES (
-                    :username,
-                    :password_hash,
-                    :full_name,
-                    :email,
-                    :role
+            else:
+                cursor.execute("""
+                    INSERT INTO U.USERS (
+                        USERNAME,
+                        PASSWORD_HASH,
+                        FULL_NAME,
+                        EMAIL,
+                        ROLE
+                    )
+                    VALUES (
+                        :username,
+                        :password_hash,
+                        :full_name,
+                        :email,
+                        :role
+                    )
+                    RETURNING USER_ID INTO :user_id
+                """,
+                    username=username,
+                    password_hash=password_hash,
+                    full_name=full_name,
+                    email=email,
+                    role=role,
+                    user_id=user_id_var
                 )
-                RETURNING USER_ID INTO :user_id
-            """,
-                username=username,
-                password_hash=password_hash,
-                full_name=full_name,
-                email=email,
-                role=role,
-                user_id=user_id_var
-            )
 
             user_id = user_id_var.getvalue()[0]
 
@@ -404,8 +464,8 @@ def _find_google_user(email: str, google_id: str):
                     cursor.execute("""
                         UPDATE U.USERS
                         SET GOOGLE_ID = :gid, AUTH_PROVIDER = 'GOOGLE'
-                        WHERE USER_ID = :uid AND GOOGLE_ID IS NULL
-                    """, gid=google_id, uid=user[0])
+                        WHERE USER_ID = :user_id AND GOOGLE_ID IS NULL
+                    """, gid=google_id, user_id=user[0])
                     connection.commit()
     except Exception as e:
         print("Google Login DB lookup fallback:", e)
@@ -585,8 +645,7 @@ def google_oauth_callback():
                 "role": requested_role,
             })
             reg_url = f"{url_for('api.register')}?{reg_params}"
-            msg = "บัญชี Google นี้ยังไม่เคยสมัครสมาชิก กรุณากรอกข้อมูลเพื่อสมัครสมาชิกก่อนเข้าใช้งาน"
-            return f"<script>alert({json.dumps(msg)}); window.location.replace({json.dumps(reg_url)});</script>"
+            return redirect(reg_url)
 
         user_id, db_username, _, db_full_name, db_email, role = user
 
