@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 class Config:
     """การตั้งค่าพื้นฐานของ Typeclass Application"""
@@ -15,3 +15,7 @@ class Config:
     
     # Anti-cheat Thresholds
     MAX_WPM_THRESHOLD = int(os.getenv("MAX_WPM_THRESHOLD", "320"))
+
+    # Google OAuth Settings
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")

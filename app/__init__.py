@@ -22,7 +22,7 @@ def create_app():
     # 2. เปิดใช้งาน Extensions
     CORS(app)
     jwt.init_app(app)
-    socketio.init_app(app, cors_allowed_origins="*")
+    socketio.init_app(app, cors_allowed_origins="*", async_mode="threading")
 
     # 3. ลงทะเบียน Route Blueprints (Presentation Layer)
     from .routes import auth_bp, teacher_bp, student_bp
@@ -33,6 +33,13 @@ def create_app():
     # 4. ลงทะเบียน WebSocket Event Listeners (Real-time Layer)
     from .sockets import register_socket_events
     register_socket_events(socketio)
+
+    @app.after_request
+    def add_no_cache_headers(response):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
 
     logging.info("Typeclass Application Initialized Successfully")
     return app
