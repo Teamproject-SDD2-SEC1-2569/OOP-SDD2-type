@@ -284,6 +284,9 @@ def update_student_profile():
         return jsonify({"error": "รหัสผู้ใช้ไม่ถูกต้อง"}), 400
 
     data = request.get_json(silent=True) or {}
+    if "email" in data:
+        # ล็อกไม่ให้แก้ไขฟิลด์ EMAIL ของบัญชีผู้ใช้
+        data.pop("email", None)
     first_name = (data.get("first_name") or "").strip()
     last_name = (data.get("last_name") or "").strip()
     combined_name = f"{first_name} {last_name}".strip()

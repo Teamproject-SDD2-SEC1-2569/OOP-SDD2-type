@@ -186,6 +186,12 @@
                     </div>
                 </div>
                 <div>
+                    <label style="display:block; font-size:13px; font-weight:600; color:#17345C; margin-bottom:6px;">
+                        อีเมลบัญชีผู้ใช้ <span style="font-size:11px; color:#71829B; font-weight:500;"><i class="fa-solid fa-lock"></i> ล็อก (ไม่สามารถแก้ไขได้)</span>
+                    </label>
+                    <input type="email" id="editEmail" readonly disabled style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none; background:#EEF2F7; color:#71829B; cursor:not-allowed;">
+                </div>
+                <div>
                     <label style="display:block; font-size:13px; font-weight:600; color:#17345C; margin-bottom:6px;">รหัสนักศึกษา (8 หลัก)</label>
                     <input type="text" id="editStudentCode" required maxlength="8" minlength="8" inputmode="numeric" pattern="\d{8}" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 8)" style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none;">
                 </div>
@@ -270,6 +276,7 @@
             const parts = (currentProfile.full_name || '').trim().split(/\s+/);
             document.getElementById('editFirstName').value = currentProfile.first_name || parts[0] || '';
             document.getElementById('editLastName').value = currentProfile.last_name || parts.slice(1).join(' ') || '';
+            document.getElementById('editEmail').value = currentProfile.email || '';
             document.getElementById('editStudentCode').value = currentProfile.student_code || '';
             document.getElementById('editMajor').value = currentProfile.major || '';
             document.getElementById('editModal').style.display = 'flex';
