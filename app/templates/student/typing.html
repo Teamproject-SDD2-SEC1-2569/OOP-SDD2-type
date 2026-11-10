@@ -297,7 +297,9 @@
 
         let isExamMode = false;
         let currentRoom = '';
-        let studentName = 'นักเรียน (คุณ)';
+        let studentName = localStorage.getItem('username') || 'นักเรียน (คุณ)';
+        document.getElementById('studentNameDisplay').innerText = studentName;
+        document.getElementById('lobbySelfName').innerText = studentName;
 
         function submitJoinRoom() {
             const code = document.getElementById('inputRoomCode').value.trim();
@@ -345,7 +347,9 @@
         }
 
         // ================= ระบบพิมพ์ =================
-        const socket = io();
+        const socket = io({
+            auth: { token: localStorage.getItem('token') }
+        });
 
         let targetText = "apple banana computer desk window school friend family house book water plane train car chair table phone sun moon star happy sad";
         const textDisplay = document.getElementById("textDisplay");
@@ -365,6 +369,13 @@
 
         socket.on("connect", () => {
             console.log("Connected to server");
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomFromUrl = urlParams.get("room_code");
+            if (roomFromUrl && !isExamMode) {
+                document.getElementById("inputRoomCode").value = roomFromUrl;
+                submitJoinRoom();
+                return;
+            }
             // เปิดหน้ามาปุ๊บ ขอคำฝึกซ้อมเลย
             socket.emit("start_typing");
         });

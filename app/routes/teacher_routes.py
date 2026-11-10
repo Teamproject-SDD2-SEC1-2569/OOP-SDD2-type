@@ -417,7 +417,7 @@ def teacher_register_page():
 
 @teacher_bp.route("/dashboard", methods=["GET"])
 def teacher_dashboard_page():
-    return render_template("teacher/dashboard.html")
+    return render_template("teacher/Dashboard.html", active_rooms=active_rooms)
 
 
 @teacher_bp.route("/create-room", methods=["GET", "POST"])

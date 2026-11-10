@@ -46,7 +46,7 @@ def typing():
 @student_bp.route('/classrooms')
 def student_classrooms_page():
     """หน้ารวมห้องเรียนของนักเรียน"""
-    return render_template('student/classrooms.html')
+    return render_template('student/classroom.html')
 
 
 @student_bp.route('/profile')

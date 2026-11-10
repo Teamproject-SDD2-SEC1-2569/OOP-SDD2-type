@@ -53,22 +53,22 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label>ชื่อผู้ใช้</label>
-                        <input type="text" placeholder="กรอกชื่อผู้ใช้" required>
+                        <input type="text" id="regUsername" placeholder="กรอกชื่อผู้ใช้" required>
                     </div>
 
                     <div class="form-group">
                         <label>รหัสผ่าน</label>
-                        <input type="password" placeholder="กรอกรหัสผ่าน" required>
+                        <input type="password" id="regPassword" placeholder="อย่างน้อย 8 ตัวอักษร" required>
                     </div>
 
                     <div class="form-group">
                         <label>อีเมล</label>
-                        <input type="email" placeholder="กรอกอีเมล" required>
+                        <input type="email" id="regEmail" placeholder="กรอกอีเมล" required>
                     </div>
 
                     <div class="form-group">
                         <label>ยืนยันรหัสผ่าน</label>
-                        <input type="password" placeholder="ยืนยันรหัสผ่าน" required>
+                        <input type="password" id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน" required>
                     </div>
                 </div>
 
@@ -91,18 +91,55 @@
     </div>
 
     <script>
+        let selectedRole = "Student";
         const roleBtns = document.querySelectorAll('.role-button');
         roleBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 roleBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+                selectedRole = btn.innerText.includes('อาจารย์') ? 'Teacher' : 'Student';
             });
         });
 
-        function handleRegister(e) {
+        async function handleRegister(e) {
             e.preventDefault();
-            alert("สมัครสมาชิกสำเร็จ!");
-            window.location.href = "{{ url_for('api.login') }}";
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const email = document.getElementById('regEmail').value.trim();
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+            if (password !== confirmPassword) {
+                alert("รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน");
+                return;
+            }
+            if (password.length < 8) {
+                alert("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
+                return;
+            }
+
+            try {
+                const res = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        email: email,
+                        full_name: username,
+                        role: selectedRole
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert("สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ");
+                    window.location.href = "{{ url_for('api.login') }}";
+                } else {
+                    alert("สมัครสมาชิกไม่สำเร็จ: " + (data.error || data.message || "กรุณาตรวจสอบข้อมูล"));
+                }
+            } catch (err) {
+                console.error(err);
+                alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+            }
         }
     </script>
 </body>
