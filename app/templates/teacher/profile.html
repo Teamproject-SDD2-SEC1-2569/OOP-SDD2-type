@@ -225,19 +225,9 @@
         </div>
     </div>
 
+    <script src="{{ url_for('static', filename='js/teacher_common.js') }}"></script>
     <script>
-        const authToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
         let currentProfile = {};
-
-        function getInitials(fullName) {
-            const cleaned = (fullName || '').trim();
-            if (!cleaned) return 'อจ';
-            const parts = cleaned.split(/\s+/);
-            if (parts.length >= 2) {
-                return (parts[0][0] + parts[1][0]).toUpperCase();
-            }
-            return cleaned.slice(0, 2).toUpperCase();
-        }
 
         function toggleProfileMenu(event) {
             event.stopPropagation();
@@ -251,61 +241,49 @@
                     dropdown.classList.remove('show');
                 }
             }
+            if (event.target.id === 'editModal') closeEditModal();
         }
 
         async function loadTeacherProfile() {
-            if (!authToken) {
-                window.location.href = "/";
+            if (!TC.guardTeacher()) return;
+            const { ok, data } = await TC.api('/teacher/api/profile');
+            if (!ok) {
+                TC.toast(data.error || 'โหลดข้อมูลโปรไฟล์ไม่สำเร็จ', 'error');
                 return;
             }
-            try {
-                const res = await fetch('/teacher/api/profile', {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
-                if (res.status === 401 || res.status === 422) {
-                    localStorage.clear();
-                    window.location.href = "/";
-                    return;
-                }
-                const data = await res.json();
-                if (!res.ok) return;
 
-                const p = data.profile || {};
-                currentProfile = p;
+            const p = data.profile || {};
+            currentProfile = p;
 
-                const titlePrefix = p.academic_title || 'อ.';
-                const fullName = p.full_name || p.username || 'อาจารย์';
-                const displayWithTitle = fullName.startsWith(titlePrefix) ? fullName : `${titlePrefix}${fullName}`;
-                const initials = getInitials(fullName);
+            const titlePrefix = p.academic_title || 'อ.';
+            const fullName = p.full_name || p.username || 'อาจารย์';
+            const displayWithTitle = fullName.startsWith(titlePrefix) ? fullName : `${titlePrefix}${fullName}`;
+            const initials = TC.initials(fullName);
 
-                document.getElementById('sidebarAvatar').innerText = initials;
-                document.getElementById('profAvatar').innerText = initials;
-                document.getElementById('sidebarTeacherName').innerText = displayWithTitle;
-                document.getElementById('profTitleName').innerText = displayWithTitle;
-                document.getElementById('profFaculty').innerText = p.faculty || '-';
-                document.getElementById('profEmail').innerText = p.email || '-';
+            document.getElementById('sidebarAvatar').innerText = initials;
+            document.getElementById('profAvatar').innerText = initials;
+            document.getElementById('sidebarTeacherName').innerText = displayWithTitle;
+            document.getElementById('profTitleName').innerText = displayWithTitle;
+            document.getElementById('profFaculty').innerText = p.faculty || '-';
+            document.getElementById('profEmail').innerText = p.email || '-';
 
-                document.getElementById('infoFullName').innerText = fullName;
-                document.getElementById('infoEmail').innerText = p.email || '-';
-                document.getElementById('infoFaculty').innerText = p.faculty || '-';
-                document.getElementById('infoTotalRooms').innerText = `${p.total_rooms ?? 0} ห้อง`;
-                document.getElementById('infoCreatedAt').innerText = p.created_at || '-';
+            document.getElementById('infoFullName').innerText = fullName;
+            document.getElementById('infoEmail').innerText = p.email || '-';
+            document.getElementById('infoFaculty').innerText = p.faculty || '-';
+            document.getElementById('infoTotalRooms').innerText = `${p.total_rooms ?? 0} ห้อง`;
+            document.getElementById('infoCreatedAt').innerText = p.created_at || '-';
 
-                // Sync ชื่ออาจารย์ใน localStorage เพื่อแสดงในหน้าอื่นๆ ของอาจารย์
-                const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-                storedUser.full_name = fullName;
-                storedUser.academic_title = titlePrefix;
-                localStorage.setItem('user', JSON.stringify(storedUser));
-            } catch (err) {
-                console.error("Load teacher profile error:", err);
-            }
+            // Sync ชื่ออาจารย์ใน localStorage เพื่อแสดงในหน้าอื่นๆ ของอาจารย์
+            const storedUser = TC.getUser();
+            storedUser.full_name = fullName;
+            storedUser.academic_title = titlePrefix;
+            localStorage.setItem('user', JSON.stringify(storedUser));
         }
 
         function openEditModal() {
-            const parts = (currentProfile.full_name || '').trim().split(/\s+/);
             document.getElementById('editAcademicTitle').value = currentProfile.academic_title || 'อ.';
-            document.getElementById('editFirstName').value = currentProfile.first_name || parts[0] || '';
-            document.getElementById('editLastName').value = currentProfile.last_name || parts.slice(1).join(' ') || '';
+            document.getElementById('editFirstName').value = currentProfile.first_name || '';
+            document.getElementById('editLastName').value = currentProfile.last_name || '';
             document.getElementById('editEmail').value = currentProfile.email || '';
             document.getElementById('editFaculty').value = currentProfile.faculty || '';
             document.getElementById('editModal').style.display = 'flex';
@@ -315,74 +293,62 @@
             document.getElementById('editModal').style.display = 'none';
         }
 
-        async function saveProfile(e) {
-            e.preventDefault();
-            const academicTitle = document.getElementById('editAcademicTitle').value;
+        async function handleSaveProfile(event) {
+            event.preventDefault();
+            const academicTitle = document.getElementById('editAcademicTitle').value.trim();
             const firstName = document.getElementById('editFirstName').value.trim();
             const lastName = document.getElementById('editLastName').value.trim();
-            const fullName = `${firstName} ${lastName}`.trim();
             const faculty = document.getElementById('editFaculty').value.trim();
+            const fullName = `${firstName} ${lastName}`.trim();
 
-            if (firstName.length < 3 || firstName.length > 30) {
-                alert('ชื่อจริงต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร');
-                return;
-            }
-            if (lastName.length < 3 || lastName.length > 30) {
-                alert('นามสกุลต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร');
+            if (!fullName) {
+                TC.toast('กรุณาระบุชื่อ-นามสกุล', 'error');
                 return;
             }
 
-            try {
-                const res = await fetch('/teacher/api/profile', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify({
-                        academic_title: academicTitle,
-                        first_name: firstName,
-                        last_name: lastName,
-                        full_name: fullName,
-                        faculty: faculty
-                    })
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    closeEditModal();
-                    await loadTeacherProfile();
-                } else {
-                    alert(data.error || 'ไม่สามารถบันทึกข้อมูลได้');
+            const { ok, data } = await TC.api('/teacher/api/profile', {
+                method: 'PUT',
+                body: {
+                    academic_title: academicTitle,
+                    first_name: firstName,
+                    last_name: lastName,
+                    full_name: fullName,
+                    faculty: faculty
                 }
-            } catch (err) {
-                console.error("Save teacher profile error:", err);
-                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+            });
+
+            if (ok) {
+                closeEditModal();
+                TC.toast('บันทึกข้อมูลส่วนตัวสำเร็จ', 'success');
+                await loadTeacherProfile();
+            } else {
+                TC.toast(data.error || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
             }
         }
 
         async function deleteAccount() {
-            const confirmMsg = prompt("คำเตือน: การลบบัญชีจะทำให้ข้อมูลห้องเรียนและสถิติทั้งหมดหายไปถาวร\nพิมพ์คำว่า 'ยืนยัน' เพื่อดำเนินการลบ:");
-            if (confirmMsg === "ยืนยัน") {
-                try {
-                    const res = await fetch('/teacher/api/profile', {
-                        method: 'DELETE',
-                        headers: { 'Authorization': `Bearer ${authToken}` }
-                    });
-                    if (res.ok) {
-                        localStorage.clear();
-                        alert("ลบบัญชีผู้ใช้อาจารย์เรียบร้อยแล้ว");
-                        window.location.href = "/";
-                    } else {
-                        const data = await res.json();
-                        alert(data.error || "ไม่สามารถลบบัญชีได้");
-                    }
-                } catch (err) {
-                    alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
-                }
+            const confirmed = await TC.confirm({
+                title: 'ลบบัญชีอาจารย์ผู้สอน?',
+                message: 'คำเตือน: การลบบัญชีจะทำให้ข้อมูลห้องเรียน สมาชิก และผลคะแนนทั้งหมดถูกลบถาวร',
+                confirmText: 'ลบบัญชีถาวร',
+                danger: true
+            });
+            if (!confirmed) return;
+
+            const { ok, data } = await TC.api('/teacher/api/profile', { method: 'DELETE' });
+            if (ok) {
+                TC.toast('ลบบัญชีผู้ใช้อาจารย์เรียบร้อยแล้ว', 'success');
+                setTimeout(() => TC.logout(), 800);
+            } else {
+                TC.toast(data.error || 'ไม่สามารถลบบัญชีได้', 'error');
             }
         }
 
-        document.addEventListener('DOMContentLoaded', loadTeacherProfile);
+        document.addEventListener('DOMContentLoaded', () => {
+            if (TC.guardTeacher()) {
+                loadTeacherProfile();
+            }
+        });
     </script>
 </body>
 </html>

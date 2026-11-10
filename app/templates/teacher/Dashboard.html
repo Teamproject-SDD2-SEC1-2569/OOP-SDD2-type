@@ -94,6 +94,11 @@
         .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
         .form-label { color: #063376; font-size: 14px; font-weight: 600; }
         .form-input, .form-select { padding: 10px 15px; border-radius: 12px; border: 1px solid #D8E7F4; font-size: 14px; width: 100%; outline: none; background: #fff; font-family: 'Prompt';}
+        .btn-icon-danger { background: #fff; border: 1px solid #F8C9CE; color: #E95C68; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .btn-icon-danger:hover { background: #E95C68; color: #fff; }
+        .action-group { display: flex; gap: 8px; align-items: center; }
+        .loading-row td { text-align: center; padding: 30px; color: #71829B; }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -106,16 +111,16 @@
         
         <!-- อัปเดต User Profile: เพิ่ม onclick เรียกฟังก์ชัน JavaScript -->
         <div class="user-profile" onclick="toggleProfileMenu(event)">
-            <div class="avatar">ธพ</div>
+            <div class="avatar">อจ</div>
             <div class="user-info">
-                <div class="name">อ.ธนภัทร ดิษฐสโร</div>
+                <div class="name">กำลังโหลด...</div>
                 <div class="role">อาจารย์ผู้สอน</div>
             </div>
             <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
             
             <div class="dropdown-menu" id="profileDropdown">
                 <a href="{{ url_for('teacher.teacher_profile_page') }}"><i class="fa-solid fa-user-gear"></i> ตั้งค่าบัญชี</a>
-                <a href="/" class="text-danger" onclick="event.stopPropagation();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
+                <a href="/" class="text-danger" data-logout><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
         </div>
         
@@ -145,22 +150,36 @@
                     <h1>ภาพรวมห้องเรียนฝึกพิมพ์</h1>
                     <p>เข้าถึงทุกเมนูจัดการ สร้างห้องใหม่ หรือติดตามการแข่งขันสดได้จากหน้านี้</p>
                 </div>
-                <div class="term-badge"><i class="fa-regular fa-calendar-check" style="color: #288CF0;"></i> ภาคเรียนที่ 1 / 2569</div>
+                <div class="term-badge"><i class="fa-regular fa-calendar-check" style="color: #288CF0;"></i> <span id="termLabel">ภาคเรียนที่ 1 / 2569</span></div>
             </div>
 
             <div class="stats-row">
                 <div class="stat-box">
                     <div class="stat-icon" style="background: #E7F3FE; color: #288CF0;"><i class="fa-solid fa-chalkboard-user"></i></div>
                     <div class="stat-info">
-                        <h4>{{ active_rooms|length if active_rooms else 0 }} ห้อง</h4>
+                        <h4 id="statTotalRooms">- ห้อง</h4>
                         <p>ห้องเรียนในระบบทั้งหมด</p>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon" style="background: #FDEBED; color: #E95C68;"><i class="fa-solid fa-tower-broadcast"></i></div>
+                    <div class="stat-info">
+                        <h4 id="statOpenRooms">- ห้อง</h4>
+                        <p>ห้องที่กำลังเปิดอยู่</p>
                     </div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-icon" style="background: #E4F7F0; color: #20A873;"><i class="fa-solid fa-users"></i></div>
                     <div class="stat-info">
-                        <h4>0 คน</h4>
-                        <p>นักเรียนที่เข้าร่วม (สถิติรวม)</p>
+                        <h4 id="statTotalStudents">- คน</h4>
+                        <p>นักศึกษาที่เข้าร่วม (สถิติรวม)</p>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon" style="background: #FFF3DD; color: #F2A93B;"><i class="fa-solid fa-file-lines"></i></div>
+                    <div class="stat-info">
+                        <h4 id="statTotalSubmissions">- ครั้ง</h4>
+                        <p>ผลการทดสอบที่บันทึกแล้ว</p>
                     </div>
                 </div>
             </div>
@@ -174,9 +193,14 @@
                     <div class="filter-tools">
                         <div class="search-box">
                             <i class="fa-solid fa-search"></i>
-                            <input type="text" placeholder="ค้นหารหัส หรือชื่อห้อง...">
+                            <input type="text" id="roomSearch" placeholder="ค้นหารหัส หรือชื่อห้อง..." oninput="renderRooms()">
                         </div>
-                        <button class="btn-primary" onclick="document.getElementById('createModal').classList.add('show')">
+                        <select class="filter-select" id="statusFilter" onchange="renderRooms()">
+                            <option value="all">ทุกสถานะ</option>
+                            <option value="open">กำลังเปิด</option>
+                            <option value="closed">ปิดแล้ว</option>
+                        </select>
+                        <button class="btn-primary" onclick="openCreateModal()">
                             <i class="fa-solid fa-plus"></i> สร้างห้องใหม่
                         </button>
                     </div>
@@ -188,41 +212,15 @@
                             <tr>
                                 <th>รหัสเข้าห้อง</th>
                                 <th>ชื่อห้องเรียน</th>
-                                <th>ประเภท</th>
+                                <th>สมาชิก</th>
                                 <th>เวลา</th>
+                                <th>สร้างเมื่อ</th>
                                 <th>สถานะ</th>
                                 <th>จัดการ</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% if active_rooms %}
-                                {% for code, room in active_rooms.items() %}
-                                <tr>
-                                    <td><span class="room-code-badge" {% if room.status not in ['live', 'waiting'] %}style="background-color: #71829B;"{% endif %}>{{ code }}</span></td>
-                                    <td style="font-weight: 700; color: #063376;">{{ room.room_name }}</td>
-                                    <td>ภาษาอังกฤษ</td>
-                                    <td>{{ room.duration }} วิ</td>
-                                    <td>
-                                        {% if room.status == 'live' or room.status == 'waiting' %}
-                                            <span class="status-badge live">กำลังเปิด</span>
-                                        {% else %}
-                                            <span class="status-badge closed">ปิดแล้ว</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{{ url_for('teacher.teacher_manage_classroom_page', room_code=code) }}" class="btn-action {% if room.status == 'live' or room.status == 'waiting' %}btn-primary-sm{% else %}btn-outline-sm{% endif %}">
-                                            <i class="fa-solid fa-display"></i> ดูข้อมูล
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            {% else %}
-                                <tr>
-                                    <td colspan="6" style="text-align: center; padding: 30px; color: #71829B;">
-                                        ยังไม่มีห้องเรียนที่เปิดใช้งาน กรุณากด "สร้างห้องใหม่"
-                                    </td>
-                                </tr>
-                            {% endif %}
+                        <tbody id="roomTableBody">
+                            <tr class="loading-row"><td colspan="7"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดข้อมูลห้องเรียน...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -230,103 +228,38 @@
         </main>
     </div>
 
-    <!-- Modal ตั้งค่าบัญชี -->
-    <div class="modal-overlay" id="accountModal">
-        <div class="modal-card">
-            <h3 style="color: #063376; font-size: 18px; margin-bottom: 5px;">ตั้งค่าบัญชีอาจารย์</h3>
-            <div class="form-group">
-                <label class="form-label">ชื่อ - นามสกุล</label>
-                <input type="text" class="form-input" value="อ.ธนภัทร ดิษฐสโร">
-            </div>
-            <div class="form-group">
-                <label class="form-label">รหัสผ่านใหม่ (ปล่อยว่างหากไม่ต้องการเปลี่ยน)</label>
-                <input type="password" class="form-input" placeholder="••••••••">
-            </div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
-                <button type="button" class="btn-action btn-outline-sm" onclick="document.getElementById('accountModal').classList.remove('show')">ยกเลิก</button>
-                <button type="button" class="btn-primary" onclick="alert('บันทึกข้อมูลบัญชีสำเร็จ!'); document.getElementById('accountModal').classList.remove('show')">บันทึกข้อมูล</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal สร้างห้อง -->
     <div class="modal-overlay" id="createModal">
-        <form class="modal-card" action="{{ url_for('teacher.teacher_create_room_page') }}" method="POST">
+        <form class="modal-card" id="createRoomForm" novalidate>
             <h3 style="color: #063376; font-size: 18px; margin-bottom: 5px;">สร้างห้องเรียนใหม่</h3>
             <div class="form-group">
                 <label class="form-label">ชื่อห้องเรียน</label>
-                <input type="text" name="room_name" class="form-input" value="ห้องฝึกพิมพ์ พื้นฐานคอมพิวเตอร์" required>
+                <input type="text" id="roomNameInput" class="form-input" maxlength="100" placeholder="เช่น ห้องฝึกพิมพ์ พื้นฐานคอมพิวเตอร์">
             </div>
             <div class="form-group">
-                <label class="form-label">ประเภท</label>
-                <select name="category" class="form-select">
-                    <option value="english">ภาษาอังกฤษ</option>
+                <label class="form-label">เวลาสอบ (วินาที)</label>
+                <select id="roomDurationInput" class="form-select">
+                    <option value="15">15 วิ</option>
+                    <option value="30">30 วิ</option>
+                    <option value="60" selected>60 วิ</option>
+                    <option value="120">120 วิ</option>
                 </select>
             </div>
-            <div class="form-group" style="display: flex; flex-direction: row; gap: 15px;">
-                <div style="flex: 1;">
-                    <label class="form-label">เวลาสอบ (วินาที)</label>
-                    <select name="duration" class="form-select">
-                        <option value="15">15 วิ</option>
-                        <option value="30">30 วิ</option>
-                        <option value="60" selected>60 วิ</option>
-                        <option value="120">120 วิ</option>
-                    </select>
-                </div>
-                <div style="flex: 1;">
-                    <label class="form-label">จำนวนนักเรียนสูงสุด</label>
-                    <input type="number" name="max_participants" class="form-input" value="30" min="1" max="60">
-                </div>
-            </div>
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
-                <button type="button" class="btn-action btn-outline-sm" onclick="document.getElementById('createModal').classList.remove('show')">ยกเลิก</button>
-                <button type="submit" class="btn-primary">บันทึกและสร้างห้อง</button>
+                <button type="button" class="btn-action btn-outline-sm" style="cursor:pointer;" onclick="closeCreateModal()">ยกเลิก</button>
+                <button type="submit" class="btn-primary" id="createRoomBtn">บันทึกและสร้างห้อง</button>
             </div>
         </form>
     </div>
 
-    <!-- ================= สคริปต์ควบคุมเมนูโปรไฟล์ ================= -->
+    <script src="{{ url_for('static', filename='js/teacher_common.js') }}"></script>
     <script>
-        // ป้องกันบัญชีนักเรียนแอบเข้าหน้าอาจารย์ผ่าน URL
-        (function checkTeacherRole() {
-            try {
-                const userStr = localStorage.getItem('user');
-                if (!userStr) {
-                    window.location.href = '/';
-                    return;
-                }
-                const user = JSON.parse(userStr);
-                if (!user.role || user.role.toLowerCase() !== 'teacher') {
-                    alert('ปฏิเสธการเข้าถึง: บัญชีนักเรียนไม่สามารถเข้าใช้งานระบบของอาจารย์ได้');
-                    window.location.href = '/';
-                    return;
-                }
-                const fullName = (user.full_name || user.username || 'อาจารย์').trim();
-                const titlePrefix = user.academic_title || 'อ.';
-                const displayName = fullName.startsWith(titlePrefix) ? fullName : `${titlePrefix}${fullName}`;
-                const parts = fullName.split(/\s+/);
-                const initials = parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : fullName.slice(0, 2).toUpperCase();
-                const nameEl = document.querySelector('.user-profile .name');
-                const avatarEl = document.querySelector('.user-profile .avatar');
-                if (nameEl) nameEl.innerText = displayName;
-                if (avatarEl) avatarEl.innerText = initials;
-            } catch (e) {
-                window.location.href = '/';
-            }
-        })();
+        let allRooms = [];
 
         // ฟังก์ชันเปิด/ปิด เมนู Dropdown แบบคลิก
         function toggleProfileMenu(event) {
             event.stopPropagation();
             document.getElementById('profileDropdown').classList.toggle('show');
-        }
-
-        // ฟังก์ชันเปิด Modal ตั้งค่าบัญชี
-        function openAccountModal(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            document.getElementById('profileDropdown').classList.remove('show');
-            document.getElementById('accountModal').classList.add('show');
         }
 
         // กดพื้นที่ว่างนอกเมนู เพื่อปิด Dropdown อัตโนมัติ
@@ -337,6 +270,135 @@
                     dropdown.classList.remove('show');
                 }
             }
+            if (event.target.id === 'createModal') closeCreateModal();
+        }
+
+        function openCreateModal() {
+            document.getElementById('createModal').classList.add('show');
+            setTimeout(() => document.getElementById('roomNameInput').focus(), 50);
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('show');
+        }
+
+        function setTermLabel() {
+            // ภาคเรียนคำนวณจากวันที่ปัจจุบัน (ปีการศึกษาไทยเริ่ม มิ.ย.)
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            const beYear = now.getFullYear() + 543;
+            const academicYear = month >= 6 ? beYear : beYear - 1;
+            const term = (month >= 6 && month <= 10) ? 1 : 2;
+            document.getElementById('termLabel').innerText = `ภาคเรียนที่ ${term} / ${academicYear}`;
+        }
+
+        async function loadDashboard() {
+            const { ok, data } = await TC.api('/teacher/api/dashboard');
+            const tbody = document.getElementById('roomTableBody');
+            if (!ok) {
+                tbody.innerHTML = `<tr class="loading-row"><td colspan="7" style="color:#E95C68;">${TC.escape(data.error || 'ไม่สามารถโหลดข้อมูลได้')}</td></tr>`;
+                return;
+            }
+            const s = data.stats || {};
+            document.getElementById('statTotalRooms').innerText = `${s.total_rooms ?? 0} ห้อง`;
+            document.getElementById('statOpenRooms').innerText = `${s.open_rooms ?? 0} ห้อง`;
+            document.getElementById('statTotalStudents').innerText = `${s.total_students ?? 0} คน`;
+            document.getElementById('statTotalSubmissions').innerText = `${s.total_submissions ?? 0} ครั้ง`;
+            allRooms = data.rooms || [];
+            renderRooms();
+        }
+
+        function renderRooms() {
+            const tbody = document.getElementById('roomTableBody');
+            const q = document.getElementById('roomSearch').value.trim().toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            const rooms = allRooms.filter(r =>
+                (status === 'all' || r.status === status) &&
+                (!q || r.room_code.toLowerCase().includes(q) || (r.room_name || '').toLowerCase().includes(q))
+            );
+
+            if (allRooms.length === 0) {
+                tbody.innerHTML = `<tr class="loading-row"><td colspan="7">ยังไม่มีห้องเรียน กรุณากด "สร้างห้องใหม่"</td></tr>`;
+                return;
+            }
+            if (rooms.length === 0) {
+                tbody.innerHTML = `<tr class="loading-row"><td colspan="7">ไม่พบห้องเรียนที่ค้นหา</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = rooms.map(r => {
+                const isOpen = r.status === 'open';
+                const manageUrl = `{{ url_for('teacher.teacher_manage_classroom_page') }}?room_code=${encodeURIComponent(r.room_code)}`;
+                return `
+                <tr>
+                    <td><span class="room-code-badge" ${isOpen ? '' : 'style="background-color: #71829B;"'}>${TC.escape(r.room_code)}</span></td>
+                    <td style="font-weight: 700; color: #063376;">${TC.escape(r.room_name)}</td>
+                    <td>${r.member_count} คน</td>
+                    <td>${r.duration} วิ</td>
+                    <td>${TC.escape(r.created_at || '-')}</td>
+                    <td>${isOpen
+                        ? '<span class="status-badge live"><i class="fa-solid fa-circle" style="font-size:7px;"></i> กำลังเปิด</span>'
+                        : '<span class="status-badge closed">ปิดอยู่</span>'}</td>
+                    <td>
+                        <div class="action-group">
+                            <a href="${manageUrl}" class="btn-action ${isOpen ? 'btn-primary-sm' : 'btn-outline-sm'}">
+                                <i class="fa-solid fa-display"></i> ดูข้อมูล
+                            </a>
+                            <button class="btn-icon-danger" title="ลบห้องเรียน" data-code="${TC.escape(r.room_code)}" data-name="${TC.escape(r.room_name)}" onclick="deleteRoom(this.dataset.code, this.dataset.name)">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function deleteRoom(code, name) {
+            const confirmed = await TC.confirm({
+                title: 'ลบห้องเรียน?',
+                message: `ห้อง "${name}" (${code}) รวมถึงสมาชิกและผลคะแนนทั้งหมดในห้องนี้จะถูกลบถาวร`,
+                confirmText: 'ลบห้องเรียน',
+                danger: true
+            });
+            if (!confirmed) return;
+            const { ok, data } = await TC.api(`/teacher/api/rooms/${encodeURIComponent(code)}`, { method: 'DELETE' });
+            TC.toast(ok ? data.message : (data.error || 'ลบห้องเรียนไม่สำเร็จ'), ok ? 'success' : 'error');
+            if (ok) loadDashboard();
+        }
+
+        document.getElementById('createRoomForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nameInput = document.getElementById('roomNameInput');
+            const roomName = nameInput.value.trim();
+            const duration = parseInt(document.getElementById('roomDurationInput').value, 10);
+            if (!roomName) {
+                TC.toast('กรุณาระบุชื่อห้องเรียน', 'error');
+                nameInput.focus();
+                return;
+            }
+            const btn = document.getElementById('createRoomBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังสร้าง...';
+            const { ok, data } = await TC.api('/teacher/rooms', {
+                method: 'POST',
+                body: { room_name: roomName, duration }
+            });
+            btn.disabled = false;
+            btn.innerHTML = 'บันทึกและสร้างห้อง';
+            if (!ok) {
+                TC.toast(data.error || 'สร้างห้องเรียนไม่สำเร็จ', 'error');
+                return;
+            }
+            TC.toast(`สร้างห้อง ${data.room.room_code} สำเร็จ`, 'success');
+            setTimeout(() => {
+                window.location.href = `{{ url_for('teacher.teacher_manage_classroom_page') }}?room_code=${encodeURIComponent(data.room.room_code)}`;
+            }, 600);
+        });
+
+        if (TC.guardTeacher()) {
+            TC.renderSidebarUser();
+            setTermLabel();
+            loadDashboard();
         }
     </script>
 </body>
