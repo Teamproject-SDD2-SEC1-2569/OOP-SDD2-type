@@ -63,5 +63,50 @@
 
 **1. โคลนโปรเจกต์**
 ```bash
-git clone [https://github.com/ChittiphatLamdaun/OOP-SDD2-type.git](https://github.com/ChittiphatLamdaun/OOP-SDD2-type.git)
+git clone https://github.com/Teamproject-SDD2-SEC1-2569/OOP-SDD2-type.git
 cd OOP-SDD2-type
+```
+
+**2. สร้าง Virtual Environment และติดตั้งแพ็กเกจ**
+```bash
+# Mac/Linux
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Windows
+python -m venv .venv
+.venv\Scripts\activate
+
+# ติดตั้ง Libraries
+pip install -r requirements.txt
+```
+
+**3. ตั้งค่าไฟล์ `.env` และรันเซิร์ฟเวอร์**
+สร้างไฟล์ `.env` ที่โฟลเดอร์หลัก (ดูรายละเอียดใน [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md)) แล้วรัน:
+```bash
+python run.py
+```
+เปิดใช้งานผ่านเบราว์เซอร์ที่ `http://127.0.0.1:5000`
+
+---
+
+## 📂 8. โครงสร้างโปรเจกต์ (Project Structure)
+
+```text
+OOP-SDD2-type/
+├── app/
+│   ├── __init__.py              # Application Factory (create_app) ตั้งค่า Flask, CORS, JWT, SocketIO
+│   ├── config.py                # โหลดค่าตัวแปรจาก .env (SECRET_KEY, Oracle DB, Anti-cheat)
+│   ├── database.py              # ฟังก์ชัน get_db_connection() เชื่อมต่อ Oracle Cloud Database
+│   ├── models/                  # 📦 [Model Layer] OOP Entities (domain.py) และ Session (typing_session.py)
+│   ├── services/                # ⚙️ [Service Layer] Business Logic (typing_service.py)
+│   ├── routes/                  # 🌐 [Controller Layer] HTTP Routes (auth, student, teacher)
+│   ├── sockets/                 # ⚡ [Real-time Layer] WebSocket Events (events.py)
+│   ├── utils/                   # 🛠️ [Utilities] Auth Decorators และคลังคำศัพท์
+│   ├── templates/               # 🎨 [Frontend HTML] หน้าเว็บ student/ และ teacher/
+│   ├── static/                  # 💅 [Static Assets] ไฟล์ CSS (style.css)
+│   └── test/                    # 🧪 [Unit Tests] ชุดทดสอบระบบ (test_basic.py)
+├── docs/                        # 📚 เอกสารคู่มือของทีม (SETUP_GUIDE.md, websocket_api_spec.md)
+├── requirements.txt             # รายชื่อแพ็กเกจ Python
+└── run.py                       # 🚀 ไฟล์หลักสำหรับรันเซิร์ฟเวอร์
+```
