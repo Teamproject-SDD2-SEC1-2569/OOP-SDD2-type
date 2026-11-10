@@ -2,7 +2,7 @@ import secrets
 import random
 import string
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for
-from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from ..utils.auth_utils import require_role
 from ..database import get_db_connection
@@ -514,8 +514,273 @@ def teacher_history_page():
 
 @teacher_bp.route("/profile", methods=["GET"])
 def teacher_profile_page():
-    # ในอนาคตสามารถส่งข้อมูล User Profile จาก Database ไปแสดงผลได้
     return render_template("teacher/profile.html")
+
+
+def _ensure_teacher_record(cursor, user_id: int):
+    """ตรวจสอบว่ามีข้อมูลใน U.TEACHERS สำหรับ user_id นี้หรือยัง ถ้ายังไม่มีให้สร้างอัตโนมัติ"""
+    cursor.execute("SELECT TEACHER_ID FROM U.TEACHERS WHERE TEACHER_ID = :user_id", {"user_id": user_id})
+    if not cursor.fetchone():
+        cursor.execute(
+            """
+            INSERT INTO U.TEACHERS (TEACHER_ID, ACADEMIC_TITLE, FACULTY)
+            VALUES (:user_id, :title, :faculty)
+            """,
+            {
+                "user_id": user_id,
+                "title": "อ.",
+                "faculty": "สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง"
+            }
+        )
+
+
+@teacher_bp.route("/api/profile", methods=["GET"])
+@jwt_required()
+def get_teacher_profile():
+    """ดึงข้อมูลโปรไฟล์อาจารย์และจำนวนห้องเรียนจาก Oracle Database"""
+    identity = get_jwt_identity()
+    try:
+        user_id = int(identity)
+    except (TypeError, ValueError):
+        return jsonify({"error": "รหัสผู้ใช้ไม่ถูกต้อง"}), 400
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            _ensure_teacher_record(cursor, user_id)
+            conn.commit()
+
+            cursor.execute(
+                """
+                SELECT COUNT(*)
+                FROM all_tab_columns
+                WHERE owner = 'U'
+                  AND table_name = 'USERS'
+                  AND column_name IN ('FIRST_NAME', 'LAST_NAME')
+                """
+            )
+            has_split_name_cols = (cursor.fetchone()[0] or 0) == 2
+
+            if has_split_name_cols:
+                cursor.execute(
+                    """
+                    SELECT u.USER_ID, u.USERNAME, u.FULL_NAME, u.EMAIL, u.ROLE, u.CREATED_AT,
+                           t.ACADEMIC_TITLE, t.FACULTY, u.FIRST_NAME, u.LAST_NAME
+                    FROM U.USERS u
+                    LEFT JOIN U.TEACHERS t ON u.USER_ID = t.TEACHER_ID
+                    WHERE u.USER_ID = :user_id
+                    """,
+                    {"user_id": user_id}
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT u.USER_ID, u.USERNAME, u.FULL_NAME, u.EMAIL, u.ROLE, u.CREATED_AT,
+                           t.ACADEMIC_TITLE, t.FACULTY
+                    FROM U.USERS u
+                    LEFT JOIN U.TEACHERS t ON u.USER_ID = t.TEACHER_ID
+                    WHERE u.USER_ID = :user_id
+                    """,
+                    {"user_id": user_id}
+                )
+            row = cursor.fetchone()
+            if not row:
+                return jsonify({"error": "ไม่พบข้อมูลผู้ใช้"}), 404
+
+            full_name_val = (row[2] or "").strip()
+            name_parts = full_name_val.split(None, 1) if full_name_val else ["", ""]
+            first_name_val = (row[8] if has_split_name_cols and len(row) > 8 and row[8] else name_parts[0])
+            last_name_val = (
+                row[9]
+                if has_split_name_cols and len(row) > 9 and row[9]
+                else (name_parts[1] if len(name_parts) > 1 else "")
+            )
+
+            cursor.execute(
+                "SELECT COUNT(*) FROM U.CLASSROOMS WHERE TEACHER_ID = :user_id",
+                {"user_id": user_id}
+            )
+            total_rooms = int((cursor.fetchone() or [0])[0] or 0)
+
+            created_at_str = row[5].strftime("%d/%m/%Y") if row[5] else "-"
+
+            return jsonify({
+                "profile": {
+                    "user_id": row[0],
+                    "username": row[1],
+                    "first_name": first_name_val,
+                    "last_name": last_name_val,
+                    "full_name": full_name_val,
+                    "email": row[3],
+                    "role": row[4],
+                    "created_at": created_at_str,
+                    "academic_title": row[6] or "อ.",
+                    "faculty": row[7] or "สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง",
+                    "total_rooms": total_rooms
+                }
+            }), 200
+    except Exception as e:
+        return jsonify({"error": f"ดึงข้อมูลโปรไฟล์อาจารย์ไม่สำเร็จ: {e}"}), 500
+    finally:
+        conn.close()
+
+
+@teacher_bp.route("/api/profile", methods=["PUT"])
+@jwt_required()
+def update_teacher_profile():
+    """แก้ไขข้อมูลส่วนตัวของอาจารย์ใน U.USERS และ U.TEACHERS (ล็อกอีเมลไม่ให้แก้ไข)"""
+    identity = get_jwt_identity()
+    try:
+        user_id = int(identity)
+    except (TypeError, ValueError):
+        return jsonify({"error": "รหัสผู้ใช้ไม่ถูกต้อง"}), 400
+
+    data = request.get_json(silent=True) or {}
+    data.pop("email", None)
+
+    first_name = (data.get("first_name") or "").strip()
+    last_name = (data.get("last_name") or "").strip()
+    combined_name = f"{first_name} {last_name}".strip()
+    full_name = combined_name or (data.get("full_name") or "").strip()
+    if not first_name and full_name:
+        parts = full_name.split(None, 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ""
+
+    academic_title = (data.get("academic_title") or "อ.").strip()
+    faculty = (data.get("faculty") or "").strip()
+
+    if not full_name:
+        return jsonify({"error": "กรุณาระบุชื่อ-นามสกุล"}), 400
+
+    if first_name and (len(first_name) < 3 or len(first_name) > 30):
+        return jsonify({"error": "ชื่อจริงต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร"}), 400
+
+    if last_name and (len(last_name) < 3 or len(last_name) > 30):
+        return jsonify({"error": "นามสกุลต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร"}), 400
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            _ensure_teacher_record(cursor, user_id)
+
+            cursor.execute(
+                """
+                SELECT COUNT(*)
+                FROM all_tab_columns
+                WHERE owner = 'U'
+                  AND table_name = 'USERS'
+                  AND column_name IN ('FIRST_NAME', 'LAST_NAME')
+                """
+            )
+            has_split_name_cols = (cursor.fetchone()[0] or 0) == 2
+
+            if has_split_name_cols:
+                cursor.execute(
+                    """
+                    UPDATE U.USERS
+                    SET FULL_NAME = :full_name,
+                        FIRST_NAME = :first_name,
+                        LAST_NAME = :last_name
+                    WHERE USER_ID = :user_id
+                    """,
+                    {
+                        "full_name": full_name,
+                        "first_name": first_name,
+                        "last_name": last_name,
+                        "user_id": user_id
+                    }
+                )
+            else:
+                cursor.execute(
+                    "UPDATE U.USERS SET FULL_NAME = :full_name WHERE USER_ID = :user_id",
+                    {"full_name": full_name, "user_id": user_id}
+                )
+
+            cursor.execute(
+                """
+                UPDATE U.TEACHERS
+                SET ACADEMIC_TITLE = :academic_title,
+                    FACULTY = NVL(:faculty, FACULTY)
+                WHERE TEACHER_ID = :user_id
+                """,
+                {
+                    "academic_title": academic_title,
+                    "faculty": faculty if faculty else None,
+                    "user_id": user_id
+                }
+            )
+            conn.commit()
+            return jsonify({"message": "อัปเดตข้อมูลโปรไฟล์อาจารย์สำเร็จ"}), 200
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": f"อัปเดตข้อมูลไม่สำเร็จ: {e}"}), 500
+    finally:
+        conn.close()
+
+
+@teacher_bp.route("/api/profile", methods=["DELETE"])
+@jwt_required()
+def delete_teacher_profile():
+    """ลบบัญชีผู้ใช้อาจารย์และข้อมูลที่เกี่ยวข้องออกจากฐานข้อมูล"""
+    identity = get_jwt_identity()
+    try:
+        user_id = int(identity)
+    except (TypeError, ValueError):
+        return jsonify({"error": "รหัสผู้ใช้ไม่ถูกต้อง"}), 400
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                DELETE FROM U.SUBMISSION_RESULTS
+                WHERE ASSIGNMENT_ID IN (
+                    SELECT a.ASSIGNMENT_ID
+                    FROM U.ASSIGNMENTS a
+                    JOIN U.CLASSROOMS c ON a.CLASSROOM_ID = c.CLASSROOM_ID
+                    WHERE c.TEACHER_ID = :user_id
+                )
+                """,
+                {"user_id": user_id}
+            )
+            cursor.execute(
+                """
+                DELETE FROM U.ASSIGNMENTS
+                WHERE CLASSROOM_ID IN (
+                    SELECT CLASSROOM_ID FROM U.CLASSROOMS WHERE TEACHER_ID = :user_id
+                )
+                """,
+                {"user_id": user_id}
+            )
+            cursor.execute(
+                """
+                DELETE FROM U.CLASSROOM_MEMBERS
+                WHERE CLASSROOM_ID IN (
+                    SELECT CLASSROOM_ID FROM U.CLASSROOMS WHERE TEACHER_ID = :user_id
+                )
+                """,
+                {"user_id": user_id}
+            )
+            cursor.execute("DELETE FROM U.CLASSROOMS WHERE TEACHER_ID = :user_id", {"user_id": user_id})
+            cursor.execute("DELETE FROM U.TEACHERS WHERE TEACHER_ID = :user_id", {"user_id": user_id})
+            cursor.execute("DELETE FROM U.USERS WHERE USER_ID = :user_id", {"user_id": user_id})
+            conn.commit()
+            return jsonify({"message": "ลบบัญชีผู้ใช้อาจารย์เรียบร้อยแล้ว"}), 200
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": f"ไม่สามารถลบบัญชีผู้ใช้ได้: {e}"}), 500
+    finally:
+        conn.close()
 
 
 __all__ = ["teacher_bp"]

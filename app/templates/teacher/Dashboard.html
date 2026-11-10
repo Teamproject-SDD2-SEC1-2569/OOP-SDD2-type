@@ -299,7 +299,17 @@
                 if (!user.role || user.role.toLowerCase() !== 'teacher') {
                     alert('ปฏิเสธการเข้าถึง: บัญชีนักเรียนไม่สามารถเข้าใช้งานระบบของอาจารย์ได้');
                     window.location.href = '/';
+                    return;
                 }
+                const fullName = (user.full_name || user.username || 'อาจารย์').trim();
+                const titlePrefix = user.academic_title || 'อ.';
+                const displayName = fullName.startsWith(titlePrefix) ? fullName : `${titlePrefix}${fullName}`;
+                const parts = fullName.split(/\s+/);
+                const initials = parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : fullName.slice(0, 2).toUpperCase();
+                const nameEl = document.querySelector('.user-profile .name');
+                const avatarEl = document.querySelector('.user-profile .avatar');
+                if (nameEl) nameEl.innerText = displayName;
+                if (avatarEl) avatarEl.innerText = initials;
             } catch (e) {
                 window.location.href = '/';
             }
