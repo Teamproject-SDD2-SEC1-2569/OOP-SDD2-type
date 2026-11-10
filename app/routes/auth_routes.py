@@ -29,7 +29,15 @@ def register():
     password = data.get("password")
     email = data.get("email")
     role = data.get("role", "Student")
-    full_name = data.get("full_name") or username
+    first_name = (data.get("first_name") or "").strip()
+    last_name = (data.get("last_name") or "").strip()
+    combined_name = f"{first_name} {last_name}".strip()
+    full_name = combined_name or (data.get("full_name") or "").strip() or username
+
+    if not first_name and isinstance(full_name, str) and full_name.strip():
+        name_parts = full_name.strip().split(None, 1)
+        first_name = name_parts[0]
+        last_name = name_parts[1] if len(name_parts) > 1 else ""
 
     # ตรวจสอบข้อมูลพื้นฐาน
     if not all(
@@ -142,33 +150,75 @@ def register():
                     "error": "ชื่อผู้ใช้หรืออีเมลนี้ถูกใช้งานแล้ว"
                 }), 409
 
+            # ตรวจสอบว่าตาราง U.USERS มีคอลัมน์ FIRST_NAME และ LAST_NAME หรือไม่
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM all_tab_columns
+                WHERE owner = 'U'
+                  AND table_name = 'USERS'
+                  AND column_name IN ('FIRST_NAME', 'LAST_NAME')
+            """)
+            has_split_name_cols = (cursor.fetchone()[0] or 0) == 2
+
             # เพิ่มบัญชีผู้ใช้และรับ USER_ID ที่ Oracle สร้างให้อัตโนมัติ
             user_id_var = cursor.var(int)
 
-            cursor.execute("""
-                INSERT INTO U.USERS (
-                    USERNAME,
-                    PASSWORD_HASH,
-                    FULL_NAME,
-                    EMAIL,
-                    ROLE
+            if has_split_name_cols:
+                cursor.execute("""
+                    INSERT INTO U.USERS (
+                        USERNAME,
+                        PASSWORD_HASH,
+                        FULL_NAME,
+                        FIRST_NAME,
+                        LAST_NAME,
+                        EMAIL,
+                        ROLE
+                    )
+                    VALUES (
+                        :username,
+                        :password_hash,
+                        :full_name,
+                        :first_name,
+                        :last_name,
+                        :email,
+                        :role
+                    )
+                    RETURNING USER_ID INTO :user_id
+                """,
+                    username=username,
+                    password_hash=password_hash,
+                    full_name=full_name,
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    role=role,
+                    user_id=user_id_var
                 )
-                VALUES (
-                    :username,
-                    :password_hash,
-                    :full_name,
-                    :email,
-                    :role
+            else:
+                cursor.execute("""
+                    INSERT INTO U.USERS (
+                        USERNAME,
+                        PASSWORD_HASH,
+                        FULL_NAME,
+                        EMAIL,
+                        ROLE
+                    )
+                    VALUES (
+                        :username,
+                        :password_hash,
+                        :full_name,
+                        :email,
+                        :role
+                    )
+                    RETURNING USER_ID INTO :user_id
+                """,
+                    username=username,
+                    password_hash=password_hash,
+                    full_name=full_name,
+                    email=email,
+                    role=role,
+                    user_id=user_id_var
                 )
-                RETURNING USER_ID INTO :user_id
-            """,
-                username=username,
-                password_hash=password_hash,
-                full_name=full_name,
-                email=email,
-                role=role,
-                user_id=user_id_var
-            )
 
             user_id = user_id_var.getvalue()[0]
 

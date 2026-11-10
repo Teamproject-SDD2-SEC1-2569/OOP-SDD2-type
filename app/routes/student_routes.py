@@ -184,17 +184,49 @@ def get_student_profile():
 
             cursor.execute(
                 """
-                SELECT u.USER_ID, u.USERNAME, u.FULL_NAME, u.EMAIL, u.ROLE, u.CREATED_AT,
-                       s.STUDENT_CODE, s.MAJOR
-                FROM U.USERS u
-                LEFT JOIN U.STUDENTS s ON u.USER_ID = s.STUDENT_ID
-                WHERE u.USER_ID = :user_id
-                """,
-                {"user_id": user_id}
+                SELECT COUNT(*)
+                FROM all_tab_columns
+                WHERE owner = 'U'
+                  AND table_name = 'USERS'
+                  AND column_name IN ('FIRST_NAME', 'LAST_NAME')
+                """
             )
+            has_split_name_cols = (cursor.fetchone()[0] or 0) == 2
+
+            if has_split_name_cols:
+                cursor.execute(
+                    """
+                    SELECT u.USER_ID, u.USERNAME, u.FULL_NAME, u.EMAIL, u.ROLE, u.CREATED_AT,
+                           s.STUDENT_CODE, s.MAJOR, u.FIRST_NAME, u.LAST_NAME
+                    FROM U.USERS u
+                    LEFT JOIN U.STUDENTS s ON u.USER_ID = s.STUDENT_ID
+                    WHERE u.USER_ID = :user_id
+                    """,
+                    {"user_id": user_id}
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT u.USER_ID, u.USERNAME, u.FULL_NAME, u.EMAIL, u.ROLE, u.CREATED_AT,
+                           s.STUDENT_CODE, s.MAJOR
+                    FROM U.USERS u
+                    LEFT JOIN U.STUDENTS s ON u.USER_ID = s.STUDENT_ID
+                    WHERE u.USER_ID = :user_id
+                    """,
+                    {"user_id": user_id}
+                )
             row = cursor.fetchone()
             if not row:
                 return jsonify({"error": "ไม่พบข้อมูลผู้ใช้"}), 404
+
+            full_name_val = (row[2] or "").strip()
+            name_parts = full_name_val.split(None, 1) if full_name_val else ["", ""]
+            first_name_val = (row[8] if has_split_name_cols and len(row) > 8 and row[8] else name_parts[0])
+            last_name_val = (
+                row[9]
+                if has_split_name_cols and len(row) > 9 and row[9]
+                else (name_parts[1] if len(name_parts) > 1 else "")
+            )
 
             cursor.execute(
                 """
@@ -218,7 +250,9 @@ def get_student_profile():
                 "profile": {
                     "user_id": row[0],
                     "username": row[1],
-                    "full_name": row[2],
+                    "first_name": first_name_val,
+                    "last_name": last_name_val,
+                    "full_name": full_name_val,
                     "email": row[3],
                     "role": row[4],
                     "created_at": created_at_str,
@@ -250,7 +284,14 @@ def update_student_profile():
         return jsonify({"error": "รหัสผู้ใช้ไม่ถูกต้อง"}), 400
 
     data = request.get_json(silent=True) or {}
-    full_name = (data.get("full_name") or "").strip()
+    first_name = (data.get("first_name") or "").strip()
+    last_name = (data.get("last_name") or "").strip()
+    combined_name = f"{first_name} {last_name}".strip()
+    full_name = combined_name or (data.get("full_name") or "").strip()
+    if not first_name and full_name:
+        parts = full_name.split(None, 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ""
     student_code = (data.get("student_code") or "").strip()
     major = (data.get("major") or "").strip()
 
@@ -266,9 +307,37 @@ def update_student_profile():
             _ensure_student_record(cursor, user_id)
 
             cursor.execute(
-                "UPDATE U.USERS SET FULL_NAME = :full_name WHERE USER_ID = :user_id",
-                {"full_name": full_name, "user_id": user_id}
+                """
+                SELECT COUNT(*)
+                FROM all_tab_columns
+                WHERE owner = 'U'
+                  AND table_name = 'USERS'
+                  AND column_name IN ('FIRST_NAME', 'LAST_NAME')
+                """
             )
+            has_split_name_cols = (cursor.fetchone()[0] or 0) == 2
+
+            if has_split_name_cols:
+                cursor.execute(
+                    """
+                    UPDATE U.USERS
+                    SET FULL_NAME = :full_name,
+                        FIRST_NAME = :first_name,
+                        LAST_NAME = :last_name
+                    WHERE USER_ID = :user_id
+                    """,
+                    {
+                        "full_name": full_name,
+                        "first_name": first_name,
+                        "last_name": last_name,
+                        "user_id": user_id
+                    }
+                )
+            else:
+                cursor.execute(
+                    "UPDATE U.USERS SET FULL_NAME = :full_name WHERE USER_ID = :user_id",
+                    {"full_name": full_name, "user_id": user_id}
+                )
             if student_code or major:
                 cursor.execute(
                     """

@@ -175,9 +175,15 @@
         <div style="background:#fff; width:100%; max-width:460px; border-radius:24px; padding:35px; box-shadow:0 15px 40px rgba(0,0,0,0.18);">
             <h3 style="color:#17345C; font-size:20px; margin-bottom:20px;"><i class="fa-solid fa-user-pen" style="color:#288CF0;"></i> แก้ไขข้อมูลส่วนตัว</h3>
             <form onsubmit="saveProfile(event)" style="display:flex; flex-direction:column; gap:15px;">
-                <div>
-                    <label style="display:block; font-size:13px; font-weight:600; color:#17345C; margin-bottom:6px;">ชื่อ - นามสกุล</label>
-                    <input type="text" id="editFullName" required style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="display:block; font-size:13px; font-weight:600; color:#17345C; margin-bottom:6px;">ชื่อจริง</label>
+                        <input type="text" id="editFirstName" required placeholder="ชื่อจริง" style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:13px; font-weight:600; color:#17345C; margin-bottom:6px;">นามสกุล</label>
+                        <input type="text" id="editLastName" required placeholder="นามสกุล" style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none;">
+                    </div>
                 </div>
                 <div>
                     <label style="display:block; font-size:13px; font-weight:600; color:#17345C; margin-bottom:6px;">รหัสนักศึกษา</label>
@@ -258,7 +264,9 @@
         }
 
         function openEditModal() {
-            document.getElementById('editFullName').value = currentProfile.full_name || '';
+            const parts = (currentProfile.full_name || '').trim().split(/\s+/);
+            document.getElementById('editFirstName').value = currentProfile.first_name || parts[0] || '';
+            document.getElementById('editLastName').value = currentProfile.last_name || parts.slice(1).join(' ') || '';
             document.getElementById('editStudentCode').value = currentProfile.student_code || '';
             document.getElementById('editMajor').value = currentProfile.major || '';
             document.getElementById('editModal').style.display = 'flex';
@@ -270,7 +278,9 @@
 
         async function saveProfile(e) {
             e.preventDefault();
-            const fullName = document.getElementById('editFullName').value.trim();
+            const firstName = document.getElementById('editFirstName').value.trim();
+            const lastName = document.getElementById('editLastName').value.trim();
+            const fullName = `${firstName} ${lastName}`.trim();
             const studentCode = document.getElementById('editStudentCode').value.trim();
             const major = document.getElementById('editMajor').value.trim();
 
@@ -282,6 +292,8 @@
                         'Authorization': `Bearer ${authToken}`
                     },
                     body: JSON.stringify({
+                        first_name: firstName,
+                        last_name: lastName,
                         full_name: fullName,
                         student_code: studentCode,
                         major: major

@@ -52,18 +52,28 @@
             <form onsubmit="handleRegister(event)">
                 <div class="form-grid">
                     <div class="form-group">
+                        <label>ชื่อจริง</label>
+                        <input type="text" id="regFirstName" placeholder="กรอกชื่อจริง" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>นามสกุล</label>
+                        <input type="text" id="regLastName" placeholder="กรอกนามสกุล" required>
+                    </div>
+
+                    <div class="form-group">
                         <label>ชื่อผู้ใช้</label>
                         <input type="text" id="regUsername" placeholder="กรอกชื่อผู้ใช้" required>
                     </div>
 
                     <div class="form-group">
-                        <label>รหัสผ่าน</label>
-                        <input type="password" id="regPassword" placeholder="อย่างน้อย 8 ตัวอักษร" required>
+                        <label>อีเมล</label>
+                        <input type="email" id="regEmail" placeholder="กรอกอีเมล" required>
                     </div>
 
                     <div class="form-group">
-                        <label>อีเมล</label>
-                        <input type="email" id="regEmail" placeholder="กรอกอีเมล" required>
+                        <label>รหัสผ่าน</label>
+                        <input type="password" id="regPassword" placeholder="อย่างน้อย 8 ตัวอักษร" required>
                     </div>
 
                     <div class="form-group">
@@ -117,7 +127,10 @@
                 document.getElementById('regUsername').value = usernameParam;
             }
             if (fullNameParam) {
-                prefilledFullName = fullNameParam;
+                prefilledFullName = fullNameParam.trim();
+                const parts = prefilledFullName.split(/\s+/);
+                document.getElementById('regFirstName').value = parts[0] || '';
+                document.getElementById('regLastName').value = parts.slice(1).join(' ') || '';
             }
             if (roleParam && roleParam.toLowerCase() === 'teacher') {
                 selectedRole = 'Teacher';
@@ -130,17 +143,28 @@
                 });
             }
             if (emailParam) {
-                document.getElementById('regPassword').focus();
+                if (!document.getElementById('regFirstName').value) {
+                    document.getElementById('regFirstName').focus();
+                } else {
+                    document.getElementById('regPassword').focus();
+                }
             }
         });
 
         async function handleRegister(e) {
             e.preventDefault();
+            const firstName = document.getElementById('regFirstName').value.trim();
+            const lastName = document.getElementById('regLastName').value.trim();
+            const fullName = `${firstName} ${lastName}`.trim();
             const username = document.getElementById('regUsername').value.trim();
             const password = document.getElementById('regPassword').value;
             const email = document.getElementById('regEmail').value.trim();
             const confirmPassword = document.getElementById('regConfirmPassword').value;
 
+            if (!firstName || !lastName) {
+                alert("กรุณากรอกชื่อจริงและนามสกุลให้ครบถ้วน");
+                return;
+            }
             if (password !== confirmPassword) {
                 alert("รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน");
                 return;
@@ -155,10 +179,12 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        first_name: firstName,
+                        last_name: lastName,
+                        full_name: fullName,
                         username: username,
                         password: password,
                         email: email,
-                        full_name: prefilledFullName || username,
                         role: selectedRole
                     })
                 });
