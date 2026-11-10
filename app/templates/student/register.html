@@ -8,19 +8,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Prompt', Arial, sans-serif; }
-        body { background: #f4f8ff; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
-        .register-container { width: 1100px; min-height: 650px; background: white; border-radius: 30px; box-shadow: 0 10px 35px rgba(70, 120, 180, 0.12); display: flex; overflow: hidden; }
-        .register-form { width: 58%; padding: 55px 65px; }
+        body { background: #f4f8ff; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .register-container { width: 1100px; max-width: 100%; min-height: 650px; background: white; border-radius: 30px; box-shadow: 0 10px 35px rgba(70, 120, 180, 0.12); display: flex; overflow: hidden; }
+        .register-form { width: 58%; padding: 45px 55px; }
         .title { color: #3f6fb5; font-size: 42px; font-weight: bold; margin-bottom: 8px; }
         .subtitle { color: #777; font-size: 18px; margin-bottom: 28px; }
         .section-title { color: #333; font-size: 18px; font-weight: bold; margin-bottom: 12px; }
         .role-container { display: flex; gap: 18px; margin-bottom: 25px; }
         .role-button { flex: 1; height: 55px; border: 1px solid #d7dce5; border-radius: 14px; background: white; color: #555; font-size: 17px; font-weight: bold; cursor: pointer; }
         .role-button.active { background: #5d91df; color: white; border-color: #5d91df; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { color: #333; font-size: 17px; font-weight: bold; margin-bottom: 8px; }
-        .form-group input, .form-group select { height: 52px; border: 1px solid #d7dce5; border-radius: 14px; padding: 0 18px; font-size: 16px; outline: none; background: #fff; color: #333; transition: border-color 0.2s, box-shadow 0.2s; }
+        .form-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; width: 100%; }
+        .form-group { display: flex; flex-direction: column; min-width: 0; }
+        .form-group label { color: #333; font-size: 16px; font-weight: bold; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .form-group input, .form-group select { width: 100%; max-width: 100%; min-width: 0; height: 52px; border: 1px solid #d7dce5; border-radius: 14px; padding: 0 16px; font-size: 15px; outline: none; background: #fff; color: #333; transition: border-color 0.2s, box-shadow 0.2s; text-overflow: ellipsis; }
         .form-group input:focus, .form-group select:focus { border-color: #5d91df; box-shadow: 0 0 0 3px rgba(93, 145, 223, 0.12); }
         .form-group input.input-error, .form-group select.input-error { border-color: #e11d48; box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.14); animation: shakeInput 0.35s ease; }
         @keyframes shakeInput {
@@ -37,8 +37,16 @@
         .keyboard-icon { font-size: 150px; margin-bottom: 20px; }
         .image-content h2 { color: #4778bd; font-size: 28px; margin-bottom: 10px; }
         .image-content p { color: #777; font-size: 16px; }
-        @media (max-width: 850px) {
-            .register-container { width: 95%; } .register-form { width: 100%; padding: 40px; } .register-image { display: none; } .form-grid { grid-template-columns: 1fr; }
+        @media (max-width: 1024px) {
+            .register-container { width: 100%; max-width: 680px; min-height: auto; margin: 20px auto; }
+            .register-form { width: 100%; padding: 40px 35px; }
+            .register-image { display: none; }
+        }
+        @media (max-width: 600px) {
+            .register-form { padding: 30px 20px; }
+            .form-grid { grid-template-columns: 1fr; gap: 15px; }
+            .title { font-size: 32px; }
+            .register-button { width: 100%; }
         }
 
         /* Modern Notification Popup Modal */
@@ -164,16 +172,18 @@
             margin-bottom: 2px;
         }
         .checklist-items {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 8px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
         .checklist-item {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 13.5px;
+            font-size: 13px;
             color: #64748b;
+            min-width: 0;
+            word-break: break-word;
             transition: color 0.2s ease;
         }
         .checklist-item .chk-badge {
