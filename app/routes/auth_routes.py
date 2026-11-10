@@ -1,9 +1,11 @@
 import json
+import os
 import re
 import random
 import urllib.parse
 import urllib.request
 from datetime import timedelta
+from dotenv import load_dotenv
 from flask import Blueprint, current_app, jsonify, redirect, request, url_for
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token
@@ -589,7 +591,8 @@ def google_login():
 @auth_bp.route("/google/oauth", methods=["GET"])
 def google_oauth_redirect():
     """เริ่มต้น OAuth 2.0 Redirect Flow ไปยังหน้าล็อกอินของ Google"""
-    client_id = current_app.config.get("GOOGLE_CLIENT_ID", "").strip()
+    load_dotenv(override=True)
+    client_id = (os.getenv("GOOGLE_CLIENT_ID") or current_app.config.get("GOOGLE_CLIENT_ID", "")).strip()
     role = request.args.get("role", "Student")
     if not client_id:
         return jsonify({
@@ -612,6 +615,7 @@ def google_oauth_redirect():
 @auth_bp.route("/google/callback", methods=["GET"])
 def google_oauth_callback():
     """รับ Authorization Code จาก Google OAuth 2.0 และแลกเป็น JWT Token เข้าสู่ระบบ"""
+    load_dotenv(override=True)
     code = request.args.get("code")
     requested_role = (request.args.get("state") or "Student").strip().capitalize()
     if requested_role not in ("Student", "Teacher"):
@@ -620,8 +624,8 @@ def google_oauth_callback():
     if not code:
         return redirect(url_for("api.login"))
 
-    client_id = current_app.config.get("GOOGLE_CLIENT_ID", "").strip()
-    client_secret = current_app.config.get("GOOGLE_CLIENT_SECRET", "").strip()
+    client_id = (os.getenv("GOOGLE_CLIENT_ID") or current_app.config.get("GOOGLE_CLIENT_ID", "")).strip()
+    client_secret = (os.getenv("GOOGLE_CLIENT_SECRET") or current_app.config.get("GOOGLE_CLIENT_SECRET", "")).strip()
     redirect_uri = url_for("auth.google_oauth_callback", _external=True)
 
     try:

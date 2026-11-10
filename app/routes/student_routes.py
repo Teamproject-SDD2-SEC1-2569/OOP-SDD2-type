@@ -2,7 +2,9 @@
 Student Web Views & Controller
 จัดการ Route สำหรับหน้าเว็บฝั่งนักเรียน
 """
-from flask import Blueprint, render_template
+import os
+from dotenv import load_dotenv
+from flask import Blueprint, current_app, render_template
 
 student_bp = Blueprint('api', __name__)
 
@@ -10,7 +12,11 @@ student_bp = Blueprint('api', __name__)
 @student_bp.route('/')
 def login():
     """หน้าแรก: เข้าสู่ระบบสำหรับนักเรียน"""
-    return render_template('student/login.html')
+    load_dotenv(override=True)
+    google_client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+    current_app.config["GOOGLE_CLIENT_ID"] = google_client_id
+    current_app.config["GOOGLE_CLIENT_SECRET"] = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
+    return render_template('student/login.html', google_client_id=google_client_id)
 
 
 @student_bp.route('/register')
