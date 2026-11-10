@@ -287,6 +287,24 @@
 
     <!-- ================= สคริปต์ควบคุมเมนูโปรไฟล์ ================= -->
     <script>
+        // ป้องกันบัญชีนักเรียนแอบเข้าหน้าอาจารย์ผ่าน URL
+        (function checkTeacherRole() {
+            try {
+                const userStr = localStorage.getItem('user');
+                if (!userStr) {
+                    window.location.href = '/';
+                    return;
+                }
+                const user = JSON.parse(userStr);
+                if (!user.role || user.role.toLowerCase() !== 'teacher') {
+                    alert('ปฏิเสธการเข้าถึง: บัญชีนักเรียนไม่สามารถเข้าใช้งานระบบของอาจารย์ได้');
+                    window.location.href = '/';
+                }
+            } catch (e) {
+                window.location.href = '/';
+            }
+        })();
+
         // ฟังก์ชันเปิด/ปิด เมนู Dropdown แบบคลิก
         function toggleProfileMenu(event) {
             event.stopPropagation();

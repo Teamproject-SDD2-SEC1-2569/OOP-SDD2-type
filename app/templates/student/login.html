@@ -31,8 +31,21 @@
         .login-button { width: 100%; height: 58px; border: none; border-radius: 14px; background: #579be8; color: white; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .login-button:hover { background: #438bdc; }
         .or { text-align: center; color: #9aa3af; margin: 25px 0; font-size: 16px; }
-        .google-button { width: 100%; height: 55px; border-radius: 14px; border: 1px solid #d9dfe8; background: white; color: #687587; font-size: 16px; cursor: pointer; }
+        .google-button { width: 100%; height: 55px; border-radius: 14px; border: 1px solid #d9dfe8; background: white; color: #687587; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, box-shadow 0.2s; }
+        .google-button:hover { background: #f8fafd; box-shadow: 0 4px 12px rgba(66, 133, 244, 0.12); border-color: #b8ccf4; }
         .google { color: #4285f4; font-size: 22px; font-weight: bold; margin-right: 10px; }
+        .google-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); z-index: 999; align-items: center; justify-content: center; padding: 20px; }
+        .google-modal-overlay.active { display: flex; }
+        .google-modal { width: 420px; max-width: 100%; background: #fff; border-radius: 20px; padding: 32px 28px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18); text-align: center; }
+        .google-modal-logo { font-size: 36px; font-weight: bold; color: #4285f4; margin-bottom: 8px; }
+        .google-modal h3 { font-size: 21px; color: #202124; margin-bottom: 6px; }
+        .google-modal p { font-size: 14px; color: #5f6368; margin-bottom: 20px; }
+        .google-modal input { width: 100%; height: 48px; border: 1px solid #dadce0; border-radius: 10px; padding: 0 14px; font-size: 15px; margin-bottom: 12px; outline: none; }
+        .google-modal input:focus { border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15); }
+        .google-modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+        .google-modal-cancel { flex: 1; height: 44px; border: 1px solid #dadce0; border-radius: 10px; background: white; color: #5f6368; font-size: 15px; cursor: pointer; }
+        .google-modal-submit { flex: 1; height: 44px; border: none; border-radius: 10px; background: #1a73e8; color: white; font-size: 15px; font-weight: bold; cursor: pointer; }
+        .google-modal-submit:hover { background: #1557b0; }
         .register { text-align: center; margin-top: 25px; color: #8a94a3; font-size: 15px; }
         .register a { color: #4d96e6; text-decoration: none; font-weight: bold; }
         .register a:hover { text-decoration: underline; }
@@ -90,7 +103,7 @@
 
                 <div class="or">หรือ</div>
 
-                <button type="button" class="google-button" onclick="handleLogin(event)">
+                <button type="button" class="google-button" onclick="handleGoogleLogin()">
                     <span class="google">G</span> เข้าสู่ระบบด้วย Google
                 </button>
 
@@ -102,7 +115,27 @@
         </section>
     </div>
 
-<script>
+    <!-- Google Sign-In Modal -->
+    <div id="googleModal" class="google-modal-overlay" onclick="if(event.target === this) closeGoogleModal()">
+        <div class="google-modal">
+            <div class="google-modal-logo">G</div>
+            <h3>เข้าสู่ระบบด้วย Google</h3>
+            <p id="googleRoleSubtitle">ดำเนินการต่อในฐานะ นักเรียน</p>
+            <form onsubmit="submitGoogleModal(event)">
+                <input type="email" id="googleEmailInput" placeholder="อีเมล Google (เช่น example@gmail.com)" required>
+                <input type="text" id="googleNameInput" placeholder="ชื่อ-นามสกุล (หากเข้าใช้งานครั้งแรก)">
+                <div class="google-modal-actions">
+                    <button type="button" class="google-modal-cancel" onclick="closeGoogleModal()">ยกเลิก</button>
+                    <button type="submit" class="google-modal-submit">ดำเนินการต่อ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        const GOOGLE_CLIENT_ID = "{{ config.get('GOOGLE_CLIENT_ID', '') }}";
+
         // เปิด/ปิด การมองเห็นรหัสผ่าน
         function togglePassword() {
             const pwdInput = document.getElementById("passwordInput");
@@ -129,7 +162,27 @@
             });
         });
 
-        // จัดการเมื่อกดปุ่มล็อกอิน
+        function handleAuthSuccess(data, fallbackIdentifier) {
+            const token = data.access_token || data.token;
+            if (token) {
+                localStorage.setItem("token", token);
+                localStorage.setItem("accessToken", token);
+            }
+            if (data.user) {
+                localStorage.setItem("user", JSON.stringify(data.user));
+                localStorage.setItem("username", data.user.username || fallbackIdentifier);
+            }
+
+            // 🌟 เช็ก Role จริงจาก Database เพื่อ Redirect 🌟
+            const userRole = data.user?.role;
+            if (userRole === "Teacher") {
+                window.location.href = "{{ url_for('teacher.teacher_dashboard_page') }}";
+            } else {
+                window.location.href = "{{ url_for('api.classroom') }}";
+            }
+        }
+
+        // จัดการเมื่อกดปุ่มล็อกอินปกติ
         async function handleLogin(e) {
             e.preventDefault(); // ป้องกันไม่ให้หน้าเว็บรีเฟรช
 
@@ -138,43 +191,94 @@
             const password = document.querySelector('input[name="password"]').value;
 
             try {
-                // ยิง API ไปที่ Backend ของทีมอาจารย์
                 const response = await fetch('/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         username: emailOrUsername,
                         email: emailOrUsername,
-                        password: password 
+                        password: password,
+                        role: selectedRole
                     })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    const token = data.access_token || data.token;
-                    if (token) {
-                        localStorage.setItem("token", token);
-                        localStorage.setItem("accessToken", token);
-                    }
-                    if (data.user) {
-                        localStorage.setItem("user", JSON.stringify(data.user));
-                        localStorage.setItem("username", data.user.username || emailOrUsername);
-                    }
-
-                    // 🌟 เช็ก Role ของผู้ใช้ (หรือปุ่มที่เลือก) และ Redirect 🌟
-                    const userRole = data.user?.role || selectedRole;
-                    if (userRole === "Teacher" || selectedRole === "Teacher") {
-                        window.location.href = "{{ url_for('teacher.teacher_dashboard_page') }}";
-                    } else {
-                        window.location.href = "{{ url_for('api.classroom') }}";
-                    }
+                    handleAuthSuccess(data, emailOrUsername);
                 } else {
-                    // ล็อกอินไม่ผ่าน (รหัสผิด หรือเมลผิด)
                     alert("เข้าสู่ระบบไม่สำเร็จ: " + (data.message || data.error || "กรุณาลองใหม่อีกครั้ง"));
                 }
             } catch (error) {
                 console.error("Error during login:", error);
+                alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+            }
+        }
+
+        // จัดการเมื่อกดปุ่ม "เข้าสู่ระบบด้วย Google"
+        function handleGoogleLogin() {
+            // ถ้าตั้งค่า GOOGLE_CLIENT_ID ใน .env ให้ใช้ Google OAuth 2.0 ของจริง
+            if (GOOGLE_CLIENT_ID) {
+                if (window.google && google.accounts && google.accounts.oauth2) {
+                    const tokenClient = google.accounts.oauth2.initTokenClient({
+                        client_id: GOOGLE_CLIENT_ID,
+                        scope: 'email profile openid',
+                        callback: async (tokenResponse) => {
+                            if (tokenResponse && tokenResponse.access_token) {
+                                await loginWithGoogleBackend("", "", tokenResponse.access_token);
+                            }
+                        }
+                    });
+                    tokenClient.requestAccessToken({ prompt: 'select_account' });
+                    return;
+                }
+                // Fallback ไปยัง OAuth 2.0 Redirect Flow
+                window.location.href = `/auth/google/oauth?role=${encodeURIComponent(selectedRole)}`;
+                return;
+            }
+
+            // กรณียังไม่ได้ใส่ GOOGLE_CLIENT_ID ใน .env ให้แสดงหน้าต่างเข้าสู่ระบบด้วยบัญชี Google
+            const roleLabel = selectedRole === "Teacher" ? "อาจารย์ (Teacher)" : "นักเรียน (Student)";
+            document.getElementById("googleRoleSubtitle").innerText = `ดำเนินการต่อในฐานะ ${roleLabel}`;
+            document.getElementById("googleModal").classList.add("active");
+            document.getElementById("googleEmailInput").focus();
+        }
+
+        function closeGoogleModal() {
+            document.getElementById("googleModal").classList.remove("active");
+        }
+
+        async function submitGoogleModal(e) {
+            e.preventDefault();
+            const email = document.getElementById("googleEmailInput").value.trim();
+            const fullName = document.getElementById("googleNameInput").value.trim();
+            if (!email) return;
+            closeGoogleModal();
+            await loginWithGoogleBackend(email, fullName, "");
+        }
+
+        async function loginWithGoogleBackend(email, fullName, googleAccessToken = "") {
+            try {
+                const response = await fetch('/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: email,
+                        full_name: fullName,
+                        access_token: googleAccessToken,
+                        role: selectedRole
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    handleAuthSuccess(data, email);
+                } else {
+                    alert("เข้าสู่ระบบด้วย Google ไม่สำเร็จ: " + (data.message || data.error || "กรุณาลองใหม่อีกครั้ง"));
+                }
+            } catch (error) {
+                console.error("Error during Google login:", error);
                 alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
             }
         }
