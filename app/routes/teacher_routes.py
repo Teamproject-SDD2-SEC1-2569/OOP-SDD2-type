@@ -509,12 +509,12 @@ def validate_room(room_code):
 
 @teacher_bp.route("/login", methods=["GET"])
 def teacher_login_page():
-    return render_template("teacher/login.html")
+    return redirect(url_for('api.login'))
 
 
 @teacher_bp.route("/register", methods=["GET"])
 def teacher_register_page():
-    return render_template("teacher/register.html")
+    return redirect(url_for('api.register') + '?role=teacher')
 
 
 @teacher_bp.route("/dashboard", methods=["GET"])
