@@ -645,8 +645,7 @@ def google_oauth_callback():
                 "role": requested_role,
             })
             reg_url = f"{url_for('api.register')}?{reg_params}"
-            msg = "บัญชี Google นี้ยังไม่เคยสมัครสมาชิก กรุณากรอกข้อมูลเพื่อสมัครสมาชิกก่อนเข้าใช้งาน"
-            return f"<script>alert({json.dumps(msg)}); window.location.replace({json.dumps(reg_url)});</script>"
+            return redirect(reg_url)
 
         user_id, db_username, _, db_full_name, db_email, role = user
 
