@@ -49,7 +49,7 @@ def register():
     username = username.strip()
     password = password
     full_name = full_name.strip()
-    email = email.strip().lower()
+    email = re.sub(r"[^\x21-\x7E]", "", email).strip().lower()
     role = role.strip().capitalize()
 
     if not username or not password or not full_name or not email:
@@ -67,8 +67,8 @@ def register():
     if len(full_name) > 100 or len(email) > 100:
         return jsonify({"error": "ความยาวข้อมูลเกินกว่าที่กำหนด"}), 400
 
-    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
-        return jsonify({"error": "รูปแบบอีเมลไม่ถูกต้อง"}), 400
+    if not re.fullmatch(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", email):
+        return jsonify({"error": "รูปแบบอีเมลไม่ถูกต้อง (กรุณาใช้ตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น)"}), 400
 
     if len(password) < 8:
         return jsonify({"error": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"}), 400
