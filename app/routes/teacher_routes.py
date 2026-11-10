@@ -62,10 +62,25 @@ def get_room_settings(room_code):
     return room_settings.get(
         room_code,
         {
-            "duration": None,
+            "duration": 60,
             "status": "closed"
         }
     )
+
+
+def _has_classroom_status_duration_cols(cursor) -> bool:
+    """ตรวจสอบว่าตาราง U.CLASSROOMS มีคอลัมน์ STATUS และ DURATION แล้วหรือยัง"""
+    cursor.execute(
+        """
+        SELECT COUNT(*)
+        FROM all_tab_columns
+        WHERE owner = 'U'
+          AND table_name = 'CLASSROOMS'
+          AND column_name IN ('STATUS', 'DURATION')
+        """
+    )
+    row = cursor.fetchone()
+    return bool(row and row[0] == 2)
 
 
 # ==================================================
@@ -119,22 +134,42 @@ def create_room():
 
         room_code = generate_room_code(cursor)
         classroom_id_var = cursor.var(int)
+        has_cols = _has_classroom_status_duration_cols(cursor)
 
-        cursor.execute(
-            """
-            INSERT INTO U.CLASSROOMS
-                (ROOM_NAME, ROOM_CODE, TEACHER_ID)
-            VALUES
-                (:room_name, :room_code, :teacher_id)
-            RETURNING CLASSROOM_ID INTO :classroom_id
-            """,
-            {
-                "room_name": room_name,
-                "room_code": room_code,
-                "teacher_id": teacher_id,
-                "classroom_id": classroom_id_var
-            }
-        )
+        if has_cols:
+            cursor.execute(
+                """
+                INSERT INTO U.CLASSROOMS
+                    (ROOM_NAME, ROOM_CODE, TEACHER_ID, STATUS, DURATION)
+                VALUES
+                    (:room_name, :room_code, :teacher_id, :status, :duration)
+                RETURNING CLASSROOM_ID INTO :classroom_id
+                """,
+                {
+                    "room_name": room_name,
+                    "room_code": room_code,
+                    "teacher_id": teacher_id,
+                    "status": "closed",
+                    "duration": duration,
+                    "classroom_id": classroom_id_var
+                }
+            )
+        else:
+            cursor.execute(
+                """
+                INSERT INTO U.CLASSROOMS
+                    (ROOM_NAME, ROOM_CODE, TEACHER_ID)
+                VALUES
+                    (:room_name, :room_code, :teacher_id)
+                RETURNING CLASSROOM_ID INTO :classroom_id
+                """,
+                {
+                    "room_name": room_name,
+                    "room_code": room_code,
+                    "teacher_id": teacher_id,
+                    "classroom_id": classroom_id_var
+                }
+            )
 
         classroom_id = classroom_id_var.getvalue()
         if isinstance(classroom_id, list):
@@ -142,7 +177,6 @@ def create_room():
 
         conn.commit()
 
-        # เก็บข้อมูลที่ตาราง Oracle ยังไม่มีคอลัมน์รองรับ
         room_settings[room_code] = {
             "duration": duration,
             "status": "closed"
@@ -157,11 +191,7 @@ def create_room():
                 "teacher_id": teacher_id,
                 "duration": duration,
                 "status": "closed"
-            },
-            "notice": (
-                "ชื่อห้องและรหัสห้องบันทึกลง Oracle แล้ว "
-                "ส่วน duration และ status เก็บไว้ชั่วคราวในหน่วยความจำ"
-            )
+            }
         }), 201
 
     except Exception:
@@ -201,25 +231,46 @@ def list_rooms():
                 "error": "ไม่พบข้อมูลครู"
             }), 403
 
-        cursor.execute(
-            """
-            SELECT
-                CLASSROOM_ID,
-                ROOM_NAME,
-                ROOM_CODE,
-                TEACHER_ID,
-                CREATED_AT
-            FROM U.CLASSROOMS
-            WHERE TEACHER_ID = :teacher_id
-            ORDER BY CLASSROOM_ID DESC
-            """,
-            {"teacher_id": teacher_id}
-        )
+        has_cols = _has_classroom_status_duration_cols(cursor)
+        if has_cols:
+            cursor.execute(
+                """
+                SELECT
+                    CLASSROOM_ID,
+                    ROOM_NAME,
+                    ROOM_CODE,
+                    TEACHER_ID,
+                    CREATED_AT,
+                    STATUS,
+                    DURATION
+                FROM U.CLASSROOMS
+                WHERE TEACHER_ID = :teacher_id
+                ORDER BY CLASSROOM_ID DESC
+                """,
+                {"teacher_id": teacher_id}
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT
+                    CLASSROOM_ID,
+                    ROOM_NAME,
+                    ROOM_CODE,
+                    TEACHER_ID,
+                    CREATED_AT
+                FROM U.CLASSROOMS
+                WHERE TEACHER_ID = :teacher_id
+                ORDER BY CLASSROOM_ID DESC
+                """,
+                {"teacher_id": teacher_id}
+            )
 
         rooms = []
         for row in cursor.fetchall():
             room_code = row[2]
             settings = get_room_settings(room_code)
+            db_status = row[5] if has_cols and len(row) > 5 and row[5] else settings["status"]
+            db_duration = int(row[6]) if has_cols and len(row) > 6 and row[6] is not None else settings["duration"]
 
             rooms.append({
                 "classroom_id": row[0],
@@ -229,8 +280,8 @@ def list_rooms():
                 "created_at": (
                     row[4].isoformat() if row[4] else None
                 ),
-                "duration": settings["duration"],
-                "status": settings["status"]
+                "duration": db_duration,
+                "status": db_status
             })
 
         return jsonify({
@@ -312,7 +363,22 @@ def update_room_status(room_code):
                 )
             }), 404
 
-        # อัปเดตสถานะชั่วคราว เพราะ Oracle ยังไม่มีคอลัมน์ STATUS
+        if _has_classroom_status_duration_cols(cursor):
+            cursor.execute(
+                """
+                UPDATE U.CLASSROOMS
+                SET STATUS = :status
+                WHERE ROOM_CODE = :room_code
+                  AND TEACHER_ID = :teacher_id
+                """,
+                {
+                    "status": status,
+                    "room_code": room_code,
+                    "teacher_id": teacher_id
+                }
+            )
+            conn.commit()
+
         settings = get_room_settings(room_code)
 
         room_settings[room_code] = {
@@ -323,8 +389,7 @@ def update_room_status(room_code):
         return jsonify({
             "message": "เปลี่ยนสถานะห้องเรียนสำเร็จ",
             "room_code": room_code,
-            "status": status,
-            "notice": "สถานะเก็บไว้ชั่วคราว ไม่ได้บันทึกลง Oracle"
+            "status": status
         }), 200
 
     except Exception:
@@ -356,17 +421,33 @@ def validate_room(room_code):
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            SELECT
-                CLASSROOM_ID,
-                ROOM_NAME,
-                ROOM_CODE
-            FROM U.CLASSROOMS
-            WHERE ROOM_CODE = :room_code
-            """,
-            {"room_code": room_code.upper()}
-        )
+        has_cols = _has_classroom_status_duration_cols(cursor)
+        if has_cols:
+            cursor.execute(
+                """
+                SELECT
+                    CLASSROOM_ID,
+                    ROOM_NAME,
+                    ROOM_CODE,
+                    STATUS,
+                    DURATION
+                FROM U.CLASSROOMS
+                WHERE ROOM_CODE = :room_code
+                """,
+                {"room_code": room_code.upper()}
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT
+                    CLASSROOM_ID,
+                    ROOM_NAME,
+                    ROOM_CODE
+                FROM U.CLASSROOMS
+                WHERE ROOM_CODE = :room_code
+                """,
+                {"room_code": room_code.upper()}
+            )
 
         room = cursor.fetchone()
 
@@ -377,6 +458,8 @@ def validate_room(room_code):
             }), 404
 
         settings = get_room_settings(room[2])
+        db_status = room[3] if has_cols and len(room) > 3 and room[3] else settings["status"]
+        db_duration = int(room[4]) if has_cols and len(room) > 4 and room[4] is not None else settings["duration"]
 
         return jsonify({
             "valid": True,
@@ -384,8 +467,8 @@ def validate_room(room_code):
                 "classroom_id": room[0],
                 "room_name": room[1],
                 "room_code": room[2],
-                "duration": settings["duration"],
-                "status": settings["status"]
+                "duration": db_duration,
+                "status": db_status
             }
         }), 200
 
@@ -458,17 +541,33 @@ def teacher_create_room_page():
                     cursor.execute("SELECT TEACHER_ID FROM U.TEACHERS FETCH FIRST 1 ROWS ONLY")
                     t_row = cursor.fetchone()
                     if t_row:
-                        cursor.execute(
-                            """
-                            INSERT INTO U.CLASSROOMS (ROOM_NAME, ROOM_CODE, TEACHER_ID)
-                            VALUES (:room_name, :room_code, :teacher_id)
-                            """,
-                            {
-                                "room_name": room_name,
-                                "room_code": room_code,
-                                "teacher_id": t_row[0]
-                            }
-                        )
+                        duration_int = int(duration) if str(duration).isdigit() else 60
+                        if _has_classroom_status_duration_cols(cursor):
+                            cursor.execute(
+                                """
+                                INSERT INTO U.CLASSROOMS (ROOM_NAME, ROOM_CODE, TEACHER_ID, STATUS, DURATION)
+                                VALUES (:room_name, :room_code, :teacher_id, :status, :duration)
+                                """,
+                                {
+                                    "room_name": room_name,
+                                    "room_code": room_code,
+                                    "teacher_id": t_row[0],
+                                    "status": "open",
+                                    "duration": duration_int
+                                }
+                            )
+                        else:
+                            cursor.execute(
+                                """
+                                INSERT INTO U.CLASSROOMS (ROOM_NAME, ROOM_CODE, TEACHER_ID)
+                                VALUES (:room_name, :room_code, :teacher_id)
+                                """,
+                                {
+                                    "room_name": room_name,
+                                    "room_code": room_code,
+                                    "teacher_id": t_row[0]
+                                }
+                            )
                         conn.commit()
         except Exception as e:
             print("Create room DB sync warning:", e)
