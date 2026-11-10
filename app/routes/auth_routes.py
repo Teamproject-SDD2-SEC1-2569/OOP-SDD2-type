@@ -55,7 +55,16 @@ def register():
     if not username or not password or not full_name or not email:
         return jsonify({"error": "ห้ามเว้นช่องข้อมูลว่าง"}), 400
 
-    if len(username) > 50 or len(full_name) > 100 or len(email) > 100:
+    if first_name and (len(first_name) < 3 or len(first_name) > 30):
+        return jsonify({"error": "ชื่อจริงต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร"}), 400
+
+    if last_name and (len(last_name) < 3 or len(last_name) > 30):
+        return jsonify({"error": "นามสกุลต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร"}), 400
+
+    if len(username) < 3 or len(username) > 30:
+        return jsonify({"error": "ชื่อผู้ใช้ต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร"}), 400
+
+    if len(full_name) > 100 or len(email) > 100:
         return jsonify({"error": "ความยาวข้อมูลเกินกว่าที่กำหนด"}), 400
 
     if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
@@ -63,6 +72,9 @@ def register():
 
     if len(password) < 8:
         return jsonify({"error": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"}), 400
+
+    if not re.search(r"[A-Za-z\u0E00-\u0E7F]", password):
+        return jsonify({"error": "รหัสผ่านต้องมีตัวอักษรอย่างน้อย 1 ตัว"}), 400
 
     if len(password.encode("utf-8")) > 72:
         return jsonify({"error": "รหัสผ่านยาวเกินกว่าที่ระบบรองรับ"}), 400
