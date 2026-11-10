@@ -57,6 +57,14 @@ def typing():
     # หน้าฝึกพิมพ์
     return render_template('student/typing.html')
 
+@api_bp.route('/classrooms')
+def student_classrooms_page():
+    return render_template('student/classrooms.html')
+
+@api_bp.route('/profile')
+def student_profile_page():
+    return render_template('student/profile.html')
+
 @api_bp.route('/history')
 def typing_history():
     # หน้าประวัติการพิมพ์
