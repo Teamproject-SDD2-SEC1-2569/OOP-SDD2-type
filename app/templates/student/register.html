@@ -19,8 +19,8 @@
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .form-group { display: flex; flex-direction: column; }
         .form-group label { color: #333; font-size: 17px; font-weight: bold; margin-bottom: 8px; }
-        .form-group input { height: 52px; border: 1px solid #d7dce5; border-radius: 14px; padding: 0 18px; font-size: 16px; outline: none; background: #fff; }
-        .form-group input:focus { border-color: #5d91df; box-shadow: 0 0 0 3px rgba(93, 145, 223, 0.12); }
+        .form-group input, .form-group select { height: 52px; border: 1px solid #d7dce5; border-radius: 14px; padding: 0 18px; font-size: 16px; outline: none; background: #fff; color: #333; }
+        .form-group input:focus, .form-group select:focus { border-color: #5d91df; box-shadow: 0 0 0 3px rgba(93, 145, 223, 0.12); }
         .register-button { width: 70%; height: 58px; margin-top: 28px; border: none; border-radius: 15px; background: #5d91df; color: white; font-size: 20px; font-weight: bold; cursor: pointer; }
         .register-button:hover { background: #4c80cf; }
         .login-link { margin-top: 25px; text-align: center; color: #666; font-size: 16px; }
@@ -61,9 +61,18 @@
                         <input type="text" id="regLastName" placeholder="กรอกนามสกุล" required>
                     </div>
 
-                    <div class="form-group" id="studentCodeGroup" style="grid-column: 1 / -1;">
+                    <div class="form-group" id="studentCodeGroup">
                         <label>รหัสนักศึกษา (8 หลัก)</label>
-                        <input type="text" id="regStudentCode" placeholder="กรอกรหัสนักศึกษา 8 หลัก (เฉพาะตัวเลข)" maxlength="8" minlength="8" inputmode="numeric" pattern="\d{8}" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 8)" required>
+                        <input type="text" id="regStudentCode" placeholder="กรอกรหัสนักศึกษา 8 หลัก" maxlength="8" minlength="8" inputmode="numeric" pattern="\d{8}" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 8)" required>
+                    </div>
+
+                    <div class="form-group" id="studentMajorGroup">
+                        <label>สาขาวิชา</label>
+                        <select id="regMajor" required>
+                            <option value="" disabled selected>-- เลือกสาขาวิชา --</option>
+                            <option value="คอมพิวเตอร์เทคโนโลยี">คอมพิวเตอร์เทคโนโลยี</option>
+                            <option value="อิเล็กทรอนิกส์และโทรคมนาคม">อิเล็กทรอนิกส์และโทรคมนาคม</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
@@ -111,12 +120,18 @@
         function updateRoleFields() {
             const studentCodeGroup = document.getElementById('studentCodeGroup');
             const studentCodeInput = document.getElementById('regStudentCode');
+            const studentMajorGroup = document.getElementById('studentMajorGroup');
+            const studentMajorSelect = document.getElementById('regMajor');
             if (selectedRole === 'Student') {
                 studentCodeGroup.style.display = 'flex';
                 studentCodeInput.required = true;
+                studentMajorGroup.style.display = 'flex';
+                studentMajorSelect.required = true;
             } else {
                 studentCodeGroup.style.display = 'none';
                 studentCodeInput.required = false;
+                studentMajorGroup.style.display = 'none';
+                studentMajorSelect.required = false;
             }
         }
 
@@ -178,6 +193,7 @@
             const lastName = document.getElementById('regLastName').value.trim();
             const fullName = `${firstName} ${lastName}`.trim();
             const studentCode = document.getElementById('regStudentCode').value.trim();
+            const major = document.getElementById('regMajor').value.trim();
             const username = document.getElementById('regUsername').value.trim();
             const password = document.getElementById('regPassword').value;
             const email = document.getElementById('regEmail').value.trim();
@@ -189,6 +205,10 @@
             }
             if (selectedRole === 'Student' && !/^\d{8}$/.test(studentCode)) {
                 alert("กรุณากรอกรหัสนักศึกษาเป็นตัวเลข 8 หลัก");
+                return;
+            }
+            if (selectedRole === 'Student' && !major) {
+                alert("กรุณาเลือกสาขาวิชา");
                 return;
             }
             if (password !== confirmPassword) {
@@ -212,6 +232,7 @@
                 };
                 if (selectedRole === 'Student') {
                     payload.student_code = studentCode;
+                    payload.major = major;
                 }
                 const res = await fetch('/auth/register', {
                     method: 'POST',

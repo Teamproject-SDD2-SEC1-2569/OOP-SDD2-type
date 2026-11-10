@@ -94,18 +94,17 @@ def register():
                 "error": "รหัสนักศึกษาต้องเป็นตัวเลข 8 หลักเท่านั้น"
             }), 400
 
-        if major is not None:
-            if not isinstance(major, str):
-                return jsonify({
-                    "error": "ข้อมูลสาขาวิชาไม่ถูกต้อง"
-                }), 400
+        if not isinstance(major, str) or not major.strip():
+            return jsonify({
+                "error": "กรุณาเลือกสาขาวิชา"
+            }), 400
 
-            major = major.strip() or None
-
-            if major and len(major) > 100:
-                return jsonify({
-                    "error": "สาขาวิชาต้องไม่เกิน 100 ตัวอักษร"
-                }), 400
+        major = major.strip()
+        allowed_majors = ("คอมพิวเตอร์เทคโนโลยี", "อิเล็กทรอนิกส์และโทรคมนาคม")
+        if major not in allowed_majors:
+            return jsonify({
+                "error": "สาขาวิชาต้องเป็น คอมพิวเตอร์เทคโนโลยี หรือ อิเล็กทรอนิกส์และโทรคมนาคม เท่านั้น"
+            }), 400
 
     else:
         academic_title = data.get("academic_title")

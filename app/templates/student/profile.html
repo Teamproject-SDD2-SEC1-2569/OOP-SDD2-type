@@ -190,8 +190,11 @@
                     <input type="text" id="editStudentCode" required maxlength="8" minlength="8" inputmode="numeric" pattern="\d{8}" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 8)" style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none;">
                 </div>
                 <div>
-                    <label style="display:block; font-size:13px; font-weight:600; color:#17345C; margin-bottom:6px;">สาขา / กลุ่มเรียน</label>
-                    <input type="text" id="editMajor" required style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none;">
+                    <label style="display:block; font-size:13px; font-weight:600; color:#17345C; margin-bottom:6px;">สาขาวิชา</label>
+                    <select id="editMajor" required style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none; background:#fff; color:#17345C;">
+                        <option value="คอมพิวเตอร์เทคโนโลยี">คอมพิวเตอร์เทคโนโลยี</option>
+                        <option value="อิเล็กทรอนิกส์และโทรคมนาคม">อิเล็กทรอนิกส์และโทรคมนาคม</option>
+                    </select>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:10px;">
                     <button type="button" onclick="closeEditModal()" style="flex:1; padding:12px; border:1px solid #D8E7F4; background:#fff; color:#71829B; border-radius:12px; font-weight:600; cursor:pointer;">ยกเลิก</button>
