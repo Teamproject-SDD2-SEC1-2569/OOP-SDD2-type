@@ -6,7 +6,7 @@ load_dotenv()
 class Config:
     """การตั้งค่าพื้นฐานของ Typeclass Application"""
     SECRET_KEY = os.getenv("SECRET_KEY", "typeclass-super-secret-key")
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "typeclass-jwt-secret-key")
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
     
     # Oracle Database Settings
     ORACLE_DB_USER = os.getenv("ORACLE_DB_USER")
