@@ -404,8 +404,8 @@ def _find_google_user(email: str, google_id: str):
                     cursor.execute("""
                         UPDATE U.USERS
                         SET GOOGLE_ID = :gid, AUTH_PROVIDER = 'GOOGLE'
-                        WHERE USER_ID = :uid AND GOOGLE_ID IS NULL
-                    """, gid=google_id, uid=user[0])
+                        WHERE USER_ID = :user_id AND GOOGLE_ID IS NULL
+                    """, gid=google_id, user_id=user[0])
                     connection.commit()
     except Exception as e:
         print("Google Login DB lookup fallback:", e)

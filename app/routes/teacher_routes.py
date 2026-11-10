@@ -436,7 +436,7 @@ def teacher_create_room_page():
             if room_code not in active_rooms:
                 break  # ถ้ารหัสไม่ซ้ำ ให้หยุดสุ่มและไปต่อ
 
-        # 3. บันทึกข้อมูลลง Memory
+        # 3. บันทึกข้อมูลลง Memory และ Oracle Database (U.CLASSROOMS)
         active_rooms[room_code] = {
             "room_name": room_name,
             "category": category,
@@ -445,6 +445,36 @@ def teacher_create_room_page():
             "status": "waiting",
             "students": []
         }
+        room_settings[room_code] = {
+            "duration": int(duration) if str(duration).isdigit() else 60,
+            "status": "open"
+        }
+
+        conn = None
+        try:
+            conn = get_db_connection()
+            if conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("SELECT TEACHER_ID FROM U.TEACHERS FETCH FIRST 1 ROWS ONLY")
+                    t_row = cursor.fetchone()
+                    if t_row:
+                        cursor.execute(
+                            """
+                            INSERT INTO U.CLASSROOMS (ROOM_NAME, ROOM_CODE, TEACHER_ID)
+                            VALUES (:room_name, :room_code, :teacher_id)
+                            """,
+                            {
+                                "room_name": room_name,
+                                "room_code": room_code,
+                                "teacher_id": t_row[0]
+                            }
+                        )
+                        conn.commit()
+        except Exception as e:
+            print("Create room DB sync warning:", e)
+        finally:
+            if conn:
+                conn.close()
 
         # 4. สร้างเสร็จ ให้ Redirect ไปหน้าจัดการห้องเรียน
         return redirect(url_for('teacher.teacher_manage_classroom_page', room_code=room_code))

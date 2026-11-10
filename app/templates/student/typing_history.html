@@ -79,18 +79,17 @@
             <div class="brand-text"><h2>ห้องเรียนฝึกพิมพ์</h2><p>โหมดนักศึกษา</p></div>
         </a>
 
-        <!-- โปรไฟล์แบบคลิก (Dropdown) เหมือนกันทุกหน้า -->
         <div class="user-profile" onclick="toggleProfileMenu(event)">
             <div class="avatar"><i class="fa-regular fa-face-smile"></i></div>
             <div class="user-info">
-                <div class="name">นักเรียนนิรนาม</div>
+                <div class="name" id="sidebarStudentName">นักเรียนนิรนาม</div>
                 <div class="role"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> กำลังออนไลน์</div>
             </div>
             <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
             
             <div class="dropdown-menu" id="profileDropdown">
-                <a href="#" onclick="alert('ระบบดูโปรไฟล์เตรียมเปิดใช้งาน')"><i class="fa-solid fa-user-pen"></i> ดูโปรไฟล์ส่วนตัว</a>
-                <a href="{{ url_for('api.login') }}" class="text-danger" onclick="event.stopPropagation();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
+                <a href="{{ url_for('api.student_profile_page') }}"><i class="fa-solid fa-user-pen"></i> ดูโปรไฟล์ส่วนตัว</a>
+                <a href="{{ url_for('api.login') }}" class="text-danger" onclick="event.stopPropagation(); localStorage.clear();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
         </div>
 
@@ -104,7 +103,7 @@
                 <i class="fa-solid fa-door-open"></i> ห้องเรียนของฉัน
             </a>
             <!-- หน้าประวัติ -->
-            <a href="{{ url_for('api.typing_history') }}" class="menu-item">
+            <a href="{{ url_for('api.typing_history') }}" class="menu-item active">
                 <i class="fa-solid fa-chart-simple"></i> ประวัติการพิมพ์
             </a>
         </div>
@@ -112,7 +111,6 @@
 
     <div class="main-wrapper">
         <header class="topbar">
-            <!-- ว่างไว้เผื่อใส่อะไรในอนาคต -->
             <div></div>
         </header>
 
@@ -125,7 +123,6 @@
                         <p>บันทึกผลงาน ย้อนดูพัฒนาการของคุณ</p>
                     </div>
                 </div>
-                <!-- ตกแต่งขวาบนเล็กน้อย -->
                 <div style="font-size: 13px; color: #20A873; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-seedling"></i> ทุกการฝึกซ้อม มีความหมายเสมอ
                 </div>
@@ -136,27 +133,25 @@
                 <div class="filter-tools">
                     <div class="form-group">
                         <label class="form-label">เรียงตาม</label>
-                        <select class="form-select">
-                            <option>ล่าสุด</option>
-                            <option>คะแนนสูงสุด</option>
-                            <option>WPM สูงสุด</option>
+                        <select class="form-select" id="sortSelect" onchange="renderHistoryTable()">
+                            <option value="latest">ล่าสุด</option>
+                            <option value="score">คะแนนสูงสุด</option>
+                            <option value="wpm">WPM สูงสุด</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">เลือกห้องเรียน</label>
-                        <select class="form-select">
-                            <option>ทั้งหมด</option>
-                            <option>ห้อง A</option>
-                            <option>ห้อง B</option>
+                        <select class="form-select" id="roomFilterSelect" onchange="renderHistoryTable()">
+                            <option value="all">ทั้งหมด</option>
                         </select>
                     </div>
                     <div class="form-group" style="flex: 2;">
                         <label class="form-label"><i class="fa-solid fa-magnifying-glass"></i> ค้นหา</label>
-                        <input type="text" class="form-input" placeholder="พิมพ์ชื่อห้อง..." style="width: 100%;">
+                        <input type="text" id="searchInput" class="form-input" placeholder="พิมพ์ชื่อห้องหรือรหัสห้อง..." style="width: 100%;" oninput="renderHistoryTable()">
                     </div>
                 </div>
 
-                <!-- ตารางข้อมูล -->
+                <!-- ตารางข้อมูล (ดึงจาก U.SUBMISSION_RESULTS บน Oracle DB) -->
                 <table>
                     <thead>
                         <tr>
@@ -169,28 +164,10 @@
                             <th style="text-align: right;">รายละเอียด</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- Mock Data เปลี่ยนจากของเดิม -->
+                    <tbody id="historyTableBody">
                         <tr>
-                            <td style="color: #71829B;">1</td>
-                            <td>12 ก.ย. 2568<br><span style="font-size: 11px; color: #71829B;">14:32</span></td>
-                            <td style="font-weight: 600;">ห้อง A</td>
-                            <td class="wpm-text">45</td>
-                            <td class="acc-text">97%</td>
-                            <td class="score-text">980</td>
-                            <td style="text-align: right;">
-                                <button class="btn-outline-sm"><i class="fa-solid fa-circle-info"></i> ดูรายละเอียด</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="color: #71829B;">2</td>
-                            <td>10 ก.ย. 2568<br><span style="font-size: 11px; color: #71829B;">16:18</span></td>
-                            <td style="font-weight: 600;">ห้อง B</td>
-                            <td class="wpm-text">42</td>
-                            <td class="acc-text">95%</td>
-                            <td class="score-text">920</td>
-                            <td style="text-align: right;">
-                                <button class="btn-outline-sm"><i class="fa-solid fa-circle-info"></i> ดูรายละเอียด</button>
+                            <td colspan="7" style="text-align: center; padding: 40px; color: #71829B;">
+                                กำลังโหลดประวัติการพิมพ์จากฐานข้อมูล...
                             </td>
                         </tr>
                     </tbody>
@@ -201,13 +178,17 @@
     </div>
 
     <script>
-        // ฟังก์ชันเปิด/ปิด เมนู Dropdown แบบคลิก
+        const authToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        document.getElementById('sidebarStudentName').innerText = storedUser.full_name || storedUser.username || localStorage.getItem('username') || 'นักเรียน';
+
+        let allHistory = [];
+
         function toggleProfileMenu(event) {
-            event.stopPropagation(); // ป้องกันไม่ให้ event คลิกทะลุไปโดนตัวอื่น
+            event.stopPropagation();
             document.getElementById('profileDropdown').classList.toggle('show');
         }
 
-        // ฟังก์ชันปิด Dropdown อัตโนมัติเมื่อคลิกพื้นที่ว่างนอกเมนู
         window.onclick = function(event) {
             if (!event.target.closest('.user-profile')) {
                 const dropdown = document.getElementById('profileDropdown');
@@ -216,6 +197,89 @@
                 }
             }
         }
+
+        async function loadHistory() {
+            const tbody = document.getElementById('historyTableBody');
+            if (!authToken) {
+                window.location.href = "{{ url_for('api.login') }}";
+                return;
+            }
+            try {
+                const res = await fetch('/api/student/history', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (res.status === 401 || res.status === 422) {
+                    localStorage.clear();
+                    window.location.href = "{{ url_for('api.login') }}";
+                    return;
+                }
+                const data = await res.json();
+                allHistory = data.history || [];
+
+                // เติมตัวเลือกห้องเรียนจากข้อมูลจริง
+                const roomSelect = document.getElementById('roomFilterSelect');
+                const uniqueRooms = [...new Set(allHistory.map(h => h.room_name).filter(Boolean))];
+                roomSelect.innerHTML = `<option value="all">ทั้งหมด</option>` +
+                    uniqueRooms.map(r => `<option value="${r}">${r}</option>`).join('');
+
+                renderHistoryTable();
+            } catch (err) {
+                console.error("Load history error:", err);
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#E95C68;">ไม่สามารถดึงประวัติการพิมพ์ได้</td></tr>`;
+            }
+        }
+
+        function renderHistoryTable() {
+            const tbody = document.getElementById('historyTableBody');
+            const sortBy = document.getElementById('sortSelect').value;
+            const roomFilter = document.getElementById('roomFilterSelect').value;
+            const searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+
+            let filtered = allHistory.filter(item => {
+                if (roomFilter !== 'all' && item.room_name !== roomFilter) return false;
+                if (searchQuery) {
+                    const hay = `${item.room_name} ${item.room_code}`.toLowerCase();
+                    if (!hay.includes(searchQuery)) return false;
+                }
+                return true;
+            });
+
+            if (sortBy === 'score') {
+                filtered.sort((a, b) => b.score - a.score);
+            } else if (sortBy === 'wpm') {
+                filtered.sort((a, b) => b.wpm - a.wpm);
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:50px 20px; color:#71829B;">
+                            ยังไม่มีประวัติการพิมพ์ เริ่มต้นฝึกพิมพ์ได้ที่เมนู <a href="{{ url_for('api.typing') }}" style="color:#288CF0; font-weight:700; text-decoration:none;">ห้องฝึกพิมพ์</a>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map((item, idx) => {
+                const detailUrl = `/result?wpm=${item.wpm}&acc=${item.accuracy}&score=${item.score}&time=${item.time_spent}&errors=${item.error_count}&room_code=${encodeURIComponent(item.room_code === '-' ? '' : item.room_code)}`;
+                return `
+                    <tr>
+                        <td style="color: #71829B;">${idx + 1}</td>
+                        <td>${item.date}<br><span style="font-size: 11px; color: #71829B;">${item.time}</span></td>
+                        <td style="font-weight: 600;">${item.room_name} <span style="font-size:11px; color:#71829B;">(${item.room_code})</span></td>
+                        <td class="wpm-text">${item.wpm}</td>
+                        <td class="acc-text">${item.accuracy}%</td>
+                        <td class="score-text">${item.score}</td>
+                        <td style="text-align: right;">
+                            <a href="${detailUrl}" class="btn-outline-sm" style="text-decoration:none;"><i class="fa-solid fa-circle-info"></i> ดูรายละเอียด</a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', loadHistory);
     </script>
 </body>
 </html>

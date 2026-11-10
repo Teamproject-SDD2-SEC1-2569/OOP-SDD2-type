@@ -109,14 +109,14 @@
         <div class="user-profile" onclick="toggleProfileMenu(event)">
             <div class="avatar"><i class="fa-regular fa-face-smile"></i></div>
             <div class="user-info">
-                <div class="name">นักเรียนนิรนาม</div>
+                <div class="name" id="sidebarStudentName">นักเรียนนิรนาม</div>
                 <div class="role"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> กำลังออนไลน์</div>
             </div>
             <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
             
             <div class="dropdown-menu" id="profileDropdown">
                 <a href="{{ url_for('api.student_profile_page') }}"><i class="fa-solid fa-user-pen"></i> ดูโปรไฟล์ส่วนตัว</a>
-                <a href="{{ url_for('api.login') }}" class="text-danger" onclick="event.stopPropagation();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
+                <a href="{{ url_for('api.login') }}" class="text-danger" onclick="event.stopPropagation(); localStorage.clear();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
         </div>
 
@@ -151,70 +151,12 @@
                 </button>
             </div>
 
-            <!-- ตะกร้าการ์ดห้องเรียน -->
+            <!-- ตะกร้าการ์ดห้องเรียน (ดึงจากฐานข้อมูล Oracle จริง) -->
             <div class="room-grid" id="roomGrid">
-                
-                <!-- ตัวอย่างห้องที่ 1 (สถานะเปิดสอบ) -->
-                <div class="room-card" id="room-ABCD">
-                    <div class="room-header">
-                        <div class="room-code-badge">TYP-ABCD</div>
-                        <div class="status-badge live"><i class="fa-solid fa-circle" style="font-size: 6px;"></i> เปิดทดสอบ</div>
-                    </div>
-                    <div>
-                        <div class="room-title">ภาษาอังกฤษเบื้องต้น (ชท.2/1)</div>
-                        <div class="room-teacher"><i class="fa-solid fa-chalkboard-user"></i> อ.ธนภัทร ดิษฐสโร</div>
-                    </div>
-                    <div class="room-stats">
-                        <div class="r-stat">
-                            <span class="r-stat-label">Best WPM</span>
-                            <span class="r-stat-val">45</span>
-                        </div>
-                        <div class="r-stat">
-                            <span class="r-stat-label">เวลาสอบ</span>
-                            <span class="r-stat-val">60 วิ</span>
-                        </div>
-                    </div>
-                    <div class="room-actions">
-                        <!-- ปุ่มเข้าสอบ จะลิงก์ไปหน้า typing.html พร้อมแนบตัวแปร url params ไปด้วย -->
-                        <a href="{{ url_for('api.typing') }}?room_code=TYP-ABCD" class="btn-enter">
-                            <i class="fa-solid fa-pen-nib"></i> เข้าห้องทดสอบ
-                        </a>
-                        <button class="btn-leave" onclick="leaveRoom('room-ABCD')" title="ออกจากห้องเรียน">
-                            <i class="fa-solid fa-right-from-bracket"></i>
-                        </button>
-                    </div>
+                <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #71829B;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 28px; color: #288CF0; margin-bottom: 12px;"></i>
+                    <p>กำลังโหลดรายการห้องเรียนจากฐานข้อมูล...</p>
                 </div>
-
-                <!-- ตัวอย่างห้องที่ 2 (สถานะปิดแล้ว) -->
-                <div class="room-card" id="room-XYZ9">
-                    <div class="room-header">
-                        <div class="room-code-badge" style="background: #71829B;">TYP-XYZ9</div>
-                        <div class="status-badge closed"><i class="fa-solid fa-lock" style="font-size: 10px;"></i> ปิดทดสอบแล้ว</div>
-                    </div>
-                    <div>
-                        <div class="room-title">ฝึกพิมพ์โค้ด Python</div>
-                        <div class="room-teacher"><i class="fa-solid fa-chalkboard-user"></i> อ.จิตติพัฒน์ ลำดวน</div>
-                    </div>
-                    <div class="room-stats">
-                        <div class="r-stat">
-                            <span class="r-stat-label">Best WPM</span>
-                            <span class="r-stat-val" style="color: #20A873;">62</span>
-                        </div>
-                        <div class="r-stat">
-                            <span class="r-stat-label">เวลาสอบ</span>
-                            <span class="r-stat-val">120 วิ</span>
-                        </div>
-                    </div>
-                    <div class="room-actions">
-                        <a href="#" class="btn-enter" style="background: #F4F7FC; color: #71829B;" onclick="alert('ห้องนี้ปิดการทดสอบแล้ว คุณไม่สามารถเข้าสอบได้')">
-                            <i class="fa-solid fa-ban"></i> ปิดทดสอบแล้ว
-                        </a>
-                        <button class="btn-leave" onclick="leaveRoom('room-XYZ9')" title="ออกจากห้องเรียน">
-                            <i class="fa-solid fa-right-from-bracket"></i>
-                        </button>
-                    </div>
-                </div>
-
             </div>
         </div>
     </div>
@@ -230,7 +172,7 @@
                 <label class="form-label">รหัสห้องเรียน</label>
                 <div class="input-with-icon">
                     <i class="fa-solid fa-hashtag"></i>
-                    <input type="text" id="inputRoomCode" class="form-input" placeholder="เช่น TYP-1234">
+                    <input type="text" id="inputRoomCode" class="form-input" placeholder="เช่น CS101-SEC1 หรือ TYP-1234">
                 </div>
             </div>
             
@@ -241,6 +183,11 @@
 
     <!-- ================= JAVASCRIPT ================= -->
     <script>
+        const authToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const displayName = storedUser.full_name || storedUser.username || localStorage.getItem('username') || 'นักเรียน';
+        document.getElementById('sidebarStudentName').innerText = displayName;
+
         // ควบคุม Profile Dropdown
         function toggleProfileMenu(event) {
             event.stopPropagation();
@@ -265,28 +212,140 @@
             document.getElementById('joinModal').classList.remove('show');
         }
 
-        // ฟังก์ชันจำลองการกรอกรหัสเพิ่มห้องเรียน
-        function submitJoinRoom() {
-            const code = document.getElementById('inputRoomCode').value.trim().toUpperCase();
-            if(!code) return alert('กรุณากรอกรหัสห้อง');
+        // ดึงข้อมูลห้องเรียนของนักเรียนจาก Oracle Database
+        async function loadStudentClassrooms() {
+            const grid = document.getElementById('roomGrid');
+            if (!authToken) {
+                window.location.href = "{{ url_for('api.login') }}";
+                return;
+            }
+            try {
+                const res = await fetch('/api/student/classrooms', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (res.status === 401 || res.status === 422) {
+                    localStorage.clear();
+                    window.location.href = "{{ url_for('api.login') }}";
+                    return;
+                }
+                const data = await res.json();
+                const rooms = data.rooms || [];
 
-            // ในระบบจริงตรงนี้จะ Fetch API ไปที่ Database เพื่อตรวจสอบรหัสห้องและบันทึก
-            alert(`เพิ่มห้องเรียนรหัส ${code} สำเร็จ! (ระบบจำลอง)`);
-            closeJoinModal();
-            // window.location.reload(); // รีเฟรชหน้าเพื่อให้ดึงข้อมูลห้องใหม่มาแสดง
-        }
+                if (rooms.length === 0) {
+                    grid.innerHTML = `
+                        <div class="room-card" style="grid-column: 1 / -1; text-align: center; align-items: center; padding: 50px 25px;">
+                            <div style="width: 64px; height: 64px; border-radius: 50%; background: #E7F3FE; color: #288CF0; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                                <i class="fa-solid fa-door-open"></i>
+                            </div>
+                            <div class="room-title">คุณยังไม่ได้เข้าร่วมห้องเรียนใดๆ</div>
+                            <p style="color: #71829B; font-size: 14px; max-width: 420px;">
+                                กดปุ่ม <strong>"เพิ่มห้องเรียนใหม่"</strong> ด้านบน แล้วกรอกรหัสห้องที่ได้รับจากอาจารย์ (เช่น <code>CS101-SEC1</code>) เพื่อเริ่มต้นใช้งาน
+                            </p>
+                            <button class="btn-primary" onclick="openJoinModal()" style="margin-top: 10px;">
+                                <i class="fa-solid fa-plus"></i> เข้าร่วมห้องเรียนแรกของคุณ
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
 
-        // ฟังก์ชันออกจากห้องเรียน
-        function leaveRoom(cardId) {
-            if(confirm('คุณต้องการออกจากห้องเรียนนี้ใช่หรือไม่? (ประวัติการพิมพ์ในห้องนี้อาจสูญหาย)')) {
-                // ในระบบจริงต้องยิง API ลบข้อมูล
-                const card = document.getElementById(cardId);
-                card.style.opacity = "0.5";
-                setTimeout(() => {
-                    card.remove();
-                }, 300);
+                grid.innerHTML = rooms.map(room => {
+                    const isClosed = room.status === 'closed';
+                    const badgeHtml = isClosed
+                        ? `<div class="status-badge closed"><i class="fa-solid fa-lock" style="font-size: 10px;"></i> ปิดทดสอบแล้ว</div>`
+                        : `<div class="status-badge live"><i class="fa-solid fa-circle" style="font-size: 6px;"></i> เปิดทดสอบ</div>`;
+                    const actionHtml = isClosed
+                        ? `<a href="#" class="btn-enter" style="background: #F4F7FC; color: #71829B;" onclick="alert('ห้องนี้ปิดการทดสอบแล้ว คุณไม่สามารถเข้าสอบได้'); return false;">
+                               <i class="fa-solid fa-ban"></i> ปิดทดสอบแล้ว
+                           </a>`
+                        : `<a href="{{ url_for('api.typing') }}?room_code=${encodeURIComponent(room.room_code)}" class="btn-enter">
+                               <i class="fa-solid fa-pen-nib"></i> เข้าห้องทดสอบ
+                           </a>`;
+
+                    return `
+                        <div class="room-card" id="room-${room.room_code}">
+                            <div class="room-header">
+                                <div class="room-code-badge" style="${isClosed ? 'background:#71829B;' : ''}">${room.room_code}</div>
+                                ${badgeHtml}
+                            </div>
+                            <div>
+                                <div class="room-title">${room.room_name}</div>
+                                <div class="room-teacher"><i class="fa-solid fa-chalkboard-user"></i> ${room.teacher_name}</div>
+                            </div>
+                            <div class="room-stats">
+                                <div class="r-stat">
+                                    <span class="r-stat-label">Best WPM</span>
+                                    <span class="r-stat-val" style="color: #20A873;">${room.best_wpm}</span>
+                                </div>
+                                <div class="r-stat">
+                                    <span class="r-stat-label">เวลาสอบ</span>
+                                    <span class="r-stat-val">${room.duration} วิ</span>
+                                </div>
+                            </div>
+                            <div class="room-actions">
+                                ${actionHtml}
+                                <button class="btn-leave" onclick="leaveRoom('${room.room_code}')" title="ออกจากห้องเรียน">
+                                    <i class="fa-solid fa-right-from-bracket"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("Load classrooms error:", err);
+                grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: #E95C68; padding: 40px;">ไม่สามารถดึงข้อมูลห้องเรียนได้ กรุณาลองใหม่อีกครั้ง</div>`;
             }
         }
+
+        // บันทึกรหัสห้องเรียนลง Oracle Database
+        async function submitJoinRoom() {
+            const code = document.getElementById('inputRoomCode').value.trim().toUpperCase();
+            if (!code) return alert('กรุณากรอกรหัสห้อง');
+
+            try {
+                const res = await fetch('/api/student/classrooms/join', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ room_code: code })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.message || `เข้าร่วมห้องเรียน ${code} สำเร็จ!`);
+                    closeJoinModal();
+                    await loadStudentClassrooms();
+                } else {
+                    alert(data.error || 'ไม่พบรหัสห้องเรียนนี้ในระบบ');
+                }
+            } catch (err) {
+                console.error("Join room error:", err);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+            }
+        }
+
+        // ออกจากห้องเรียนและลบจาก Oracle Database
+        async function leaveRoom(roomCode) {
+            if (!confirm(`คุณต้องการออกจากห้องเรียน ${roomCode} ใช่หรือไม่?`)) return;
+            try {
+                const res = await fetch(`/api/student/classrooms/${encodeURIComponent(roomCode)}/leave`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    await loadStudentClassrooms();
+                } else {
+                    alert(data.error || 'ไม่สามารถออกจากห้องเรียนได้');
+                }
+            } catch (err) {
+                console.error("Leave room error:", err);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadStudentClassrooms);
     </script>
 </body>
 </html>
