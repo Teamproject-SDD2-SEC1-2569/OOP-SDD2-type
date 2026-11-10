@@ -556,14 +556,7 @@ def google_login():
 
     user_id, db_username, _, db_full_name, db_email, role = user
 
-    # ตรวจสอบว่า Role ของบัญชีตรงกับปุ่มที่เลือกหรือไม่
-    if role.strip().lower() != requested_role.strip().lower():
-        role_th = "อาจารย์" if role.strip().lower() == "teacher" else "นักเรียน"
-        selected_th = "อาจารย์" if requested_role.strip().lower() == "teacher" else "นักเรียน"
-        return jsonify({
-            "error": f"ไม่สามารถเข้าสู่ระบบโหมด{selected_th}ได้ เนื่องจากบัญชี Google นี้ผูกไว้เป็นบัญชี{role_th}"
-        }), 403
-
+    # ใช้ Role ของบัญชีจากฐานข้อมูลโดยอัตโนมัติ (ไม่ต้องบังคับให้เลือกปุ่มตรงกันก่อนกด Google Login)
     access_token = create_access_token(
         identity=str(user_id),
         expires_delta=timedelta(hours=1),
@@ -661,12 +654,7 @@ def google_oauth_callback():
 
         user_id, db_username, _, db_full_name, db_email, role = user
 
-        if role.strip().lower() != requested_role.strip().lower():
-            role_th = "อาจารย์" if role.strip().lower() == "teacher" else "นักเรียน"
-            selected_th = "อาจารย์" if requested_role.strip().lower() == "teacher" else "นักเรียน"
-            msg = f"ไม่สามารถเข้าสู่ระบบโหมด{selected_th}ได้ เนื่องจากบัญชี Google นี้ผูกไว้เป็นบัญชี{role_th}"
-            return f"<script>alert({json.dumps(msg)}); window.location.href='/';</script>"
-
+        # ใช้ Role ของบัญชีจากฐานข้อมูลโดยอัตโนมัติและพาดิ่งไปยังหน้าของ Role นั้นทันที
         jwt_token = create_access_token(
             identity=str(user_id),
             expires_delta=timedelta(hours=1),
