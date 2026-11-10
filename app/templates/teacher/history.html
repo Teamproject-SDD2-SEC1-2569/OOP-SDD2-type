@@ -10,7 +10,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Prompt', 'Inter', sans-serif; }
         body { background-color: #F4F7FC; height: 100vh; display: flex; overflow: hidden; }
         
-        .sidebar { width: 260px; background-color: #B2DCFA; padding: 25px 20px; display: flex; flex-direction: column; z-index: 10; border-right: 2px solid #D8E7F4; }
+        .sidebar { width: 260px; background-color: #B2DCFA; padding: 25px 20px; display: flex; flex-direction: column; z-index: 10; border-right: 2px solid #D8E7F4; flex-shrink: 0; }
         .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; text-decoration: none;}
         .brand-icon { width: 40px; height: 40px; background-color: #063376; border-radius: 12px; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 20px; }
         .brand-text h2 { color: #063376; font-size: 16px; font-weight: 700; }
@@ -22,8 +22,8 @@
         .user-info .name { color: #063376; font-size: 14px; font-weight: 700; }
         .user-info .role { color: #71829B; font-size: 12px; }
         
-        .dropdown-menu { display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border-radius: 12px; box-shadow: 0 5px 15px rgba(6, 51, 118, 0.1); margin-top: 8px; flex-direction: column; overflow: hidden; z-index: 100; border: 1px solid #D8E7F4; }
-        .user-profile:hover .dropdown-menu { display: flex; }
+        .dropdown-menu { display: none; position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: #fff; border-radius: 12px; box-shadow: 0 5px 15px rgba(6, 51, 118, 0.1); flex-direction: column; overflow: hidden; z-index: 100; border: 1px solid #D8E7F4; }
+        .dropdown-menu.show { display: flex; }
         .dropdown-menu a { padding: 12px 15px; color: #063376; text-decoration: none; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
         .dropdown-menu a:hover { background: #F4F7FC; color: #288CF0; }
         .dropdown-menu a.text-danger:hover { color: #E95C68; background: #FDEBED; }
@@ -37,7 +37,7 @@
         
         .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         .topbar { background-color: #fff; height: 60px; padding: 0 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #D8E7F4; }
-        .breadcrumb { color: #71829B; font-size: 14px; }
+        .breadcrumb { color: #71829B; font-size: 14px; display: flex; align-items: center; gap: 8px; }
         .breadcrumb span { color: #063376; font-weight: 700; }
         .btn-noti { width: 38px; height: 38px; background-color: #E7F3FE; color: #288CF0; border: none; border-radius: 12px; font-size: 18px; cursor: pointer; transition: 0.2s;}
         .btn-noti:hover { background-color: #DDF0FD; }
@@ -47,7 +47,7 @@
         .page-header h1 { color: #063376; font-size: 26px; font-weight: 700; margin-bottom: 4px; }
         .page-header p { color: #71829B; font-size: 14px; }
         
-        /* Summary Stats (เพิ่มมาใหม่ให้ดูโปรขึ้น) */
+        /* Summary Stats */
         .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
         .stat-box { padding: 15px 20px; background: #fff; border-radius: 16px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
         .stat-icon { width: 45px; height: 45px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 22px; }
@@ -58,18 +58,27 @@
         .card-title { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;}
         .card-title h3 { color: #063376; font-size: 18px; font-weight: 700; }
         
+        .header-actions { display: flex; gap: 10px; align-items: center; }
         .btn-primary { background: #288CF0; color: #fff; padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; transition: 0.2s;}
         .btn-primary:hover { background: #1e70c4; }
-        .filter-select { padding: 10px 15px; border-radius: 12px; border: 1px solid #D8E7F4; outline: none; font-size: 14px; color: #063376; background-color: #fff; font-family: 'Prompt';}
+        .btn-outline { background: #fff; border: 1px solid #D8E7F4; color: #063376; padding: 10px 18px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; transition: 0.2s; }
+        .btn-outline:hover { border-color: #288CF0; color: #288CF0; }
+
+        .filter-tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .search-box { position: relative; }
+        .search-box i { position: absolute; left: 15px; top: 12px; color: #71829B; }
+        .search-box input { padding: 10px 15px 10px 40px; border-radius: 12px; border: 1px solid #D8E7F4; outline: none; width: 220px; font-family: 'Prompt';}
+        .filter-select { padding: 10px 15px; border-radius: 12px; border: 1px solid #D8E7F4; outline: none; font-size: 14px; color: #063376; background-color: #fff; font-family: 'Prompt'; cursor: pointer;}
         
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th { background: #F4F7FC; padding: 15px; color: #71829B; font-size: 13px; font-weight: 700; border-radius: 8px 8px 0 0;}
         td { padding: 15px; border-bottom: 1px solid #D8E7F4; font-size: 14px; color: #17345C; font-weight: 500; }
         tr:hover td { background-color: #f9fbff; }
         .room-code-badge { background-color: #063376; color: #fff; padding: 5px 12px; border-radius: 6px; font-family: 'Inter'; font-weight: 700; font-size: 13px; letter-spacing: 1px;}
-        .status-badge { padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
+        .status-badge { padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
         .status-pass { background-color: #E4F7F0; color: #20A873; }
         .status-fail { background-color: #FDEBED; color: #E95C68; }
+        .loading-state { text-align: center; padding: 40px; color: #71829B; }
     </style>
 </head>
 <body>
@@ -79,16 +88,16 @@
             <div class="brand-text"><h2>ห้องเรียนฝึกพิมพ์</h2><p>ระบบติดตามผลนักศึกษา</p></div>
         </a>
 
-        <div class="user-profile">
-            <div class="avatar">ธพ</div>
+        <div class="user-profile" onclick="toggleProfileMenu(event)">
+            <div class="avatar">อจ</div>
             <div class="user-info">
-                <div class="name">อ.ธนภัทร ดิษฐสโร</div>
+                <div class="name">กำลังโหลด...</div>
                 <div class="role">อาจารย์ผู้สอน</div>
             </div>
             <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
-            <div class="dropdown-menu">
-                <a href="#"><i class="fa-solid fa-user-gear"></i> ตั้งค่าบัญชี</a>
-                <a href="#" class="text-danger"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
+            <div class="dropdown-menu" id="profileDropdown">
+                <a href="{{ url_for('teacher.teacher_profile_page') }}"><i class="fa-solid fa-user-gear"></i> ตั้งค่าบัญชี</a>
+                <a href="/" class="text-danger" data-logout><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
         </div>
 
@@ -110,34 +119,42 @@
             <div class="page-header">
                 <div>
                     <h1>รายงานผลคะแนนและประวัติการพิมพ์</h1>
-                    <p>ตรวจสอบผลการแข่งขันย้อนหลังของแต่ละห้องเรียนและส่งออกเป็นไฟล์ CSV</p>
+                    <p>ตรวจสอบผลการทดสอบย้อนหลังของแต่ละห้องเรียนและส่งออกเป็นไฟล์ CSV จากฐานข้อมูลจริง</p>
                 </div>
-                <button class="btn-primary" onclick="alert('ระบบ Export CSV เตรียมพร้อมเชื่อม Database')"><i class="fa-solid fa-file-csv"></i> ส่งออกรายงาน (Export CSV)</button>
+                <div class="header-actions">
+                    <button class="btn-outline" onclick="loadHistory()"><i class="fa-solid fa-rotate"></i> รีเฟรช</button>
+                    <button class="btn-primary" onclick="exportHistoryCSV()"><i class="fa-solid fa-file-csv"></i> ส่งออกรายงาน (Export CSV)</button>
+                </div>
             </div>
             
-            <!-- สรุปสถิติที่ทำให้หน้าดูเป็นมืออาชีพ -->
+            <!-- สรุปสถิติจริงจากฐานข้อมูล -->
             <div class="stats-row">
                 <div class="stat-box">
                     <div class="stat-icon" style="background: #E7F3FE; color: #288CF0;"><i class="fa-solid fa-file-lines"></i></div>
-                    <div class="stat-info"><h4>1,245 ครั้ง</h4><p>จำนวนการทดสอบทั้งหมด</p></div>
+                    <div class="stat-info"><h4 id="statTotalTests">- ครั้ง</h4><p>จำนวนการทดสอบทั้งหมด</p></div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-icon" style="background: #FFF3DD; color: #F2A93B;"><i class="fa-solid fa-gauge-high"></i></div>
-                    <div class="stat-info"><h4>68 WPM</h4><p>ความเร็วเฉลี่ย (WPM)</p></div>
+                    <div class="stat-info"><h4 id="statAvgWpm">- WPM</h4><p>ความเร็วเฉลี่ย (WPM)</p></div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-icon" style="background: #E4F7F0; color: #20A873;"><i class="fa-solid fa-bullseye"></i></div>
-                    <div class="stat-info"><h4>94.5%</h4><p>ความแม่นยำเฉลี่ย</p></div>
+                    <div class="stat-info"><h4 id="statAvgAcc">-%</h4><p>ความแม่นยำเฉลี่ย</p></div>
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-title">
-                    <h3>บันทึกประวัติการทดสอบทั้งหมด</h3>
-                    <select class="filter-select">
-                        <option value="all">แสดงผลทุกห้องเรียน</option>
-                        <option value="room1">TYP-ABCD</option>
-                    </select>
+                    <h3>บันทึกประวัติการทดสอบ (<span id="historyRowCount">0</span> รายการ)</h3>
+                    <div class="filter-tools">
+                        <div class="search-box">
+                            <i class="fa-solid fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="ค้นหาชื่อ, รหัสนักศึกษา..." oninput="renderTable()">
+                        </div>
+                        <select class="filter-select" id="roomFilter" onchange="loadHistory()">
+                            <option value="">แสดงผลทุกห้องเรียน</option>
+                        </select>
+                    </div>
                 </div>
                 <div style="overflow-x: auto;">
                     <table>
@@ -145,34 +162,149 @@
                             <tr>
                                 <th>วันที่ - เวลา</th>
                                 <th>รหัสห้อง</th>
+                                <th>รหัสนักศึกษา</th>
                                 <th>ชื่อนักศึกษา</th>
                                 <th>ความเร็ว (WPM)</th>
                                 <th>ความแม่นยำ (%)</th>
+                                <th>คำผิด</th>
+                                <th>คะแนน</th>
                                 <th>ผลประเมิน</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>09/11/2569 14:20</td>
-                                <td><span class="room-code-badge">TYP-ABCD</span></td>
-                                <td style="color:#063376; font-weight:600;">กัญญารัตน์ ศรีสุข</td>
-                                <td style="color:#288CF0; font-weight:700;">82 WPM</td>
-                                <td>98.2%</td>
-                                <td><span class="status-badge status-pass">ผ่านเกณฑ์</span></td>
-                            </tr>
-                            <tr>
-                                <td>09/11/2569 14:21</td>
-                                <td><span class="room-code-badge">TYP-ABCD</span></td>
-                                <td style="color:#063376; font-weight:600;">ธนกฤต วงศ์สวัสดิ์</td>
-                                <td style="color:#288CF0; font-weight:700;">35 WPM</td>
-                                <td>80.5%</td>
-                                <td><span class="status-badge status-fail">ควรปรับปรุง</span></td>
-                            </tr>
+                        <tbody id="historyTableBody">
+                            <tr><td colspan="9" class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดประวัติผลคะแนน...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </main>
     </div>
+
+    <script src="{{ url_for('static', filename='js/teacher_common.js') }}"></script>
+    <script>
+        let allHistory = [];
+        let availableRooms = [];
+
+        function toggleProfileMenu(event) {
+            event.stopPropagation();
+            document.getElementById('profileDropdown').classList.toggle('show');
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.closest('.user-profile')) {
+                const dropdown = document.getElementById('profileDropdown');
+                if (dropdown && dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            }
+        }
+
+        async function loadHistory() {
+            const selectedRoom = document.getElementById('roomFilter').value;
+            const queryParam = selectedRoom ? `?room_code=${encodeURIComponent(selectedRoom)}` : '';
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = `<tr><td colspan="9" class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดประวัติผลคะแนน...</td></tr>`;
+
+            const { ok, data } = await TC.api(`/teacher/api/history${queryParam}`);
+            if (!ok) {
+                tbody.innerHTML = `<tr><td colspan="9" class="loading-state" style="color:#E95C68;">${TC.escape(data.error || 'โหลดประวัติไม่สำเร็จ')}</td></tr>`;
+                return;
+            }
+
+            const stats = data.stats || {};
+            document.getElementById('statTotalTests').innerText = `${stats.total_tests ?? 0} ครั้ง`;
+            document.getElementById('statAvgWpm').innerText = `${stats.avg_wpm ?? 0} WPM`;
+            document.getElementById('statAvgAcc').innerText = `${stats.avg_accuracy ?? 0}%`;
+
+            availableRooms = data.rooms || [];
+            updateRoomFilterDropdown(selectedRoom);
+
+            allHistory = data.history || [];
+            renderTable();
+        }
+
+        function updateRoomFilterDropdown(currentSelection) {
+            const select = document.getElementById('roomFilter');
+            const options = ['<option value="">แสดงผลทุกห้องเรียน</option>'];
+            availableRooms.forEach(r => {
+                const isSelected = r.room_code === currentSelection ? 'selected' : '';
+                options.push(`<option value="${TC.escape(r.room_code)}" ${isSelected}>${TC.escape(r.room_name)} (${TC.escape(r.room_code)})</option>`);
+            });
+            select.innerHTML = options.join('');
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('historyTableBody');
+            const q = document.getElementById('searchInput').value.toLowerCase().trim();
+            const list = allHistory.filter(h =>
+                !q ||
+                (h.student_code && h.student_code.toLowerCase().includes(q)) ||
+                (h.full_name && h.full_name.toLowerCase().includes(q)) ||
+                (h.room_code && h.room_code.toLowerCase().includes(q)) ||
+                (h.room_name && h.room_name.toLowerCase().includes(q))
+            );
+
+            document.getElementById('historyRowCount').innerText = list.length;
+
+            if (allHistory.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="loading-state">ยังไม่มีประวัติการส่งผลคะแนนในห้องเรียนของคุณ</td></tr>`;
+                return;
+            }
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="loading-state">ไม่พบผลคะแนนที่ตรงกับการค้นหา</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(h => `
+                <tr>
+                    <td>${TC.escape(h.submitted_at || '-')}</td>
+                    <td><span class="room-code-badge" title="${TC.escape(h.room_name)}">${TC.escape(h.room_code)}</span></td>
+                    <td>${TC.escape(h.student_code)}</td>
+                    <td style="color:#063376; font-weight:600;">${TC.escape(h.full_name)}</td>
+                    <td style="color:#288CF0; font-weight:700;">${h.wpm} WPM</td>
+                    <td>${h.accuracy}%</td>
+                    <td>${h.error_count}</td>
+                    <td>${h.score}</td>
+                    <td>
+                        ${h.passed
+                            ? '<span class="status-badge status-pass"><i class="fa-solid fa-check"></i> ผ่านเกณฑ์</span>'
+                            : '<span class="status-badge status-fail"><i class="fa-solid fa-xmark"></i> ควรปรับปรุง</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function exportHistoryCSV() {
+            if (allHistory.length === 0) {
+                TC.toast('ไม่มีข้อมูลประวัติให้ส่งออก', 'info');
+                return;
+            }
+            const rows = [
+                ['Submitted At', 'Room Code', 'Room Name', 'Student ID', 'Student Name', 'WPM', 'Accuracy (%)', 'Errors', 'Time Spent (s)', 'Score', 'Evaluation']
+            ];
+            allHistory.forEach(h => {
+                rows.push([
+                    h.submitted_at,
+                    h.room_code,
+                    h.room_name,
+                    h.student_code,
+                    h.full_name,
+                    h.wpm,
+                    h.accuracy,
+                    h.error_count,
+                    h.time_spent,
+                    h.score,
+                    h.passed ? 'Passed' : 'Needs Improvement'
+                ]);
+            });
+            const roomPrefix = document.getElementById('roomFilter').value || 'All_Rooms';
+            TC.downloadCSV(`Typing_Report_${roomPrefix}_${new Date().toISOString().slice(0, 10)}.csv`, rows);
+        }
+
+        if (TC.guardTeacher()) {
+            TC.renderSidebarUser();
+            loadHistory();
+        }
+    </script>
 </body>
 </html>

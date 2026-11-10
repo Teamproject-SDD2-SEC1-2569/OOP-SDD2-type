@@ -122,21 +122,15 @@ def register():
         academic_title = data.get("academic_title")
         faculty = data.get("faculty")
 
-        if academic_title is not None:
-            if not isinstance(academic_title, str):
-                return jsonify({
-                    "error": "คำนำหน้าทางวิชาการไม่ถูกต้อง"
-                }), 400
+        if isinstance(academic_title, str) and academic_title.strip():
+            academic_title = academic_title.strip()
+        else:
+            academic_title = "อ."
 
-            academic_title = academic_title.strip() or None
-
-        if faculty is not None:
-            if not isinstance(faculty, str):
-                return jsonify({
-                    "error": "ข้อมูลคณะไม่ถูกต้อง"
-                }), 400
-
-            faculty = faculty.strip() or None
+        if isinstance(faculty, str) and faculty.strip():
+            faculty = faculty.strip()
+        else:
+            faculty = "สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง"
 
     password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
 

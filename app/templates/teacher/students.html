@@ -11,7 +11,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Prompt', 'Inter', sans-serif; }
         body { background-color: #F4F7FC; height: 100vh; display: flex; overflow: hidden; }
         
-        .sidebar { width: 260px; background-color: #B2DCFA; padding: 25px 20px; display: flex; flex-direction: column; z-index: 10; border-right: 2px solid #D8E7F4; }
+        .sidebar { width: 260px; background-color: #B2DCFA; padding: 25px 20px; display: flex; flex-direction: column; z-index: 10; border-right: 2px solid #D8E7F4; flex-shrink: 0; }
         .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; text-decoration: none;}
         .brand-icon { width: 40px; height: 40px; background-color: #063376; border-radius: 12px; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 20px; }
         .brand-text h2 { color: #063376; font-size: 16px; font-weight: 700; }
@@ -53,8 +53,12 @@
         .card-title { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;}
         .card-title h3 { color: #063376; font-size: 18px; font-weight: 700; }
         
+        .header-actions { display: flex; gap: 10px; align-items: center; }
         .btn-primary { background: #288CF0; color: #fff; padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; transition: 0.2s;}
         .btn-primary:hover { background: #1e70c4; }
+        .btn-outline { background: #fff; border: 1px solid #D8E7F4; color: #063376; padding: 10px 18px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; transition: 0.2s; }
+        .btn-outline:hover { border-color: #288CF0; color: #288CF0; }
+
         .search-box { position: relative; }
         .search-box i { position: absolute; left: 15px; top: 12px; color: #71829B; }
         .search-box input { padding: 10px 15px 10px 40px; border-radius: 12px; border: 1px solid #D8E7F4; outline: none; width: 250px; font-family: 'Prompt';}
@@ -64,7 +68,8 @@
         td { padding: 15px; border-bottom: 1px solid #D8E7F4; font-size: 14px; color: #17345C; font-weight: 500; }
         tr:hover td { background-color: #f9fbff; }
         
-        .room-code-badge { background-color: #288CF0; color: #fff; padding: 5px 12px; border-radius: 6px; font-family: 'Inter'; font-weight: 700; font-size: 13px; }
+        .room-code-badge { background-color: #288CF0; color: #fff; padding: 4px 10px; border-radius: 6px; font-family: 'Inter'; font-weight: 700; font-size: 12px; }
+        .room-pill { display: inline-block; background: #E7F3FE; color: #288CF0; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; margin: 2px; }
         
         /* ปุ่มจัดการในตาราง */
         .action-group { display: flex; gap: 8px; }
@@ -84,13 +89,14 @@
         
         /* ส่วน Header ของ Profile */
         .profile-header { display: flex; align-items: center; gap: 20px; border-bottom: 1px solid #D8E7F4; padding-bottom: 25px; margin-bottom: 25px; }
-        .profile-avatar { width: 80px; height: 80px; background: #E7F3FE; border: 2px solid #288CF0; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 35px; color: #288CF0; }
-        .profile-name { font-size: 24px; font-weight: 700; color: #063376; }
-        .profile-id { font-size: 14px; color: #71829B; margin-top: 5px; }
+        .profile-avatar { width: 75px; height: 75px; background: #E7F3FE; border: 2px solid #288CF0; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 28px; font-weight: 700; color: #288CF0; flex-shrink: 0; }
+        .profile-name { font-size: 22px; font-weight: 700; color: #063376; }
+        .profile-id { font-size: 14px; color: #71829B; margin-top: 4px; }
         .profile-id span { color: #288CF0; font-weight: 600; }
+        .profile-rooms { margin-top: 6px; font-size: 13px; color: #71829B; }
         
         /* ตัวเลขสถิติภาพรวมด้านบน */
-        .stat-grid-top { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; flex: 1; text-align: center; }
+        .stat-grid-top { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; flex: 1; text-align: center; }
         .stat-grid-top > div { background: #F4F7FC; padding: 15px; border-radius: 16px; border: 1px solid #D8E7F4; }
         .stat-label { font-size: 12px; color: #71829B; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;}
         .stat-value { font-size: 24px; font-weight: 700; color: #063376; font-family: 'Inter'; }
@@ -105,7 +111,7 @@
         .stat-row-label { font-size: 14px; color: #71829B; font-weight: 500; }
         .stat-row-val { font-size: 20px; font-weight: 700; color: #288CF0; font-family: 'Inter'; }
         .stat-row-val.acc { color: #20A873; }
-
+        .loading-state { text-align: center; padding: 40px; color: #71829B; }
     </style>
 </head>
 <body>
@@ -115,16 +121,16 @@
             <div class="brand-text"><h2>ห้องเรียนฝึกพิมพ์</h2><p>ระบบติดตามผลนักศึกษา</p></div>
         </a>
 
-        <div class="user-profile">
-            <div class="avatar">ธพ</div>
+        <div class="user-profile" onclick="toggleProfileMenu(event)">
+            <div class="avatar">อจ</div>
             <div class="user-info">
-                <div class="name">อ.ธนภัทร ดิษฐสโร</div>
+                <div class="name">กำลังโหลด...</div>
                 <div class="role">อาจารย์ผู้สอน</div>
             </div>
             <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
-            <div class="dropdown-menu">
-                <a href="#"><i class="fa-solid fa-user-gear"></i> ตั้งค่าบัญชี</a>
-                <a href="#" class="text-danger"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
+            <div class="dropdown-menu" id="profileDropdown">
+                <a href="{{ url_for('teacher.teacher_profile_page') }}"><i class="fa-solid fa-user-gear"></i> ตั้งค่าบัญชี</a>
+                <a href="/" class="text-danger" data-logout><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
         </div>
 
@@ -146,16 +152,20 @@
             <div class="page-header">
                 <div>
                     <h1>จัดการข้อมูลนักศึกษา</h1>
-                    <p>ค้นหา ดูโปรไฟล์เชิงลึก และติดตามสถิติการฝึกพิมพ์ของนักศึกษาแต่ละคน</p>
+                    <p>ค้นหา ดูโปรไฟล์เชิงลึก และติดตามสถิติการฝึกพิมพ์ของนักศึกษาแต่ละคนจากฐานข้อมูลจริง</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-outline" onclick="loadStudents()"><i class="fa-solid fa-rotate"></i> รีเฟรช</button>
+                    <button class="btn-primary" onclick="exportAllStudentsCSV()"><i class="fa-solid fa-file-csv"></i> ส่งออกข้อมูลทั้งหมด (CSV)</button>
                 </div>
             </div>
             
             <div class="card">
                 <div class="card-title">
-                    <h3>รายชื่อนักศึกษาในระบบ (<span id="studentTotalCount">3</span> คน)</h3>
+                    <h3>รายชื่อนักศึกษาในห้องเรียน (<span id="studentTotalCount">0</span> คน)</h3>
                     <div class="search-box">
                         <i class="fa-solid fa-search"></i>
-                        <input type="text" id="searchInput" placeholder="ค้นหาชื่อ หรือรหัสนักศึกษา..." oninput="searchStudents()">
+                        <input type="text" id="searchInput" placeholder="ค้นหาชื่อ, รหัสนักศึกษา หรือสาขา..." oninput="searchStudents()">
                     </div>
                 </div>
                 <div style="overflow-x: auto;">
@@ -164,14 +174,15 @@
                             <tr>
                                 <th>รหัสนักศึกษา</th>
                                 <th>ชื่อ - นามสกุล</th>
-                                <th>กลุ่มเรียน</th>
-                                <th>เข้าสอบแล้ว</th>
+                                <th>สาขาวิชา</th>
+                                <th>ห้องเรียนที่เข้าร่วม</th>
+                                <th>ส่งผลสอบแล้ว</th>
                                 <th>WPM เฉลี่ย</th>
                                 <th>จัดการ</th>
                             </tr>
                         </thead>
                         <tbody id="studentTableBody">
-                            <!-- ข้อมูลจะถูก Render ผ่าน JavaScript -->
+                            <tr><td colspan="7" class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดข้อมูลนักศึกษา...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -179,29 +190,26 @@
         </main>
     </div>
 
-    <!-- Modal ดูโปรไฟล์เชิงลึก (Theme เดียวกับ Dashboard) -->
+    <!-- Modal ดูโปรไฟล์เชิงลึก -->
     <div class="modal-overlay" id="profileModal">
         <div class="profile-card">
             <button class="profile-close" onclick="closeProfileModal()"><i class="fa-solid fa-times"></i></button>
             
             <div class="profile-header">
-                <div class="profile-avatar"><i class="fa-solid fa-user"></i></div>
-                <div style="flex: 1;">
-                    <div class="profile-name" id="pName">กัญญารัตน์ ศรีสุข</div>
-                    <div class="profile-id">ID: <span id="pId">68030101</span> &nbsp;|&nbsp; ภาคเรียนที่ 1/2569</div>
+                <div class="profile-avatar" id="pAvatar">นศ</div>
+                <div style="flex: 1; min-width: 0;">
+                    <div class="profile-name" id="pName">-</div>
+                    <div class="profile-id">ID: <span id="pId">-</span> &nbsp;|&nbsp; สาขา: <span id="pMajor">-</span></div>
+                    <div class="profile-rooms" id="pRooms">ห้องเรียน: -</div>
                 </div>
                 <div class="stat-grid-top">
                     <div>
-                        <div class="stat-label">Tests Started</div>
-                        <div class="stat-value" id="pStarted">12</div>
-                    </div>
-                    <div>
                         <div class="stat-label">Tests Completed</div>
-                        <div class="stat-value" id="pCompleted">10</div>
+                        <div class="stat-value" id="pCompleted">0</div>
                     </div>
                     <div>
                         <div class="stat-label">Time Typing</div>
-                        <div class="stat-value" id="pTime">15:30</div>
+                        <div class="stat-value" id="pTime">00:00</div>
                     </div>
                 </div>
             </div>
@@ -211,22 +219,22 @@
                     <div class="stat-box-title"><i class="fa-solid fa-arrow-trend-up" style="color: #F2A93B;"></i> สถิติสูงสุด (Highest Stats)</div>
                     <div class="stat-row">
                         <span class="stat-row-label">ความเร็วพิมพ์สูงสุด (WPM)</span>
-                        <span class="stat-row-val" id="pHighestWpm">82</span>
+                        <span class="stat-row-val" id="pHighestWpm">0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-row-label">ความแม่นยำสูงสุด (Accuracy)</span>
-                        <span class="stat-row-val acc" id="pHighestAcc">98%</span>
+                        <span class="stat-row-val acc" id="pHighestAcc">0%</span>
                     </div>
                 </div>
                 <div class="stat-box-inner">
                     <div class="stat-box-title"><i class="fa-solid fa-chart-pie" style="color: #288CF0;"></i> สถิติเฉลี่ย (Average Stats)</div>
                     <div class="stat-row">
                         <span class="stat-row-label">ความเร็วพิมพ์เฉลี่ย (WPM)</span>
-                        <span class="stat-row-val" id="pAvgWpm">76</span>
+                        <span class="stat-row-val" id="pAvgWpm">0</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-row-label">ความแม่นยำเฉลี่ย (Accuracy)</span>
-                        <span class="stat-row-val acc" id="pAvgAcc">95%</span>
+                        <span class="stat-row-val acc" id="pAvgAcc">0%</span>
                     </div>
                 </div>
             </div>
@@ -237,82 +245,122 @@
                     <i class="fa-solid fa-file-csv"></i> ส่งออกข้อมูลนักศึกษาคนนี้ (CSV)
                 </button>
             </div>
-            
         </div>
     </div>
 
+    <script src="{{ url_for('static', filename='js/teacher_common.js') }}"></script>
     <script>
-        // ข้อมูลจำลองนักศึกษา
-        let studentsData = [
-            { id: '68030101', name: 'กัญญารัตน์ ศรีสุข', group: 'ทค.2/1', started: 12, completed: 10, time: '15:30', hwpm: 82, hacc: 98, awpm: 76, aacc: 95 },
-            { id: '68030102', name: 'ธนกฤต วงศ์สวัสดิ์', group: 'ทค.2/1', started: 8, completed: 5, time: '08:45', hwpm: 75, hacc: 95, awpm: 68, aacc: 92 },
-            { id: '68030103', name: 'จิตติพัฒน์ ลำดวน', group: 'ทค.2/1', started: 92, completed: 63, time: '30:27', hwpm: 50, hacc: 100, awpm: 40, aacc: 94 }
-        ];
+        let allStudents = [];
+        let currentViewedStudent = null;
 
-        let currentViewedStudent = null; // เก็บข้อมูลนักศึกษาที่กำลังดูโปรไฟล์อยู่
+        function toggleProfileMenu(event) {
+            event.stopPropagation();
+            document.getElementById('profileDropdown').classList.toggle('show');
+        }
 
-        // ฟังก์ชัน Render ตาราง
+        window.onclick = function(event) {
+            if (!event.target.closest('.user-profile')) {
+                const dropdown = document.getElementById('profileDropdown');
+                if (dropdown && dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            }
+            if (event.target.id === 'profileModal') closeProfileModal();
+        }
+
+        async function loadStudents() {
+            const tbody = document.getElementById('studentTableBody');
+            tbody.innerHTML = `<tr><td colspan="7" class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดข้อมูลนักศึกษา...</td></tr>`;
+            const { ok, data } = await TC.api('/teacher/api/students');
+            if (!ok) {
+                tbody.innerHTML = `<tr><td colspan="7" class="loading-state" style="color:#E95C68;">${TC.escape(data.error || 'โหลดข้อมูลนักศึกษาไม่สำเร็จ')}</td></tr>`;
+                return;
+            }
+            allStudents = data.students || [];
+            renderTable(allStudents);
+        }
+
         function renderTable(data) {
             const tbody = document.getElementById('studentTableBody');
             document.getElementById('studentTotalCount').innerText = data.length;
             
-            if(data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#71829B;">ไม่พบข้อมูลนักศึกษาที่ค้นหา</td></tr>`;
+            if (allStudents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="loading-state">ยังไม่มีนักศึกษาเข้าร่วมห้องเรียนของคุณ</td></tr>`;
+                return;
+            }
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="loading-state">ไม่พบข้อมูลนักศึกษาที่ค้นหา</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = data.map(s => `
+            tbody.innerHTML = data.map(s => {
+                const roomBadges = (s.rooms && s.rooms.length)
+                    ? s.rooms.map(r => `<span class="room-pill" title="${TC.escape(r.room_name)}">${TC.escape(r.room_code)}</span>`).join('')
+                    : '<span style="color:#71829B;">-</span>';
+                return `
                 <tr>
-                    <td><span class="room-code-badge">${s.id}</span></td>
-                    <td style="color:#063376; font-weight:600;">${s.name}</td>
-                    <td>${s.group}</td>
-                    <td>${s.completed} ครั้ง</td>
-                    <td style="color:#288CF0; font-weight:700;">${s.awpm} WPM</td>
+                    <td><span class="room-code-badge">${TC.escape(s.student_code)}</span></td>
+                    <td style="color:#063376; font-weight:600;">${TC.escape(s.full_name)}</td>
+                    <td>${TC.escape(s.major)}</td>
+                    <td>${roomBadges}</td>
+                    <td>${s.tests_completed} ครั้ง</td>
+                    <td style="color:#288CF0; font-weight:700;">${s.avg_wpm} WPM</td>
                     <td>
                         <div class="action-group">
-                            <button class="btn-outline-sm view" onclick="viewProfile('${s.id}')"><i class="fa-solid fa-eye"></i> ดูข้อมูล</button>
-                            <button class="btn-outline-sm delete" onclick="deleteStudent('${s.id}')"><i class="fa-solid fa-trash"></i> ลบ</button>
+                            <button class="btn-outline-sm view" onclick="viewProfile(${s.user_id})"><i class="fa-solid fa-eye"></i> ดูข้อมูล</button>
+                            <button class="btn-outline-sm delete" onclick="removeStudent(${s.user_id}, '${TC.escape(s.full_name).replace(/'/g, '&#39;')}')"><i class="fa-solid fa-trash"></i> นำออก</button>
                         </div>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         }
 
-        // ระบบค้นหา
         function searchStudents() {
-            const query = document.getElementById('searchInput').value.toLowerCase().trim();
-            const filtered = studentsData.filter(s => 
-                s.id.includes(query) || s.name.toLowerCase().includes(query)
+            const q = document.getElementById('searchInput').value.toLowerCase().trim();
+            const filtered = allStudents.filter(s => 
+                (s.student_code && s.student_code.toLowerCase().includes(q)) ||
+                (s.full_name && s.full_name.toLowerCase().includes(q)) ||
+                (s.major && s.major.toLowerCase().includes(q)) ||
+                (s.rooms && s.rooms.some(r => r.room_code.toLowerCase().includes(q) || r.room_name.toLowerCase().includes(q)))
             );
             renderTable(filtered);
         }
 
-        // ลบข้อมูล
-        function deleteStudent(id) {
-            if(confirm(`ยืนยันการลบข้อมูลนักศึกษารหัส ${id} ใช่หรือไม่?`)) {
-                studentsData = studentsData.filter(s => s.id !== id);
-                searchStudents();
-            }
+        async function removeStudent(studentId, studentName) {
+            const confirmed = await TC.confirm({
+                title: 'นำนักศึกษาออกจากห้องเรียน?',
+                message: `คุณต้องการนำ "${studentName}" ออกจากห้องเรียนทั้งหมดของคุณใช่หรือไม่?`,
+                confirmText: 'นำออก',
+                danger: true
+            });
+            if (!confirmed) return;
+
+            const { ok, data } = await TC.api(`/teacher/api/students/${studentId}`, { method: 'DELETE' });
+            TC.toast(ok ? data.message : (data.error || 'นำนักศึกษาออกไม่สำเร็จ'), ok ? 'success' : 'error');
+            if (ok) loadStudents();
         }
 
-        // ดูโปรไฟล์เชิงลึก
-        function viewProfile(id) {
-            const student = studentsData.find(s => s.id === id);
-            if(student) {
-                currentViewedStudent = student; // จำไว้เพื่อใช้ส่งออก
-                
-                document.getElementById('pName').innerText = student.name;
-                document.getElementById('pId').innerText = student.id;
-                document.getElementById('pStarted').innerText = student.started;
-                document.getElementById('pCompleted').innerText = student.completed;
-                document.getElementById('pTime').innerText = student.time;
-                document.getElementById('pHighestWpm').innerText = student.hwpm;
-                document.getElementById('pHighestAcc').innerText = student.hacc + '%';
-                document.getElementById('pAvgWpm').innerText = student.awpm;
-                document.getElementById('pAvgAcc').innerText = student.aacc + '%';
-                
-                document.getElementById('profileModal').classList.add('show');
-            }
+        function viewProfile(studentId) {
+            const student = allStudents.find(s => s.user_id === studentId);
+            if (!student) return;
+            currentViewedStudent = student;
+            
+            document.getElementById('pAvatar').innerText = TC.initials(student.full_name);
+            document.getElementById('pName').innerText = student.full_name;
+            document.getElementById('pId').innerText = student.student_code;
+            document.getElementById('pMajor').innerText = student.major;
+            const roomsText = (student.rooms && student.rooms.length)
+                ? student.rooms.map(r => `${r.room_name} (${r.room_code})`).join(', ')
+                : '-';
+            document.getElementById('pRooms').innerText = `ห้องเรียน: ${roomsText}`;
+            document.getElementById('pCompleted').innerText = student.tests_completed;
+            document.getElementById('pTime').innerText = TC.formatSeconds(student.total_time_seconds);
+            document.getElementById('pHighestWpm').innerText = student.highest_wpm;
+            document.getElementById('pHighestAcc').innerText = `${student.highest_accuracy}%`;
+            document.getElementById('pAvgWpm').innerText = student.avg_wpm;
+            document.getElementById('pAvgAcc').innerText = `${student.avg_accuracy}%`;
+            
+            document.getElementById('profileModal').classList.add('show');
         }
 
         function closeProfileModal() {
@@ -320,29 +368,34 @@
             currentViewedStudent = null;
         }
 
-        // ฟังก์ชัน Export ข้อมูลนักศึกษา 1 คน เป็นไฟล์ CSV
         function exportSingleStudentCSV() {
-            if(!currentViewedStudent) return;
+            if (!currentViewedStudent) return;
             const s = currentViewedStudent;
-            
-            // สร้าง Header ของไฟล์ CSV (ใช้ \uFEFF ป้องกันภาษาไทยเพี้ยน)
-            let csvContent = "Student ID,Name,Group,Tests Started,Tests Completed,Time Typing,Highest WPM,Highest Accuracy (%),Average WPM,Average Accuracy (%)\n";
-            // นำข้อมูลของนักศึกษาคนนี้มาใส่
-            csvContent += `${s.id},"${s.name}","${s.group}",${s.started},${s.completed},"${s.time}",${s.hwpm},${s.hacc},${s.awpm},${s.aacc}\n`;
-            
-            // สร้างไฟล์และทำการดาวน์โหลด
-            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Student_Report_${s.id}.csv`; // ตั้งชื่อไฟล์ให้ตรงกับรหัส
-            a.click();
+            const rooms = (s.rooms || []).map(r => r.room_code).join('; ');
+            const rows = [
+                ['Student ID', 'Full Name', 'Major', 'Rooms', 'Tests Completed', 'Time Typing (s)', 'Highest WPM', 'Highest Accuracy (%)', 'Average WPM', 'Average Accuracy (%)'],
+                [s.student_code, s.full_name, s.major, rooms, s.tests_completed, s.total_time_seconds, s.highest_wpm, s.highest_accuracy, s.avg_wpm, s.avg_accuracy]
+            ];
+            TC.downloadCSV(`Student_Report_${s.student_code || s.user_id}.csv`, rows);
         }
 
-        // Render เมื่อโหลดหน้า
-        document.addEventListener('DOMContentLoaded', () => {
-            renderTable(studentsData);
-        });
+        function exportAllStudentsCSV() {
+            if (allStudents.length === 0) {
+                TC.toast('ไม่มีข้อมูลนักศึกษาให้ส่งออก', 'info');
+                return;
+            }
+            const rows = [['Student ID', 'Full Name', 'Email', 'Major', 'Rooms', 'Tests Completed', 'Time Typing (s)', 'Highest WPM', 'Highest Accuracy (%)', 'Average WPM', 'Average Accuracy (%)']];
+            allStudents.forEach(s => {
+                const rooms = (s.rooms || []).map(r => r.room_code).join('; ');
+                rows.push([s.student_code, s.full_name, s.email, s.major, rooms, s.tests_completed, s.total_time_seconds, s.highest_wpm, s.highest_accuracy, s.avg_wpm, s.avg_accuracy]);
+            });
+            TC.downloadCSV(`Students_List_${new Date().toISOString().slice(0, 10)}.csv`, rows);
+        }
+
+        if (TC.guardTeacher()) {
+            TC.renderSidebarUser();
+            loadStudents();
+        }
     </script>
 </body>
 </html>

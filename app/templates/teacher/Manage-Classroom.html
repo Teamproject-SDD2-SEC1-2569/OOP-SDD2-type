@@ -85,6 +85,21 @@
         td { padding: 12px 0; border-bottom: 1px solid #F4F7FC; font-size: 14px; color: #17345C; font-weight: 500; }
         .badge { background: #E7F3FE; color: #288CF0; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;}
 
+        .members-list { display: flex; flex-direction: column; max-height: 380px; overflow-y: auto; }
+        .member-item { display: flex; align-items: center; gap: 10px; padding: 10px 4px; border-bottom: 1px dashed #F4F7FC; }
+        .member-item:last-child { border-bottom: none; }
+        .member-avatar { width: 34px; height: 34px; border-radius: 50%; background: #E7F3FE; color: #288CF0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; position: relative; }
+        .member-avatar.online::after { content: ''; position: absolute; right: -1px; bottom: -1px; width: 10px; height: 10px; border-radius: 50%; background: #20A873; border: 2px solid #fff; }
+        .member-info { flex: 1; min-width: 0; }
+        .member-name { font-size: 14px; font-weight: 600; color: #17345C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .member-meta { font-size: 12px; color: #71829B; }
+        .member-wpm { font-family: 'Inter'; font-weight: 700; color: #288CF0; font-size: 13px; }
+        .btn-outline { background: #fff; border: 1px solid #D8E7F4; color: #063376; }
+        .btn-outline:hover { border-color: #288CF0; color: #288CF0; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .empty-state { text-align: center; color: #71829B; padding: 30px 0; font-size: 13px; }
+        .results-card { margin-top: 0; }
+        @media (max-width: 1100px) { .live-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -97,9 +112,9 @@
         
         <!-- โปรไฟล์พร้อม Dropdown -->
         <div class="user-profile" onclick="toggleProfileMenu(event)">
-            <div class="avatar">ธพ</div>
+            <div class="avatar">อจ</div>
             <div class="user-info">
-                <div class="name">อ.ธนภัทร ดิษฐสโร</div>
+                <div class="name">กำลังโหลด...</div>
                 <div class="role">อาจารย์ผู้สอน</div>
             </div>
             <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
@@ -107,7 +122,7 @@
             <div class="dropdown-menu" id="profileDropdown">
                 <!-- เปลี่ยนลิงก์ให้ไปหน้า profile.html -->
                 <a href="{{ url_for('teacher.teacher_profile_page') }}"><i class="fa-solid fa-user-gear"></i> ตั้งค่าบัญชี</a>
-                <a href="/" class="text-danger" onclick="event.stopPropagation();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
+                <a href="/" class="text-danger" data-logout><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
         </div>
         
@@ -130,7 +145,7 @@
             <div class="breadcrumb">
                 อาจารย์ <i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i> 
                 <a href="{{ url_for('teacher.teacher_dashboard_page') }}">ภาพรวมห้องเรียน</a> <i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i> 
-                <span>Live ห้อง {{ room_code }}</span>
+                <span>ห้อง {{ room_code }}</span>
             </div>
             <button class="btn-noti"><i class="fa-regular fa-bell"></i></button>
         </header>
@@ -138,21 +153,18 @@
         <main class="content-scroll">
             <div class="room-banner">
                 <div>
-                    <h1>{{ room_data.room_name }}</h1>
+                    <h1 id="roomName">กำลังโหลดข้อมูลห้อง...</h1>
                     <p>
-                        <i class="fa-solid fa-layer-group"></i> ประเภท: 
-                        {% if room_data.category == 'english' %}ภาษาอังกฤษ
-                        {% elif room_data.category == 'general' %}คำศัพท์ทั่วไป
-                        {% elif room_data.category == 'code' %}โค้ด
-                        {% elif room_data.category == 'mixed' %}รวม
-                        {% else %}{{ room_data.category }}{% endif %}
-                        &nbsp;|&nbsp; 
-                        <i class="fa-regular fa-clock"></i> เวลา: {{ room_data.duration }} วินาที
+                        <i class="fa-regular fa-clock"></i> เวลา: <span id="roomDuration">-</span> วินาที
+                        &nbsp;|&nbsp;
+                        <i class="fa-solid fa-users"></i> สมาชิก: <span id="roomMemberCount">0</span> คน
+                        &nbsp;|&nbsp;
+                        <i class="fa-regular fa-calendar"></i> สร้างเมื่อ: <span id="roomCreatedAt">-</span>
                     </p>
                 </div>
                 <div style="text-align: right;">
                     <div style="font-size: 12px; margin-bottom: 5px; color: #A0CEF8;">รหัสสำหรับให้นักศึกษาเข้าร่วม (คลิกเพื่อคัดลอก)</div>
-                    <div class="code-container" onclick="copyRoomCode('{{ room_code }}')" id="codeContainer" title="คลิกเพื่อคัดลอก">
+                    <div class="code-container" onclick="copyRoomCode()" id="codeContainer" title="คลิกเพื่อคัดลอก">
                         <span id="roomCodeText">{{ room_code }}</span>
                         <i class="fa-regular fa-copy" id="copyIcon"></i>
                     </div>
@@ -163,13 +175,13 @@
             <div class="control-panel">
                 <div class="status-indicator">
                     <span class="status-dot" id="statusDot"></span> 
-                    <span id="statusText">สถานะ: รอการเปิดห้องทดสอบ...</span>
+                    <span id="statusText">สถานะ: กำลังโหลด...</span>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-success" id="btnOpenRoom" onclick="toggleRoomState(true)">
+                    <button class="btn btn-success" id="btnOpenRoom" onclick="setRoomStatus('open')" style="display:none;">
                         <i class="fa-solid fa-play"></i> เปิดห้องทดสอบ
                     </button>
-                    <button class="btn btn-danger" onclick="toggleRoomState(false)">
+                    <button class="btn btn-danger" id="btnCloseRoom" onclick="setRoomStatus('closed')" style="display:none;">
                         <i class="fa-solid fa-power-off"></i> ปิดห้องและบันทึกผล
                     </button>
                 </div>
@@ -180,7 +192,7 @@
                 <div class="card">
                     <div class="card-title">
                         <div><i class="fa-solid fa-trophy" style="color: #F2A93B;"></i> Live Leaderboard</div>
-                        <span class="badge" id="participantCountBadge">ผู้เข้าร่วม 0 คน</span>
+                        <span class="badge" id="participantCountBadge">กำลังพิมพ์ 0 คน</span>
                     </div>
                     <table>
                         <thead>
@@ -189,26 +201,56 @@
                             </tr>
                         </thead>
                         <tbody id="leaderboardBody">
-                            <tr><td colspan="5" style="text-align:center; color:#71829B; padding:30px 0;">ยังไม่มีนักเรียนเริ่มทดสอบ</td></tr>
+                            <tr><td colspan="5" class="empty-state">ยังไม่มีนักเรียนเริ่มทดสอบ</td></tr>
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Lobby -->
+                <!-- สมาชิกในห้อง (จากฐานข้อมูล) -->
                 <div class="card">
                     <div class="card-title">
-                        <div><i class="fa-solid fa-person-shelter" style="color: #288CF0;"></i> ห้องพักคอย (Lobby)</div>
+                        <div><i class="fa-solid fa-user-group" style="color: #288CF0;"></i> สมาชิกในห้อง</div>
+                        <span class="badge" id="memberBadge">0 คน</span>
                     </div>
-                    <div id="lobbyContainer" style="text-align:center; color:#71829B; padding:30px 0; font-size: 13px;">
-                        <i class="fa-solid fa-wifi" style="font-size: 24px; color: #D8E7F4; margin-bottom: 10px; display: block;"></i>
-                        รอรับการเชื่อมต่อ...
+                    <div class="members-list" id="membersList">
+                        <div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลด...</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- ผลคะแนนที่บันทึกในฐานข้อมูล -->
+            <div class="card results-card">
+                <div class="card-title">
+                    <div><i class="fa-solid fa-clipboard-list" style="color: #20A873;"></i> ผลคะแนนที่บันทึกแล้ว</div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-outline" onclick="loadRoom()"><i class="fa-solid fa-rotate"></i> รีเฟรช</button>
+                        <button class="btn btn-outline" onclick="exportResultsCSV()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                    </div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>วันที่ - เวลา</th><th>รหัสนักศึกษา</th><th>ชื่อนักศึกษา</th><th>WPM</th><th>แม่นยำ</th><th>ผิด</th><th>คะแนน</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                            <tr><td colspan="7" class="empty-state">กำลังโหลด...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
     </div>
 
+    <script src="{{ url_for('static', filename='js/teacher_common.js') }}"></script>
     <script>
+        const roomCode = "{{ room_code }}";
+        let roomInfo = null;
+        let roomMembers = [];
+        let roomResults = [];
+        let livePlayers = [];
+
         // ฟังก์ชันเปิด/ปิด เมนู Dropdown แบบคลิก
         function toggleProfileMenu(event) {
             event.stopPropagation();
@@ -226,8 +268,8 @@
         }
 
         // ฟังก์ชันคัดลอกรหัสห้อง
-        function copyRoomCode(code) {
-            navigator.clipboard.writeText(code).then(() => {
+        function copyRoomCode() {
+            navigator.clipboard.writeText(roomCode).then(() => {
                 const textElem = document.getElementById('roomCodeText');
                 const iconElem = document.getElementById('copyIcon');
                 const container = document.getElementById('codeContainer');
@@ -237,75 +279,173 @@
                 container.style.backgroundColor = "rgba(255,255,255,0.3)";
                 
                 setTimeout(() => {
-                    textElem.innerText = code;
+                    textElem.innerText = roomCode;
                     iconElem.className = "fa-regular fa-copy";
                     container.style.backgroundColor = "rgba(255,255,255,0.1)";
                 }, 1500);
             });
         }
 
-        // ฟังก์ชันเปิด/ปิดห้อง
-        function toggleRoomState(isOpen) {
+        function renderStatus(status) {
             const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('statusText');
             const btnOpen = document.getElementById('btnOpenRoom');
+            const btnClose = document.getElementById('btnCloseRoom');
 
-            if(isOpen) {
+            if (status === 'open') {
                 statusDot.className = "status-dot active";
                 statusText.innerText = "สถานะ: เปิดรับนักศึกษาและกำลังทดสอบ (Live)";
                 statusText.style.color = "#20A873";
-                
-                btnOpen.innerHTML = '<i class="fa-solid fa-check"></i> เปิดห้องแล้ว';
-                btnOpen.style.backgroundColor = '#1a8f61';
-                btnOpen.disabled = true;
+                btnOpen.style.display = 'none';
+                btnClose.style.display = 'inline-flex';
             } else {
-                if(confirm('คุณต้องการปิดห้องทดสอบและบันทึกคะแนนใช่หรือไม่?\nนักศึกษาจะไม่สามารถพิมพ์ต่อได้')) {
-                    statusDot.className = "status-dot closed";
-                    statusText.innerText = "สถานะ: ปิดการทดสอบแล้ว";
-                    statusText.style.color = "#E95C68";
-                    
-                    setTimeout(() => {
-                        window.location.href = "{{ url_for('teacher.teacher_dashboard_page') }}";
-                    }, 800);
-                }
+                statusDot.className = "status-dot closed";
+                statusText.innerText = "สถานะ: ปิดห้องอยู่ (นักศึกษายังไม่สามารถเริ่มทดสอบได้)";
+                statusText.style.color = "#E95C68";
+                btnOpen.style.display = 'inline-flex';
+                btnClose.style.display = 'none';
             }
         }
 
-        // เชื่อมต่อ WebSocket เพื่ออัปเดต Live Leaderboard & Lobby แบบ Real-time
-        const roomCode = "{{ room_code }}";
+        // ฟังก์ชันเปิด/ปิดห้อง (บันทึกสถานะลง U.CLASSROOMS)
+        async function setRoomStatus(status) {
+            if (status === 'closed') {
+                const confirmed = await TC.confirm({
+                    title: 'ปิดห้องทดสอบ?',
+                    message: 'นักศึกษาจะไม่สามารถเริ่มทดสอบในห้องนี้ได้จนกว่าจะเปิดห้องอีกครั้ง\nผลคะแนนที่ส่งแล้วจะถูกเก็บไว้ในระบบ',
+                    confirmText: 'ปิดห้อง',
+                    danger: true,
+                    icon: 'fa-power-off'
+                });
+                if (!confirmed) return;
+            }
+            const btn = document.getElementById(status === 'open' ? 'btnOpenRoom' : 'btnCloseRoom');
+            btn.disabled = true;
+            const { ok, data } = await TC.api(`/teacher/rooms/${encodeURIComponent(roomCode)}/status`, {
+                method: 'PATCH',
+                body: { status }
+            });
+            btn.disabled = false;
+            if (!ok) {
+                TC.toast(data.error || 'เปลี่ยนสถานะห้องไม่สำเร็จ', 'error');
+                return;
+            }
+            if (roomInfo) roomInfo.status = status;
+            renderStatus(status);
+            TC.toast(status === 'open' ? 'เปิดห้องทดสอบแล้ว' : 'ปิดห้องทดสอบแล้ว', 'success');
+        }
+
+        function isOnline(member) {
+            return livePlayers.some(p => p.username === member.username || p.username === member.full_name);
+        }
+
+        function renderMembers() {
+            const list = document.getElementById('membersList');
+            document.getElementById('memberBadge').innerText = `${roomMembers.length} คน`;
+            document.getElementById('roomMemberCount').innerText = roomMembers.length;
+            if (roomMembers.length === 0) {
+                list.innerHTML = `<div class="empty-state"><i class="fa-solid fa-user-plus" style="font-size: 24px; color: #D8E7F4; margin-bottom: 10px; display: block;"></i>ยังไม่มีนักศึกษาเข้าร่วม<br>แชร์รหัส <b>${TC.escape(roomCode)}</b> ให้นักศึกษา</div>`;
+                return;
+            }
+            list.innerHTML = roomMembers.map(m => `
+                <div class="member-item">
+                    <div class="member-avatar ${isOnline(m) ? 'online' : ''}">${TC.escape(TC.initials(m.full_name))}</div>
+                    <div class="member-info">
+                        <div class="member-name">${TC.escape(m.full_name)}</div>
+                        <div class="member-meta">${TC.escape(m.student_code)} · ทดสอบ ${m.attempts} ครั้ง</div>
+                    </div>
+                    <div class="member-wpm">${m.attempts ? `${m.best_wpm} WPM` : '-'}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderResults() {
+            const tbody = document.getElementById('resultsBody');
+            if (roomResults.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">ยังไม่มีผลคะแนนในห้องนี้</td></tr>';
+                return;
+            }
+            tbody.innerHTML = roomResults.map(r => `
+                <tr>
+                    <td>${TC.escape(r.submitted_at || '-')}</td>
+                    <td>${TC.escape(r.student_code)}</td>
+                    <td style="font-weight:600;">${TC.escape(r.full_name)}</td>
+                    <td style="color:#288CF0; font-weight:700;">${r.wpm} WPM</td>
+                    <td>${r.accuracy}%</td>
+                    <td>${r.error_count}</td>
+                    <td>${r.score}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadRoom() {
+            const { ok, status, data } = await TC.api(`/teacher/api/rooms/${encodeURIComponent(roomCode)}`);
+            if (!ok) {
+                if (status === 404 || status === 403) {
+                    TC.toast(data.error || 'ไม่พบห้องเรียนนี้', 'error');
+                    setTimeout(() => window.location.href = "{{ url_for('teacher.teacher_dashboard_page') }}", 1500);
+                } else {
+                    TC.toast(data.error || 'โหลดข้อมูลห้องไม่สำเร็จ', 'error');
+                }
+                return;
+            }
+            roomInfo = data.room;
+            roomMembers = data.members || [];
+            roomResults = data.results || [];
+
+            document.title = `${roomInfo.room_name} - ควบคุมห้องสอบ`;
+            document.getElementById('roomName').innerText = roomInfo.room_name;
+            document.getElementById('roomDuration').innerText = roomInfo.duration;
+            document.getElementById('roomCreatedAt').innerText = roomInfo.created_at || '-';
+            renderStatus(roomInfo.status);
+            renderMembers();
+            renderResults();
+        }
+
+        function exportResultsCSV() {
+            if (roomResults.length === 0) {
+                TC.toast('ยังไม่มีผลคะแนนให้ส่งออก', 'info');
+                return;
+            }
+            const rows = [['Submitted At', 'Student ID', 'Name', 'WPM', 'Accuracy (%)', 'Errors', 'Time (s)', 'Score']];
+            roomResults.forEach(r => rows.push([r.submitted_at, r.student_code, r.full_name, r.wpm, r.accuracy, r.error_count, r.time_spent, r.score]));
+            TC.downloadCSV(`Room_${roomCode}_Results.csv`, rows);
+        }
+
+        if (TC.guardTeacher()) {
+            TC.renderSidebarUser();
+            loadRoom();
+            // รีเฟรชผลคะแนนจากฐานข้อมูลอัตโนมัติทุก 20 วินาที
+            setInterval(() => { if (!document.hidden) loadRoom(); }, 20000);
+        }
+
+        // เชื่อมต่อ WebSocket เพื่ออัปเดต Live Leaderboard แบบ Real-time
         const socket = io();
         socket.on("connect", () => {
             socket.emit("teacher_join_room", { room_code: roomCode });
         });
 
         socket.on("room_leaderboard_update", (players) => {
+            livePlayers = players || [];
             const badge = document.getElementById("participantCountBadge");
             const tbody = document.getElementById("leaderboardBody");
-            const lobby = document.getElementById("lobbyContainer");
 
-            badge.innerText = `ผู้เข้าร่วม ${players.length} คน`;
+            badge.innerText = `กำลังพิมพ์ ${livePlayers.length} คน`;
+            renderMembers();
 
-            if (!players || players.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#71829B; padding:30px 0;">ยังไม่มีนักเรียนเริ่มทดสอบ</td></tr>';
-                lobby.innerHTML = '<i class="fa-solid fa-wifi" style="font-size: 24px; color: #D8E7F4; margin-bottom: 10px; display: block;"></i>รอรับการเชื่อมต่อ...';
+            if (livePlayers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">ยังไม่มีนักเรียนเริ่มทดสอบ</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = players.map((p, idx) => `
+            tbody.innerHTML = livePlayers.map((p, idx) => `
                 <tr>
                     <td>#${idx + 1}</td>
-                    <td style="font-weight: 700;">${p.username}</td>
+                    <td style="font-weight: 700;">${TC.escape(p.username)}</td>
                     <td style="color: #288CF0; font-weight: 700;">${p.wpm} WPM</td>
                     <td>${p.accuracy}%</td>
                     <td><span class="badge" style="background:#E4F7F0; color:#20A873;">กำลังพิมพ์</span></td>
                 </tr>
-            `).join("");
-
-            lobby.innerHTML = players.map(p => `
-                <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; border-bottom:1px dashed #F4F7FC; text-align:left;">
-                    <i class="fa-solid fa-user-check" style="color:#20A873;"></i>
-                    <span style="font-weight:600; color:#17345C;">${p.username}</span>
-                </div>
             `).join("");
         });
     </script>

@@ -229,6 +229,28 @@
                         <input type="text" id="regLastName" placeholder="กรอกนามสกุล (3-30 ตัวอักษร)" maxlength="30">
                     </div>
 
+                    <div class="form-group" id="teacherTitleGroup" style="display: none;">
+                        <label>คำนำหน้าทางวิชาการ</label>
+                        <select id="regAcademicTitle">
+                            <option value="" disabled selected>-- เลือกคำนำหน้าทางวิชาการ --</option>
+                            <option value="อ.">อาจารย์ (อ.)</option>
+                            <option value="ผศ.">ผู้ช่วยศาสตราจารย์ (ผศ.)</option>
+                            <option value="รศ.">รองศาสตราจารย์ (รศ.)</option>
+                            <option value="ศ.">ศาสตราจารย์ (ศ.)</option>
+                            <option value="ดร.">ดร.</option>
+                            <option value="ผศ.ดร.">ผศ.ดร.</option>
+                            <option value="รศ.ดร.">รศ.ดร.</option>
+                            <option value="ศ.ดร.">ศ.ดร.</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="teacherFacultyGroup" style="display: none;">
+                        <label>สถานศึกษา</label>
+                        <select id="regFaculty">
+                            <option value="สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง" selected>สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง</option>
+                        </select>
+                    </div>
+
                     <div class="form-group" id="studentCodeGroup">
                         <label>รหัสนักศึกษา (8 หลัก)</label>
                         <input type="text" id="regStudentCode" placeholder="กรอกรหัสนักศึกษา 8 หลัก" maxlength="8" inputmode="numeric" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 8)">
@@ -360,12 +382,19 @@
         function updateRoleFields() {
             const studentCodeGroup = document.getElementById('studentCodeGroup');
             const studentMajorGroup = document.getElementById('studentMajorGroup');
+            const teacherTitleGroup = document.getElementById('teacherTitleGroup');
+            const teacherFacultyGroup = document.getElementById('teacherFacultyGroup');
+
             if (selectedRole === 'Student') {
                 studentCodeGroup.style.display = 'flex';
                 studentMajorGroup.style.display = 'flex';
+                teacherTitleGroup.style.display = 'none';
+                teacherFacultyGroup.style.display = 'none';
             } else {
                 studentCodeGroup.style.display = 'none';
                 studentMajorGroup.style.display = 'none';
+                teacherTitleGroup.style.display = 'flex';
+                teacherFacultyGroup.style.display = 'flex';
             }
         }
 
@@ -427,6 +456,8 @@
                             document.getElementById('regFirstName').focus();
                         } else if (selectedRole === 'Student' && !document.getElementById('regStudentCode').value) {
                             document.getElementById('regStudentCode').focus();
+                        } else if (selectedRole === 'Teacher' && !document.getElementById('regAcademicTitle').value) {
+                            document.getElementById('regAcademicTitle').focus();
                         } else {
                             document.getElementById('regPassword').focus();
                         }
@@ -494,6 +525,18 @@
                 markFieldError('regMajor', 'ยังไม่ได้เลือกสาขาวิชา', 'กรุณาเลือกสาขาวิชาของคุณจากรายการ');
                 return;
             }
+            if (selectedRole === 'Teacher') {
+                const academicTitle = document.getElementById('regAcademicTitle').value.trim();
+                const faculty = document.getElementById('regFaculty').value.trim();
+                if (!academicTitle) {
+                    markFieldError('regAcademicTitle', 'ยังไม่ได้เลือกคำนำหน้าทางวิชาการ', 'กรุณาเลือกคำนำหน้าทางวิชาการจากรายการ');
+                    return;
+                }
+                if (!faculty) {
+                    markFieldError('regFaculty', 'ยังไม่ได้เลือกสถานศึกษา', 'กรุณาเลือกสถานศึกษา');
+                    return;
+                }
+            }
             if (!username || username.length < 3 || username.length > 30) {
                 markFieldError('regUsername', 'ความยาวชื่อผู้ใช้ไม่ถูกต้อง', 'ชื่อผู้ใช้ (Username) ต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร');
                 return;
@@ -528,6 +571,9 @@
                 if (selectedRole === 'Student') {
                     payload.student_code = studentCode;
                     payload.major = major;
+                } else if (selectedRole === 'Teacher') {
+                    payload.academic_title = document.getElementById('regAcademicTitle').value.trim();
+                    payload.faculty = document.getElementById('regFaculty').value.trim();
                 }
                 const res = await fetch('/auth/register', {
                     method: 'POST',
