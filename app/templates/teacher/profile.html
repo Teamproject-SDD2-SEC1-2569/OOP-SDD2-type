@@ -88,15 +88,15 @@
         </a>
 
         <div class="user-profile" onclick="toggleProfileMenu(event)">
-            <div class="avatar">ธพ</div>
+            <div class="avatar" id="sidebarAvatar">อจ</div>
             <div class="user-info">
-                <div class="name">อ.ธนภัทร ดิษฐสโร</div>
+                <div class="name" id="sidebarTeacherName">กำลังโหลด...</div>
                 <div class="role">อาจารย์ผู้สอน</div>
             </div>
             <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
             <div class="dropdown-menu" id="profileDropdown">
                 <a href="{{ url_for('teacher.teacher_profile_page') }}"><i class="fa-solid fa-user-gear"></i> ตั้งค่าบัญชี</a>
-                <a href="/" class="text-danger" onclick="event.stopPropagation();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
+                <a href="/" class="text-danger" onclick="event.stopPropagation(); localStorage.clear();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
         </div>
 
@@ -126,34 +126,34 @@
             
             <div class="profile-card">
                 <div class="profile-header-sec">
-                    <div class="big-avatar">ธพ</div>
+                    <div class="big-avatar" id="profAvatar">อจ</div>
                     <div class="prof-info">
-                        <h2>อ.ธนภัทร ดิษฐสโร</h2>
-                        <p><i class="fa-solid fa-building-columns"></i> สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง</p>
-                        <p><i class="fa-solid fa-envelope"></i> teacher.admin@typeclass.com</p>
+                        <h2 id="profTitleName">กำลังโหลด...</h2>
+                        <p><i class="fa-solid fa-building-columns"></i> <span id="profFaculty">-</span></p>
+                        <p><i class="fa-solid fa-envelope"></i> <span id="profEmail">-</span></p>
                     </div>
                 </div>
 
                 <div class="info-grid">
                     <div class="info-group">
                         <span class="info-label">ชื่อ - นามสกุล</span>
-                        <div class="info-val">ธนภัทร ดิษฐสโร</div>
+                        <div class="info-val" id="infoFullName">-</div>
                     </div>
                     <div class="info-group">
                         <span class="info-label">อีเมลที่ใช้เข้าระบบ</span>
-                        <div class="info-val">teacher.admin@typeclass.com</div>
+                        <div class="info-val" id="infoEmail">-</div>
                     </div>
                     <div class="info-group">
-                        <span class="info-label">สถานศึกษา / องค์กร</span>
-                        <div class="info-val">สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง</div>
+                        <span class="info-label">สถานศึกษา / คณะ</span>
+                        <div class="info-val" id="infoFaculty">-</div>
                     </div>
                     <div class="info-group">
                         <span class="info-label">จำนวนห้องเรียนที่สร้าง</span>
-                        <div class="info-val"><span style="color: #288CF0;">{{ active_rooms|length if active_rooms else 0 }} ห้อง</span> (รองรับผู้ใช้งาน)</div>
+                        <div class="info-val"><span style="color: #288CF0;" id="infoTotalRooms">0 ห้อง</span> (รองรับผู้ใช้งาน)</div>
                     </div>
                     <div class="info-group">
                         <span class="info-label">วันที่สมัครใช้งาน</span>
-                        <div class="info-val">15 ตุลาคม 2569</div>
+                        <div class="info-val" id="infoCreatedAt">-</div>
                     </div>
                     <div class="info-group">
                         <span class="info-label">สถานะบัญชี</span>
@@ -164,11 +164,10 @@
                 </div>
 
                 <div class="action-buttons">
-                    <button class="btn btn-primary" onclick="alert('ระบบแก้ไขข้อมูลเตรียมเปิดใช้งาน')">
-                        <i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูล
+                    <button class="btn btn-primary" onclick="openEditModal()">
+                        <i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูลส่วนตัว
                     </button>
-                    <!-- เอาปุ่มเปลี่ยนรหัสผ่านออกตามที่แจ้งครับ -->
-                    <a href="/" class="btn btn-outline-danger">
+                    <a href="/" class="btn btn-outline-danger" onclick="localStorage.clear();">
                         <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
                     </a>
                     
@@ -180,7 +179,66 @@
         </main>
     </div>
 
+    <!-- Modal แก้ไขข้อมูลส่วนตัวอาจารย์ -->
+    <div id="editModal" style="display:none; position:fixed; inset:0; background:rgba(6,51,118,0.45); backdrop-filter:blur(4px); z-index:200; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#fff; width:100%; max-width:480px; border-radius:24px; padding:35px; box-shadow:0 15px 40px rgba(0,0,0,0.18);">
+            <h3 style="color:#063376; font-size:20px; margin-bottom:20px;"><i class="fa-solid fa-user-pen" style="color:#288CF0;"></i> แก้ไขข้อมูลบัญชีอาจารย์</h3>
+            <form onsubmit="saveProfile(event)" novalidate style="display:flex; flex-direction:column; gap:15px;">
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; color:#063376; margin-bottom:6px;">คำนำหน้าทางวิชาการ</label>
+                    <select id="editAcademicTitle" style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none; background:#fff; color:#063376;">
+                        <option value="อ.">อาจารย์ (อ.)</option>
+                        <option value="ผศ.">ผู้ช่วยศาสตราจารย์ (ผศ.)</option>
+                        <option value="รศ.">รองศาสตราจารย์ (รศ.)</option>
+                        <option value="ศ.">ศาสตราจารย์ (ศ.)</option>
+                        <option value="ดร.">ดร.</option>
+                        <option value="ผศ.ดร.">ผศ.ดร.</option>
+                        <option value="รศ.ดร.">รศ.ดร.</option>
+                        <option value="ศ.ดร.">ศ.ดร.</option>
+                    </select>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="display:block; font-size:13px; font-weight:600; color:#063376; margin-bottom:6px;">ชื่อจริง (3-30 ตัวอักษร)</label>
+                        <input type="text" id="editFirstName" maxlength="30" placeholder="ชื่อจริง" style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:13px; font-weight:600; color:#063376; margin-bottom:6px;">นามสกุล (3-30 ตัวอักษร)</label>
+                        <input type="text" id="editLastName" maxlength="30" placeholder="นามสกุล" style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none;">
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; color:#063376; margin-bottom:6px;">
+                        อีเมลที่ใช้เข้าระบบ <span style="font-size:11px; color:#71829B; font-weight:500;"><i class="fa-solid fa-lock"></i> ล็อก (ไม่สามารถแก้ไขได้)</span>
+                    </label>
+                    <input type="email" id="editEmail" readonly disabled style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none; background:#EEF2F7; color:#71829B; cursor:not-allowed;">
+                </div>
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; color:#063376; margin-bottom:6px;">สถานศึกษา / คณะ</label>
+                    <input type="text" id="editFaculty" placeholder="เช่น สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง" style="width:100%; padding:12px 15px; border:1px solid #D8E7F4; border-radius:12px; font-size:15px; outline:none;">
+                </div>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button type="button" onclick="closeEditModal()" style="flex:1; padding:12px; border:1px solid #D8E7F4; background:#fff; color:#71829B; border-radius:12px; font-weight:600; cursor:pointer;">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1;">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        const authToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        let currentProfile = {};
+
+        function getInitials(fullName) {
+            const cleaned = (fullName || '').trim();
+            if (!cleaned) return 'อจ';
+            const parts = cleaned.split(/\s+/);
+            if (parts.length >= 2) {
+                return (parts[0][0] + parts[1][0]).toUpperCase();
+            }
+            return cleaned.slice(0, 2).toUpperCase();
+        }
+
         function toggleProfileMenu(event) {
             event.stopPropagation();
             document.getElementById('profileDropdown').classList.toggle('show');
@@ -195,15 +253,136 @@
             }
         }
 
-        function deleteAccount() {
-            const confirmMsg = prompt("คำเตือน: การลบบัญชีจะทำให้ข้อมูลห้องเรียนและสถิติทั้งหมดหายไปถาวร\nพิมพ์คำว่า 'ยืนยัน' เพื่อดำเนินการลบ:");
-            if (confirmMsg === "ยืนยัน") {
-                alert("ลบบัญชีเรียบร้อย ระบบจะนำคุณกลับไปหน้าแรก");
+        async function loadTeacherProfile() {
+            if (!authToken) {
                 window.location.href = "/";
-            } else if (confirmMsg !== null) {
-                alert("การลบบัญชีถูกยกเลิก (พิมพ์คำว่า ยืนยัน ไม่ถูกต้อง)");
+                return;
+            }
+            try {
+                const res = await fetch('/teacher/api/profile', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (res.status === 401 || res.status === 422) {
+                    localStorage.clear();
+                    window.location.href = "/";
+                    return;
+                }
+                const data = await res.json();
+                if (!res.ok) return;
+
+                const p = data.profile || {};
+                currentProfile = p;
+
+                const titlePrefix = p.academic_title || 'อ.';
+                const fullName = p.full_name || p.username || 'อาจารย์';
+                const displayWithTitle = fullName.startsWith(titlePrefix) ? fullName : `${titlePrefix}${fullName}`;
+                const initials = getInitials(fullName);
+
+                document.getElementById('sidebarAvatar').innerText = initials;
+                document.getElementById('profAvatar').innerText = initials;
+                document.getElementById('sidebarTeacherName').innerText = displayWithTitle;
+                document.getElementById('profTitleName').innerText = displayWithTitle;
+                document.getElementById('profFaculty').innerText = p.faculty || '-';
+                document.getElementById('profEmail').innerText = p.email || '-';
+
+                document.getElementById('infoFullName').innerText = fullName;
+                document.getElementById('infoEmail').innerText = p.email || '-';
+                document.getElementById('infoFaculty').innerText = p.faculty || '-';
+                document.getElementById('infoTotalRooms').innerText = `${p.total_rooms ?? 0} ห้อง`;
+                document.getElementById('infoCreatedAt').innerText = p.created_at || '-';
+
+                // Sync ชื่ออาจารย์ใน localStorage เพื่อแสดงในหน้าอื่นๆ ของอาจารย์
+                const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+                storedUser.full_name = fullName;
+                storedUser.academic_title = titlePrefix;
+                localStorage.setItem('user', JSON.stringify(storedUser));
+            } catch (err) {
+                console.error("Load teacher profile error:", err);
             }
         }
+
+        function openEditModal() {
+            const parts = (currentProfile.full_name || '').trim().split(/\s+/);
+            document.getElementById('editAcademicTitle').value = currentProfile.academic_title || 'อ.';
+            document.getElementById('editFirstName').value = currentProfile.first_name || parts[0] || '';
+            document.getElementById('editLastName').value = currentProfile.last_name || parts.slice(1).join(' ') || '';
+            document.getElementById('editEmail').value = currentProfile.email || '';
+            document.getElementById('editFaculty').value = currentProfile.faculty || '';
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        async function saveProfile(e) {
+            e.preventDefault();
+            const academicTitle = document.getElementById('editAcademicTitle').value;
+            const firstName = document.getElementById('editFirstName').value.trim();
+            const lastName = document.getElementById('editLastName').value.trim();
+            const fullName = `${firstName} ${lastName}`.trim();
+            const faculty = document.getElementById('editFaculty').value.trim();
+
+            if (firstName.length < 3 || firstName.length > 30) {
+                alert('ชื่อจริงต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร');
+                return;
+            }
+            if (lastName.length < 3 || lastName.length > 30) {
+                alert('นามสกุลต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร');
+                return;
+            }
+
+            try {
+                const res = await fetch('/teacher/api/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        academic_title: academicTitle,
+                        first_name: firstName,
+                        last_name: lastName,
+                        full_name: fullName,
+                        faculty: faculty
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    closeEditModal();
+                    await loadTeacherProfile();
+                } else {
+                    alert(data.error || 'ไม่สามารถบันทึกข้อมูลได้');
+                }
+            } catch (err) {
+                console.error("Save teacher profile error:", err);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+            }
+        }
+
+        async function deleteAccount() {
+            const confirmMsg = prompt("คำเตือน: การลบบัญชีจะทำให้ข้อมูลห้องเรียนและสถิติทั้งหมดหายไปถาวร\nพิมพ์คำว่า 'ยืนยัน' เพื่อดำเนินการลบ:");
+            if (confirmMsg === "ยืนยัน") {
+                try {
+                    const res = await fetch('/teacher/api/profile', {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    if (res.ok) {
+                        localStorage.clear();
+                        alert("ลบบัญชีผู้ใช้อาจารย์เรียบร้อยแล้ว");
+                        window.location.href = "/";
+                    } else {
+                        const data = await res.json();
+                        alert(data.error || "ไม่สามารถลบบัญชีได้");
+                    }
+                } catch (err) {
+                    alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadTeacherProfile);
     </script>
 </body>
 </html>

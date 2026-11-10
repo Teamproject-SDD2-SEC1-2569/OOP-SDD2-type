@@ -79,16 +79,16 @@
             <div class="brand-text"><h2>ห้องเรียนฝึกพิมพ์</h2><p>ระบบติดตามผลนักศึกษา</p></div>
         </a>
 
-        <div class="user-profile">
-            <div class="avatar">ธพ</div>
+        <div class="user-profile" onclick="document.getElementById('profileDropdown').classList.toggle('show'); event.stopPropagation();">
+            <div class="avatar">อจ</div>
             <div class="user-info">
-                <div class="name">อ.ธนภัทร ดิษฐสโร</div>
+                <div class="name">กำลังโหลด...</div>
                 <div class="role">อาจารย์ผู้สอน</div>
             </div>
             <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
-            <div class="dropdown-menu">
-                <a href="#"><i class="fa-solid fa-user-gear"></i> ตั้งค่าบัญชี</a>
-                <a href="#" class="text-danger"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
+            <div class="dropdown-menu" id="profileDropdown">
+                <a href="{{ url_for('teacher.teacher_profile_page') }}"><i class="fa-solid fa-user-gear"></i> ตั้งค่าบัญชี</a>
+                <a href="/" class="text-danger" onclick="event.stopPropagation(); localStorage.clear();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
         </div>
 
@@ -174,5 +174,21 @@
             </div>
         </main>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const fullName = (user.full_name || user.username || 'อาจารย์').trim();
+                const titlePrefix = user.academic_title || 'อ.';
+                const displayName = fullName.startsWith(titlePrefix) ? fullName : `${titlePrefix}${fullName}`;
+                const parts = fullName.split(/\s+/);
+                const initials = parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : fullName.slice(0, 2).toUpperCase();
+                const nameEl = document.querySelector('.user-profile .name');
+                const avatarEl = document.querySelector('.user-profile .avatar');
+                if (nameEl) nameEl.innerText = displayName;
+                if (avatarEl) avatarEl.innerText = initials;
+            } catch (e) {}
+        });
+    </script>
 </body>
 </html>

@@ -272,6 +272,20 @@
         }
 
         // เชื่อมต่อ WebSocket เพื่ออัปเดต Live Leaderboard & Lobby แบบ Real-time
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const fullName = (user.full_name || user.username || 'อาจารย์').trim();
+                const titlePrefix = user.academic_title || 'อ.';
+                const displayName = fullName.startsWith(titlePrefix) ? fullName : `${titlePrefix}${fullName}`;
+                const parts = fullName.split(/\s+/);
+                const initials = parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : fullName.slice(0, 2).toUpperCase();
+                const nameEl = document.querySelector('.user-profile .name');
+                const avatarEl = document.querySelector('.user-profile .avatar');
+                if (nameEl) nameEl.innerText = displayName;
+                if (avatarEl) avatarEl.innerText = initials;
+            } catch (e) {}
+        });
         const roomCode = "{{ room_code }}";
         const socket = io();
         socket.on("connect", () => {
