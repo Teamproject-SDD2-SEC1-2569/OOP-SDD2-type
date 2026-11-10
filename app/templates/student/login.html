@@ -273,6 +273,11 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    if (data.needs_registration && data.redirect_url) {
+                        alert(data.message || "บัญชี Google นี้ยังไม่เคยสมัครสมาชิก กรุณากรอกข้อมูลเพื่อสมัครสมาชิกก่อน");
+                        window.location.href = data.redirect_url;
+                        return;
+                    }
                     handleAuthSuccess(data, email);
                 } else {
                     alert("เข้าสู่ระบบด้วย Google ไม่สำเร็จ: " + (data.message || data.error || "กรุณาลองใหม่อีกครั้ง"));

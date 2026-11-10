@@ -372,26 +372,20 @@ def _verify_google_tokens(id_token: str = "", access_token: str = ""):
     return "", "", ""
 
 
-def _upsert_google_user(email: str, full_name: str, google_id: str, requested_role: str):
-    """ค้นหาหรือสร้างผู้ใช้ Google ใน U.USERS (รองรับทั้งตารางเดิมและตารางที่เพิ่ม GOOGLE_ID / AUTH_PROVIDER แล้ว)"""
-    base_username = email.split("@")[0][:40]
-    if not full_name:
-        full_name = base_username
-
+def _find_google_user(email: str, google_id: str):
+    """ค้นหาผู้ใช้ Google ใน U.USERS ว่าเคยสมัครสมาชิกไว้แล้วหรือยัง"""
     user = None
     connection = None
     try:
         connection = get_db_connection()
         if connection is not None:
             with connection.cursor() as cursor:
-                # ตรวจสอบว่าตาราง U.USERS มีคอลัมน์ GOOGLE_ID หรือยัง
                 cursor.execute("""
                     SELECT COUNT(*) FROM all_tab_columns
                     WHERE owner = 'U' AND table_name = 'USERS' AND column_name = 'GOOGLE_ID'
                 """)
                 has_google_col = cursor.fetchone()[0] > 0
 
-                # 1. ค้นหาว่ามีบัญชีนี้ในระบบแล้วหรือยัง
                 if has_google_col and google_id:
                     cursor.execute("""
                         SELECT USER_ID, USERNAME, PASSWORD_HASH, FULL_NAME, EMAIL, ROLE
@@ -406,7 +400,6 @@ def _upsert_google_user(email: str, full_name: str, google_id: str, requested_ro
                     """, email=email)
                 user = cursor.fetchone()
 
-                # หากมีผู้ใช้แล้วแต่ยังไม่ได้อัปเดต GOOGLE_ID ให้ผูก GOOGLE_ID อัตโนมัติ
                 if user is not None and has_google_col and google_id:
                     cursor.execute("""
                         UPDATE U.USERS
@@ -414,85 +407,8 @@ def _upsert_google_user(email: str, full_name: str, google_id: str, requested_ro
                         WHERE USER_ID = :uid AND GOOGLE_ID IS NULL
                     """, gid=google_id, uid=user[0])
                     connection.commit()
-
-                # 2. หากยังไม่มีบัญชี ให้สร้างบัญชีใหม่อัตโนมัติจาก Google Profile
-                if user is None:
-                    username_candidate = base_username
-                    cursor.execute("""
-                        SELECT USER_ID FROM U.USERS WHERE UPPER(USERNAME) = UPPER(:u)
-                    """, u=username_candidate)
-                    if cursor.fetchone():
-                        username_candidate = f"{base_username}_{random.randint(100, 999)}"
-
-                    oauth_pwd_hash = bcrypt.generate_password_hash(
-                        f"google_oauth_{google_id or email}_{random.randint(100000, 999999)}"
-                    ).decode("utf-8")
-
-                    user_id_var = cursor.var(int)
-                    if has_google_col:
-                        cursor.execute("""
-                            INSERT INTO U.USERS (
-                                USERNAME, PASSWORD_HASH, FULL_NAME, EMAIL, ROLE, GOOGLE_ID, AUTH_PROVIDER
-                            )
-                            VALUES (
-                                :username, :password_hash, :full_name, :email, :role, :google_id, 'GOOGLE'
-                            )
-                            RETURNING USER_ID INTO :user_id
-                        """,
-                            username=username_candidate,
-                            password_hash=oauth_pwd_hash,
-                            full_name=full_name,
-                            email=email,
-                            role=requested_role,
-                            google_id=google_id or None,
-                            user_id=user_id_var
-                        )
-                    else:
-                        cursor.execute("""
-                            INSERT INTO U.USERS (
-                                USERNAME, PASSWORD_HASH, FULL_NAME, EMAIL, ROLE
-                            )
-                            VALUES (
-                                :username, :password_hash, :full_name, :email, :role
-                            )
-                            RETURNING USER_ID INTO :user_id
-                        """,
-                            username=username_candidate,
-                            password_hash=oauth_pwd_hash,
-                            full_name=full_name,
-                            email=email,
-                            role=requested_role,
-                            user_id=user_id_var
-                        )
-                    new_user_id = user_id_var.getvalue()[0]
-
-                    if requested_role == "Student":
-                        cursor.execute("""
-                            INSERT INTO U.STUDENTS (STUDENT_ID, STUDENT_CODE, MAJOR)
-                            VALUES (:student_id, :student_code, :major)
-                        """,
-                            student_id=new_user_id,
-                            student_code=f"G{random.randint(100000, 999999)}",
-                            major="General"
-                        )
-                    else:
-                        cursor.execute("""
-                            INSERT INTO U.TEACHERS (TEACHER_ID, ACADEMIC_TITLE, FACULTY)
-                            VALUES (:teacher_id, :academic_title, :faculty)
-                        """,
-                            teacher_id=new_user_id,
-                            academic_title="อาจารย์",
-                            faculty="Information Technology"
-                        )
-                    connection.commit()
-                    user = (new_user_id, username_candidate, oauth_pwd_hash, full_name, email, requested_role)
     except Exception as e:
-        print("Google Login DB fallback:", e)
-        if connection is not None:
-            try:
-                connection.rollback()
-            except Exception:
-                pass
+        print("Google Login DB lookup fallback:", e)
     finally:
         if connection is not None:
             connection.close()
@@ -503,17 +419,6 @@ def _upsert_google_user(email: str, full_name: str, google_id: str, requested_ro
             if u["email"].lower() == email.lower():
                 user = (u["user_id"], u["username"], u["password_hash"], u["full_name"], u["email"], u["role"])
                 break
-        if user is None:
-            uid = len(in_memory_users) + 1
-            in_memory_users[base_username.lower()] = {
-                "user_id": uid,
-                "username": base_username,
-                "password_hash": "",
-                "full_name": full_name,
-                "email": email,
-                "role": requested_role
-            }
-            user = (uid, base_username, "", full_name, email, requested_role)
 
     return user
 
@@ -521,8 +426,8 @@ def _upsert_google_user(email: str, full_name: str, google_id: str, requested_ro
 @auth_bp.route("/google", methods=["POST"])
 def google_login():
     """
-    เข้าสู่ระบบหรือสมัครสมาชิกอัตโนมัติด้วยบัญชี Google (OAuth 2.0 / Google Identity Services)
-    รองรับการตรวจสอบ id_token / access_token จริงจาก Google API
+    เข้าสู่ระบบด้วยบัญชี Google (OAuth 2.0 / Google Identity Services)
+    หากอีเมลนี้ยังไม่เคยสมัครสมาชิกในระบบ จะส่งกลับไปหน้าสมัครสมาชิก (/register) เพื่อกรอกข้อมูลก่อน
     """
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -554,7 +459,29 @@ def google_login():
     if not email or "@" not in email:
         return jsonify({"error": "กรุณาระบุอีเมล Google ที่ถูกต้อง"}), 400
 
-    user = _upsert_google_user(email, full_name, google_id, requested_role)
+    user = _find_google_user(email, google_id)
+
+    # หากยังไม่เคยสมัครสมาชิกในระบบ ให้ส่งไปหน้าสมัครสมาชิกพร้อมข้อมูลเบื้องต้นจาก Google
+    if user is None:
+        base_username = email.split("@")[0][:40]
+        reg_params = urllib.parse.urlencode({
+            "email": email,
+            "username": base_username,
+            "full_name": full_name or base_username,
+            "role": requested_role,
+        })
+        return jsonify({
+            "needs_registration": True,
+            "message": "บัญชี Google นี้ยังไม่เคยสมัครสมาชิก กรุณากรอกข้อมูลเพื่อสมัครสมาชิกก่อนเข้าใช้งาน",
+            "redirect_url": f"{url_for('api.register')}?{reg_params}",
+            "google_profile": {
+                "email": email,
+                "username": base_username,
+                "full_name": full_name or base_username,
+                "role": requested_role,
+            }
+        }), 200
+
     user_id, db_username, _, db_full_name, db_email, role = user
 
     # ตรวจสอบว่า Role ของบัญชีตรงกับปุ่มที่เลือกหรือไม่
@@ -648,7 +575,19 @@ def google_oauth_callback():
             id_token=tokens.get("id_token", ""),
             access_token=tokens.get("access_token", ""),
         )
-        user = _upsert_google_user(email, full_name, google_id, requested_role)
+        user = _find_google_user(email, google_id)
+        if user is None:
+            base_username = email.split("@")[0][:40]
+            reg_params = urllib.parse.urlencode({
+                "email": email,
+                "username": base_username,
+                "full_name": full_name or base_username,
+                "role": requested_role,
+            })
+            reg_url = f"{url_for('api.register')}?{reg_params}"
+            msg = "บัญชี Google นี้ยังไม่เคยสมัครสมาชิก กรุณากรอกข้อมูลเพื่อสมัครสมาชิกก่อนเข้าใช้งาน"
+            return f"<script>alert({json.dumps(msg)}); window.location.replace({json.dumps(reg_url)});</script>"
+
         user_id, db_username, _, db_full_name, db_email, role = user
 
         if role.strip().lower() != requested_role.strip().lower():

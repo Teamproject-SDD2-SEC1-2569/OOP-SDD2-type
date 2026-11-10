@@ -92,6 +92,7 @@
 
     <script>
         let selectedRole = "Student";
+        let prefilledFullName = "";
         const roleBtns = document.querySelectorAll('.role-button');
         roleBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -99,6 +100,38 @@
                 btn.classList.add('active');
                 selectedRole = btn.innerText.includes('อาจารย์') ? 'Teacher' : 'Student';
             });
+        });
+
+        // ดึงข้อมูลเบื้องต้นกรณีถูกส่งมาจาก Google Login สำหรับอีเมลใหม่ที่ยังไม่เคยสมัคร
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const emailParam = params.get('email');
+            const usernameParam = params.get('username');
+            const fullNameParam = params.get('full_name');
+            const roleParam = params.get('role');
+
+            if (emailParam) {
+                document.getElementById('regEmail').value = emailParam;
+            }
+            if (usernameParam) {
+                document.getElementById('regUsername').value = usernameParam;
+            }
+            if (fullNameParam) {
+                prefilledFullName = fullNameParam;
+            }
+            if (roleParam && roleParam.toLowerCase() === 'teacher') {
+                selectedRole = 'Teacher';
+                roleBtns.forEach(b => {
+                    if (b.innerText.includes('อาจารย์')) {
+                        b.classList.add('active');
+                    } else {
+                        b.classList.remove('active');
+                    }
+                });
+            }
+            if (emailParam) {
+                document.getElementById('regPassword').focus();
+            }
         });
 
         async function handleRegister(e) {
@@ -125,7 +158,7 @@
                         username: username,
                         password: password,
                         email: email,
-                        full_name: username,
+                        full_name: prefilledFullName || username,
                         role: selectedRole
                     })
                 });
