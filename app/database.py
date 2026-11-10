@@ -3,7 +3,7 @@ import oracledb
 from dotenv import load_dotenv
 
 # โหลดค่าตัวแปรจากไฟล์ .env
-load_dotenv()
+load_dotenv(override=True)
 
 DB_USER = os.getenv("ORACLE_DB_USER")
 DB_PASSWORD = os.getenv("ORACLE_DB_PASSWORD")
@@ -15,11 +15,15 @@ def get_db_connection():
     เรียกใช้ฟังก์ชันนี้เมื่อต้องการ Insert/Select ข้อมูล
     """
     try:
+        load_dotenv(override=True)
+        user = os.getenv("ORACLE_DB_USER", DB_USER)
+        password = os.getenv("ORACLE_DB_PASSWORD", DB_PASSWORD)
+        dsn = os.getenv("ORACLE_DB_DSN", CONNECT_STRING)
         # สร้างการเชื่อมต่อแบบ Direct Connection (รองรับ Thin Mode)
         connection = oracledb.connect(
-            user=DB_USER,
-            password=DB_PASSWORD,
-            dsn=CONNECT_STRING
+            user=user,
+            password=password,
+            dsn=dsn
         )
         print("✅ [Database] Connected successfully!")
         return connection

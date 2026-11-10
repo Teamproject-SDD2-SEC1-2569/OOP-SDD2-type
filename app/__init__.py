@@ -22,7 +22,7 @@ def create_app():
     # 2. เปิดใช้งาน Extensions
     CORS(app)
     jwt.init_app(app)
-    socketio.init_app(app, cors_allowed_origins="*")
+    socketio.init_app(app, cors_allowed_origins="*", async_mode="threading")
 
     # 3. ลงทะเบียน Route Blueprints (Presentation Layer)
     from .routes import auth_bp, teacher_bp, student_bp
