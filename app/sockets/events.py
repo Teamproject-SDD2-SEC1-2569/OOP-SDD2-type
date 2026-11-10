@@ -40,19 +40,60 @@ def register_socket_events(socketio: SocketIO):
         emit('server_message', {'msg': f'Welcome {username}! Connected to server.'})
 
     @socketio.on('join_classroom')
+    @socketio.on('student_join')
     def handle_join_classroom(data):
         """2. เข้าร่วมห้องเรียนและตั้งค่ากลุ่ม"""
+        if not isinstance(data, dict):
+            return
         room = data.get('room_code')
         if not room:
             emit('error', {'msg': 'Room code is required.'})
             return
 
+        room = room.strip().upper()
         join_room(room)
+        user_session = typing_service.get_user_session(request.sid)
+        if data.get('student_name') and user_session:
+            user_session['username'] = data.get('student_name')
+
         typing_service.join_room(request.sid, room)
 
-        user_session = typing_service.get_user_session(request.sid)
         username = user_session['username'] if user_session else "Student"
         emit('server_message', {'msg': f"{username} joined room {room}"}, room=room)
+
+        # ส่งรายชื่อผู้เข้าร่วมและ Leaderboard ปัจจุบันให้ทุกคนในห้อง (รวมถึงหน้าอาจารย์)
+        if room in typing_service.room_leaderboards:
+            user_id = user_session['user_id'] if user_session else request.sid
+            if user_id not in typing_service.room_leaderboards[room]:
+                typing_service.room_leaderboards[room][user_id] = {
+                    "username": username,
+                    "wpm": 0,
+                    "accuracy": 100.0
+                }
+            sorted_leaderboard = sorted(
+                typing_service.room_leaderboards[room].values(),
+                key=lambda x: x['wpm'],
+                reverse=True
+            )
+            emit('room_leaderboard_update', sorted_leaderboard, room=room)
+
+    @socketio.on('teacher_join_room')
+    def handle_teacher_join_room(data):
+        """ให้อาจารย์เข้าฟัง Event ของห้องเรียนโดยไม่นับเป็นผู้เข้าสอบใน Leaderboard"""
+        if not isinstance(data, dict):
+            return
+        room = data.get('room_code')
+        if not room:
+            return
+        room = room.strip().upper()
+        join_room(room)
+        if room in typing_service.room_leaderboards:
+            sorted_leaderboard = sorted(
+                typing_service.room_leaderboards[room].values(),
+                key=lambda x: x['wpm'],
+                reverse=True
+            )
+            emit('room_leaderboard_update', sorted_leaderboard)
 
     @socketio.on('start_typing')
     def handle_start_typing(data=None):

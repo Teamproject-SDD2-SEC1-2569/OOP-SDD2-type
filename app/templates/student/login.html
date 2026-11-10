@@ -143,7 +143,8 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        email: emailOrUsername, // หาก backend รองรับ username ให้ปรับ field ตรงนี้ตามที่ทีมออกแบบไว้
+                        username: emailOrUsername,
+                        email: emailOrUsername,
                         password: password 
                     })
                 });
@@ -151,13 +152,19 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // หากมี token ให้เก็บไว้ใน localStorage (เผื่อเอาไปใช้ต่อ)
-                    if (data.token) {
-                        localStorage.setItem("token", data.token);
+                    const token = data.access_token || data.token;
+                    if (token) {
+                        localStorage.setItem("token", token);
+                        localStorage.setItem("accessToken", token);
+                    }
+                    if (data.user) {
+                        localStorage.setItem("user", JSON.stringify(data.user));
+                        localStorage.setItem("username", data.user.username || emailOrUsername);
                     }
 
-                    // 🌟 เช็ก Role ที่เลือกและ Redirect 🌟
-                    if (selectedRole === "Teacher") {
+                    // 🌟 เช็ก Role ของผู้ใช้ (หรือปุ่มที่เลือก) และ Redirect 🌟
+                    const userRole = data.user?.role || selectedRole;
+                    if (userRole === "Teacher" || selectedRole === "Teacher") {
                         window.location.href = "{{ url_for('teacher.teacher_dashboard_page') }}";
                     } else {
                         window.location.href = "{{ url_for('api.classroom') }}";
