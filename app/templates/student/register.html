@@ -20,8 +20,14 @@
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .form-group { display: flex; flex-direction: column; }
         .form-group label { color: #333; font-size: 17px; font-weight: bold; margin-bottom: 8px; }
-        .form-group input, .form-group select { height: 52px; border: 1px solid #d7dce5; border-radius: 14px; padding: 0 18px; font-size: 16px; outline: none; background: #fff; color: #333; }
+        .form-group input, .form-group select { height: 52px; border: 1px solid #d7dce5; border-radius: 14px; padding: 0 18px; font-size: 16px; outline: none; background: #fff; color: #333; transition: border-color 0.2s, box-shadow 0.2s; }
         .form-group input:focus, .form-group select:focus { border-color: #5d91df; box-shadow: 0 0 0 3px rgba(93, 145, 223, 0.12); }
+        .form-group input.input-error, .form-group select.input-error { border-color: #e11d48; box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.14); animation: shakeInput 0.35s ease; }
+        @keyframes shakeInput {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
         .register-button { width: 70%; height: 58px; margin-top: 28px; border: none; border-radius: 15px; background: #5d91df; color: white; font-size: 20px; font-weight: bold; cursor: pointer; }
         .register-button:hover { background: #4c80cf; }
         .login-link { margin-top: 25px; text-align: center; color: #666; font-size: 16px; }
@@ -155,26 +161,26 @@
                 <button type="button" class="role-button">🎓 อาจารย์</button>
             </div>
 
-            <form onsubmit="handleRegister(event)">
+            <form onsubmit="handleRegister(event)" novalidate>
                 <div class="form-grid">
                     <div class="form-group">
                         <label>ชื่อจริง</label>
-                        <input type="text" id="regFirstName" placeholder="กรอกชื่อจริง" required>
+                        <input type="text" id="regFirstName" placeholder="กรอกชื่อจริง">
                     </div>
 
                     <div class="form-group">
                         <label>นามสกุล</label>
-                        <input type="text" id="regLastName" placeholder="กรอกนามสกุล" required>
+                        <input type="text" id="regLastName" placeholder="กรอกนามสกุล">
                     </div>
 
                     <div class="form-group" id="studentCodeGroup">
                         <label>รหัสนักศึกษา (8 หลัก)</label>
-                        <input type="text" id="regStudentCode" placeholder="กรอกรหัสนักศึกษา 8 หลัก" maxlength="8" minlength="8" inputmode="numeric" pattern="\d{8}" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 8)" required>
+                        <input type="text" id="regStudentCode" placeholder="กรอกรหัสนักศึกษา 8 หลัก" maxlength="8" inputmode="numeric" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 8)">
                     </div>
 
                     <div class="form-group" id="studentMajorGroup">
                         <label>สาขาวิชา</label>
-                        <select id="regMajor" required>
+                        <select id="regMajor">
                             <option value="" disabled selected>-- เลือกสาขาวิชา --</option>
                             <option value="คอมพิวเตอร์เทคโนโลยี">คอมพิวเตอร์เทคโนโลยี</option>
                             <option value="อิเล็กทรอนิกส์และโทรคมนาคม">อิเล็กทรอนิกส์และโทรคมนาคม</option>
@@ -183,22 +189,22 @@
 
                     <div class="form-group">
                         <label>ชื่อผู้ใช้</label>
-                        <input type="text" id="regUsername" placeholder="กรอกชื่อผู้ใช้" required>
+                        <input type="text" id="regUsername" placeholder="กรอกชื่อผู้ใช้">
                     </div>
 
                     <div class="form-group">
                         <label>อีเมล</label>
-                        <input type="email" id="regEmail" placeholder="กรอกอีเมล" required>
+                        <input type="email" id="regEmail" placeholder="กรอกอีเมล">
                     </div>
 
                     <div class="form-group">
                         <label>รหัสผ่าน</label>
-                        <input type="password" id="regPassword" placeholder="อย่างน้อย 8 ตัวอักษร" required>
+                        <input type="password" id="regPassword" placeholder="อย่างน้อย 8 ตัวอักษร">
                     </div>
 
                     <div class="form-group">
                         <label>ยืนยันรหัสผ่าน</label>
-                        <input type="password" id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน" required>
+                        <input type="password" id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน">
                     </div>
                 </div>
 
@@ -279,19 +285,13 @@
         }
         function updateRoleFields() {
             const studentCodeGroup = document.getElementById('studentCodeGroup');
-            const studentCodeInput = document.getElementById('regStudentCode');
             const studentMajorGroup = document.getElementById('studentMajorGroup');
-            const studentMajorSelect = document.getElementById('regMajor');
             if (selectedRole === 'Student') {
                 studentCodeGroup.style.display = 'flex';
-                studentCodeInput.required = true;
                 studentMajorGroup.style.display = 'flex';
-                studentMajorSelect.required = true;
             } else {
                 studentCodeGroup.style.display = 'none';
-                studentCodeInput.required = false;
                 studentMajorGroup.style.display = 'none';
-                studentMajorSelect.required = false;
             }
         }
 
@@ -361,6 +361,24 @@
             }
         });
 
+        function markFieldError(fieldId, title, message) {
+            document.querySelectorAll('.form-group input, .form-group select').forEach(el => el.classList.remove('input-error'));
+            const el = document.getElementById(fieldId);
+            if (el) {
+                el.classList.add('input-error');
+                el.addEventListener('input', () => el.classList.remove('input-error'), { once: true });
+                el.addEventListener('change', () => el.classList.remove('input-error'), { once: true });
+            }
+            showModernPopup({
+                type: 'error',
+                title: title,
+                message: message,
+                onConfirm: () => {
+                    if (el) el.focus();
+                }
+            });
+        }
+
         async function handleRegister(e) {
             e.preventDefault();
             const firstName = document.getElementById('regFirstName').value.trim();
@@ -373,44 +391,36 @@
             const email = document.getElementById('regEmail').value.trim();
             const confirmPassword = document.getElementById('regConfirmPassword').value;
 
-            if (!firstName || !lastName) {
-                showModernPopup({
-                    type: 'error',
-                    title: 'ข้อมูลไม่ครบถ้วน',
-                    message: 'กรุณากรอกชื่อจริงและนามสกุลให้ครบถ้วน'
-                });
+            if (!firstName) {
+                markFieldError('regFirstName', 'ยังไม่ได้กรอกชื่อจริง', 'กรุณากรอกชื่อจริงของคุณให้ครบถ้วน');
+                return;
+            }
+            if (!lastName) {
+                markFieldError('regLastName', 'ยังไม่ได้กรอกนามสกุล', 'กรุณากรอกนามสกุลของคุณให้ครบถ้วน');
                 return;
             }
             if (selectedRole === 'Student' && !/^\d{8}$/.test(studentCode)) {
-                showModernPopup({
-                    type: 'error',
-                    title: 'รหัสนักศึกษาไม่ถูกต้อง',
-                    message: 'กรุณากรอกรหัสนักศึกษาเป็นตัวเลข 8 หลักเท่านั้น'
-                });
+                markFieldError('regStudentCode', 'รหัสนักศึกษาไม่ถูกต้อง', 'กรุณากรอกรหัสนักศึกษาเป็นตัวเลข 8 หลักเท่านั้น');
                 return;
             }
             if (selectedRole === 'Student' && !major) {
-                showModernPopup({
-                    type: 'error',
-                    title: 'ยังไม่ได้เลือกสาขาวิชา',
-                    message: 'กรุณาเลือกสาขาวิชาของคุณจากรายการ'
-                });
+                markFieldError('regMajor', 'ยังไม่ได้เลือกสาขาวิชา', 'กรุณาเลือกสาขาวิชาของคุณจากรายการ');
                 return;
             }
-            if (password !== confirmPassword) {
-                showModernPopup({
-                    type: 'error',
-                    title: 'รหัสผ่านไม่ตรงกัน',
-                    message: 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง'
-                });
+            if (!username) {
+                markFieldError('regUsername', 'ยังไม่ได้กรอกชื่อผู้ใช้', 'กรุณากำหนดชื่อผู้ใช้ (Username) สำหรับเข้าสู่ระบบ');
                 return;
             }
-            if (password.length < 8) {
-                showModernPopup({
-                    type: 'error',
-                    title: 'รหัสผ่านสั้นเกินไป',
-                    message: 'รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร'
-                });
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                markFieldError('regEmail', 'รูปแบบอีเมลไม่ถูกต้อง', 'กรุณากรอกอีเมลให้ถูกต้อง เช่น example@email.com');
+                return;
+            }
+            if (!password || password.length < 8) {
+                markFieldError('regPassword', 'รหัสผ่านสั้นเกินไป', 'รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
+                return;
+            }
+            if (!confirmPassword || password !== confirmPassword) {
+                markFieldError('regConfirmPassword', 'รหัสผ่านไม่ตรงกัน', 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง');
                 return;
             }
 
