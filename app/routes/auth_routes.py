@@ -79,19 +79,19 @@ def register():
     faculty = None
 
     if role == "Student":
-        student_code = data.get("student_code") or f"STD{random.randint(10000, 99999)}"
+        student_code = data.get("student_code")
         major = data.get("major")
 
         if not isinstance(student_code, str) or not student_code.strip():
             return jsonify({
-                "error": "กรุณากรอกรหัสนักศึกษา"
+                "error": "กรุณากรอกรหัสนักศึกษา 8 หลัก"
             }), 400
 
         student_code = student_code.strip()
 
-        if len(student_code) > 20:
+        if not re.fullmatch(r"\d{8}", student_code):
             return jsonify({
-                "error": "รหัสนักศึกษาต้องไม่เกิน 20 ตัวอักษร"
+                "error": "รหัสนักศึกษาต้องเป็นตัวเลข 8 หลักเท่านั้น"
             }), 400
 
         if major is not None:
@@ -149,6 +149,17 @@ def register():
                 return jsonify({
                     "error": "ชื่อผู้ใช้หรืออีเมลนี้ถูกใช้งานแล้ว"
                 }), 409
+
+            if role == "Student" and student_code:
+                cursor.execute("""
+                    SELECT STUDENT_ID
+                    FROM U.STUDENTS
+                    WHERE STUDENT_CODE = :student_code
+                """, student_code=student_code)
+                if cursor.fetchone():
+                    return jsonify({
+                        "error": "รหัสนักศึกษานี้ถูกใช้งานแล้ว"
+                    }), 409
 
             # ตรวจสอบว่าตาราง U.USERS มีคอลัมน์ FIRST_NAME และ LAST_NAME หรือไม่
             cursor.execute("""

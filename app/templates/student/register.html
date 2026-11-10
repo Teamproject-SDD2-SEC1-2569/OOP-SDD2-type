@@ -61,6 +61,11 @@
                         <input type="text" id="regLastName" placeholder="กรอกนามสกุล" required>
                     </div>
 
+                    <div class="form-group" id="studentCodeGroup" style="grid-column: 1 / -1;">
+                        <label>รหัสนักศึกษา (8 หลัก)</label>
+                        <input type="text" id="regStudentCode" placeholder="กรอกรหัสนักศึกษา 8 หลัก (เฉพาะตัวเลข)" maxlength="8" minlength="8" inputmode="numeric" pattern="\d{8}" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 8)" required>
+                    </div>
+
                     <div class="form-group">
                         <label>ชื่อผู้ใช้</label>
                         <input type="text" id="regUsername" placeholder="กรอกชื่อผู้ใช้" required>
@@ -103,12 +108,25 @@
     <script>
         let selectedRole = "Student";
         let prefilledFullName = "";
+        function updateRoleFields() {
+            const studentCodeGroup = document.getElementById('studentCodeGroup');
+            const studentCodeInput = document.getElementById('regStudentCode');
+            if (selectedRole === 'Student') {
+                studentCodeGroup.style.display = 'flex';
+                studentCodeInput.required = true;
+            } else {
+                studentCodeGroup.style.display = 'none';
+                studentCodeInput.required = false;
+            }
+        }
+
         const roleBtns = document.querySelectorAll('.role-button');
         roleBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 roleBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 selectedRole = btn.innerText.includes('อาจารย์') ? 'Teacher' : 'Student';
+                updateRoleFields();
             });
         });
 
@@ -142,9 +160,12 @@
                     }
                 });
             }
+            updateRoleFields();
             if (emailParam) {
                 if (!document.getElementById('regFirstName').value) {
                     document.getElementById('regFirstName').focus();
+                } else if (selectedRole === 'Student' && !document.getElementById('regStudentCode').value) {
+                    document.getElementById('regStudentCode').focus();
                 } else {
                     document.getElementById('regPassword').focus();
                 }
@@ -156,6 +177,7 @@
             const firstName = document.getElementById('regFirstName').value.trim();
             const lastName = document.getElementById('regLastName').value.trim();
             const fullName = `${firstName} ${lastName}`.trim();
+            const studentCode = document.getElementById('regStudentCode').value.trim();
             const username = document.getElementById('regUsername').value.trim();
             const password = document.getElementById('regPassword').value;
             const email = document.getElementById('regEmail').value.trim();
@@ -163,6 +185,10 @@
 
             if (!firstName || !lastName) {
                 alert("กรุณากรอกชื่อจริงและนามสกุลให้ครบถ้วน");
+                return;
+            }
+            if (selectedRole === 'Student' && !/^\d{8}$/.test(studentCode)) {
+                alert("กรุณากรอกรหัสนักศึกษาเป็นตัวเลข 8 หลัก");
                 return;
             }
             if (password !== confirmPassword) {
@@ -175,18 +201,22 @@
             }
 
             try {
+                const payload = {
+                    first_name: firstName,
+                    last_name: lastName,
+                    full_name: fullName,
+                    username: username,
+                    password: password,
+                    email: email,
+                    role: selectedRole
+                };
+                if (selectedRole === 'Student') {
+                    payload.student_code = studentCode;
+                }
                 const res = await fetch('/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        first_name: firstName,
-                        last_name: lastName,
-                        full_name: fullName,
-                        username: username,
-                        password: password,
-                        email: email,
-                        role: selectedRole
-                    })
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
                 if (res.ok) {
