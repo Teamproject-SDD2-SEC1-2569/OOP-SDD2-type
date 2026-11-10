@@ -1,8 +1,6 @@
 import secrets
-import random
-import string
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 
 from ..utils.auth_utils import require_role
 from ..database import get_db_connection
@@ -15,6 +13,12 @@ teacher_bp = Blueprint("teacher", __name__)
 room_settings = {}
 # ตัวแปรจำลอง Database ชั่วคราว (In-Memory) ไว้เก็บข้อมูลห้อง
 active_rooms = {}
+
+# ระยะเวลาทดสอบที่อนุญาต (วินาที)
+ALLOWED_DURATIONS = (15, 30, 60, 120)
+# เกณฑ์ผ่านสำหรับรายงานผลคะแนน
+PASS_MIN_WPM = 30
+PASS_MIN_ACCURACY = 85.0
 
 
 def generate_room_code(cursor):
@@ -36,7 +40,7 @@ def generate_room_code(cursor):
 
 
 def get_current_teacher(cursor):
-    """ดึง TEACHER_ID ของครูที่เข้าสู่ระบบอยู่"""
+    """ดึง TEACHER_ID ของครูที่เข้าสู่ระบบอยู่ (สร้างแถวใน U.TEACHERS อัตโนมัติหากบัญชีเป็น Teacher แต่ยังไม่มีข้อมูล)"""
     identity = get_jwt_identity()
 
     try:
@@ -54,7 +58,15 @@ def get_current_teacher(cursor):
     )
 
     result = cursor.fetchone()
-    return result[0] if result else None
+    if result:
+        return result[0]
+
+    if get_jwt().get("role") == "Teacher":
+        _ensure_teacher_record(cursor, user_id)
+        cursor.connection.commit()
+        return user_id
+
+    return None
 
 
 def get_room_settings(room_code):
@@ -113,9 +125,9 @@ def create_room():
             "error": "ชื่อห้องเรียนต้องไม่เกิน 100 ตัวอักษร"
         }), 400
 
-    if type(duration) is not int or duration not in (30, 60):
+    if type(duration) is not int or duration not in ALLOWED_DURATIONS:
         return jsonify({
-            "error": "ระยะเวลาต้องเป็น 30 หรือ 60 วินาที"
+            "error": "ระยะเวลาต้องเป็น 15, 30, 60 หรือ 120 วินาที"
         }), 400
 
     conn = None
@@ -386,6 +398,13 @@ def update_room_status(room_code):
             "status": status
         }
 
+        # แจ้งนักศึกษาที่อยู่ในห้องแบบ Real-time ว่าสถานะห้องเปลี่ยนแล้ว
+        try:
+            from .. import socketio
+            socketio.emit("room_status_changed", {"room_code": room_code, "status": status}, room=room_code)
+        except Exception:
+            pass
+
         return jsonify({
             "message": "เปลี่ยนสถานะห้องเรียนสำเร็จ",
             "room_code": room_code,
@@ -500,103 +519,29 @@ def teacher_register_page():
 
 @teacher_bp.route("/dashboard", methods=["GET"])
 def teacher_dashboard_page():
-    return render_template("teacher/Dashboard.html", active_rooms=active_rooms)
+    # ข้อมูลห้องเรียนถูกโหลดผ่าน GET /teacher/api/dashboard (ใช้ JWT ของอาจารย์ที่ล็อกอินอยู่)
+    return render_template("teacher/Dashboard.html")
 
 
 @teacher_bp.route("/create-room", methods=["GET", "POST"])
 def teacher_create_room_page():
-    if request.method == 'POST':
-        # 1. รับค่าที่ส่งมาจากฟอร์ม (ปรับค่าเริ่มต้นให้ตรงกับหน้าเว็บใหม่)
-        room_name = request.form.get('room_name', 'ห้องเรียนฝึกพิมพ์')
-        category = request.form.get('category', 'english')  # เปลี่ยนค่าเริ่มต้นเป็นภาษาอังกฤษ
-        duration = request.form.get('duration', '60')  # ตัวเลือก 15, 30, 60, 120
-        max_participants = request.form.get('max_participants', '30')
-
-        # 2. สุ่มรหัสห้อง 6 หลัก และเช็กว่าต้องไม่ซ้ำกับห้องที่เปิดอยู่ (Prevent Collision)
-        while True:
-            random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-            room_code = f"TYP-{random_str}"
-            if room_code not in active_rooms:
-                break  # ถ้ารหัสไม่ซ้ำ ให้หยุดสุ่มและไปต่อ
-
-        # 3. บันทึกข้อมูลลง Memory และ Oracle Database (U.CLASSROOMS)
-        active_rooms[room_code] = {
-            "room_name": room_name,
-            "category": category,
-            "duration": duration,
-            "max_participants": max_participants,
-            "status": "waiting",
-            "students": []
-        }
-        room_settings[room_code] = {
-            "duration": int(duration) if str(duration).isdigit() else 60,
-            "status": "open"
-        }
-
-        conn = None
-        try:
-            conn = get_db_connection()
-            if conn:
-                with conn.cursor() as cursor:
-                    cursor.execute("SELECT TEACHER_ID FROM U.TEACHERS FETCH FIRST 1 ROWS ONLY")
-                    t_row = cursor.fetchone()
-                    if t_row:
-                        duration_int = int(duration) if str(duration).isdigit() else 60
-                        if _has_classroom_status_duration_cols(cursor):
-                            cursor.execute(
-                                """
-                                INSERT INTO U.CLASSROOMS (ROOM_NAME, ROOM_CODE, TEACHER_ID, STATUS, DURATION)
-                                VALUES (:room_name, :room_code, :teacher_id, :status, :duration)
-                                """,
-                                {
-                                    "room_name": room_name,
-                                    "room_code": room_code,
-                                    "teacher_id": t_row[0],
-                                    "status": "open",
-                                    "duration": duration_int
-                                }
-                            )
-                        else:
-                            cursor.execute(
-                                """
-                                INSERT INTO U.CLASSROOMS (ROOM_NAME, ROOM_CODE, TEACHER_ID)
-                                VALUES (:room_name, :room_code, :teacher_id)
-                                """,
-                                {
-                                    "room_name": room_name,
-                                    "room_code": room_code,
-                                    "teacher_id": t_row[0]
-                                }
-                            )
-                        conn.commit()
-        except Exception as e:
-            print("Create room DB sync warning:", e)
-        finally:
-            if conn:
-                conn.close()
-
-        # 4. สร้างเสร็จ ให้ Redirect ไปหน้าจัดการห้องเรียน
-        return redirect(url_for('teacher.teacher_manage_classroom_page', room_code=room_code))
-
-    # ถ้ามีคนเผลอพิมพ์ URL /teacher/create-room เข้ามาตรงๆ (GET Request) ให้เด้งกลับไปที่หน้า Dashboard แทน
+    # การสร้างห้องย้ายไปใช้ POST /teacher/rooms (ผูกกับอาจารย์ที่ล็อกอินผ่าน JWT) แล้ว
     return redirect(url_for('teacher.teacher_dashboard_page'))
 
 
 @teacher_bp.route("/manage-classroom", methods=["GET"])
 def teacher_manage_classroom_page():
-    room_code = request.args.get('room_code', 'TYPE-99X')
-    room_data = active_rooms.get(room_code, {
-        "room_name": "สอบเก็บคะแนน Midterm (ข้อมูลจำลอง)",
-        "duration": "3",
-        "training_mode": "time_attack"
-    })
+    room_code = (request.args.get('room_code') or '').strip().upper()
+    if not room_code:
+        return redirect(url_for('teacher.teacher_dashboard_page'))
 
-    return render_template("teacher/Manage-Classroom.html", room_code=room_code, room_data=room_data)
+    # รายละเอียดห้องถูกโหลดผ่าน GET /teacher/api/rooms/<room_code>
+    return render_template("teacher/Manage-Classroom.html", room_code=room_code)
 
 
 @teacher_bp.route("/menu", methods=["GET"])
 def teacher_menu_page():
-    return render_template("teacher/menu.html")
+    return redirect(url_for('teacher.teacher_dashboard_page'))
 
 
 @teacher_bp.route("/students", methods=["GET"])
@@ -878,6 +823,482 @@ def delete_teacher_profile():
     except Exception as e:
         conn.rollback()
         return jsonify({"error": f"ไม่สามารถลบบัญชีผู้ใช้ได้: {e}"}), 500
+    finally:
+        conn.close()
+
+
+# ==================================================
+# 6. Teacher Data APIs (Dashboard / Classroom / Students / History)
+#    ดึงข้อมูลจริงจาก Oracle Database ตามอาจารย์ที่ล็อกอินอยู่ (JWT)
+# ==================================================
+
+def _classroom_status_cols_sql(cursor, alias: str = "c") -> str:
+    """คืนค่า SQL สำหรับเลือกคอลัมน์ STATUS, DURATION (หรือ NULL หาก Schema ยังไม่มีคอลัมน์)"""
+    if _has_classroom_status_duration_cols(cursor):
+        return f"{alias}.STATUS, {alias}.DURATION"
+    return "NULL, NULL"
+
+
+def _fmt_dt(value, fmt: str = "%d/%m/%Y %H:%M"):
+    return value.strftime(fmt) if value else None
+
+
+def _num(value, digits: int = 0):
+    if value is None:
+        return 0
+    return round(float(value), digits) if digits else int(round(float(value)))
+
+
+def _display_name(full_name, username):
+    return (full_name or "").strip() or username or "-"
+
+
+def _get_owned_room(cursor, room_code: str, teacher_id: int):
+    """ดึงข้อมูลห้องเรียนที่อาจารย์คนนี้เป็นเจ้าของ (คืน None หากไม่พบ/ไม่มีสิทธิ์)"""
+    status_cols = _classroom_status_cols_sql(cursor)
+    cursor.execute(
+        f"""
+        SELECT c.CLASSROOM_ID, c.ROOM_NAME, c.ROOM_CODE, c.CREATED_AT, {status_cols}
+        FROM U.CLASSROOMS c
+        WHERE UPPER(c.ROOM_CODE) = UPPER(:room_code)
+          AND c.TEACHER_ID = :teacher_id
+        """,
+        {"room_code": room_code.strip(), "teacher_id": teacher_id}
+    )
+    row = cursor.fetchone()
+    if not row:
+        return None
+    settings = get_room_settings(row[2])
+    return {
+        "classroom_id": row[0],
+        "room_name": row[1],
+        "room_code": row[2],
+        "created_at": _fmt_dt(row[3]),
+        "status": row[4] or settings["status"],
+        "duration": int(row[5]) if row[5] is not None else settings["duration"],
+    }
+
+
+@teacher_bp.route("/api/dashboard", methods=["GET"])
+@require_role("Teacher")
+def api_teacher_dashboard():
+    """ภาพรวมห้องเรียนของอาจารย์: รายการห้อง + สถิติจำนวนสมาชิก/การส่งผล"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            teacher_id = get_current_teacher(cursor)
+            if teacher_id is None:
+                return jsonify({"error": "ไม่พบข้อมูลอาจารย์สำหรับบัญชีนี้"}), 403
+
+            status_cols = _classroom_status_cols_sql(cursor)
+            cursor.execute(
+                f"""
+                SELECT c.CLASSROOM_ID, c.ROOM_NAME, c.ROOM_CODE, c.CREATED_AT, {status_cols},
+                       (SELECT COUNT(*) FROM U.CLASSROOM_MEMBERS m
+                         WHERE m.CLASSROOM_ID = c.CLASSROOM_ID) AS MEMBER_COUNT,
+                       (SELECT COUNT(*) FROM U.SUBMISSION_RESULTS sr
+                          JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID
+                         WHERE a.CLASSROOM_ID = c.CLASSROOM_ID) AS SUBMISSION_COUNT
+                FROM U.CLASSROOMS c
+                WHERE c.TEACHER_ID = :teacher_id
+                ORDER BY c.CLASSROOM_ID DESC
+                """,
+                {"teacher_id": teacher_id}
+            )
+
+            rooms = []
+            for row in cursor.fetchall():
+                settings = get_room_settings(row[2])
+                rooms.append({
+                    "classroom_id": row[0],
+                    "room_name": row[1],
+                    "room_code": row[2],
+                    "created_at": _fmt_dt(row[3], "%d/%m/%Y"),
+                    "status": row[4] or settings["status"],
+                    "duration": int(row[5]) if row[5] is not None else settings["duration"],
+                    "member_count": int(row[6] or 0),
+                    "submission_count": int(row[7] or 0),
+                })
+
+            cursor.execute(
+                """
+                SELECT COUNT(DISTINCT m.STUDENT_ID)
+                FROM U.CLASSROOM_MEMBERS m
+                JOIN U.CLASSROOMS c ON m.CLASSROOM_ID = c.CLASSROOM_ID
+                WHERE c.TEACHER_ID = :teacher_id
+                """,
+                {"teacher_id": teacher_id}
+            )
+            total_students = int((cursor.fetchone() or [0])[0] or 0)
+
+            return jsonify({
+                "rooms": rooms,
+                "stats": {
+                    "total_rooms": len(rooms),
+                    "open_rooms": sum(1 for r in rooms if r["status"] == "open"),
+                    "total_students": total_students,
+                    "total_submissions": sum(r["submission_count"] for r in rooms),
+                }
+            }), 200
+    except Exception as e:
+        return jsonify({"error": f"ไม่สามารถดึงข้อมูลภาพรวมได้: {e}"}), 500
+    finally:
+        conn.close()
+
+
+@teacher_bp.route("/api/rooms/<room_code>", methods=["GET"])
+@require_role("Teacher")
+def api_teacher_room_detail(room_code):
+    """รายละเอียดห้องเรียน: ข้อมูลห้อง, รายชื่อสมาชิก และผลคะแนนที่บันทึกแล้ว"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            teacher_id = get_current_teacher(cursor)
+            if teacher_id is None:
+                return jsonify({"error": "ไม่พบข้อมูลอาจารย์สำหรับบัญชีนี้"}), 403
+
+            room = _get_owned_room(cursor, room_code, teacher_id)
+            if not room:
+                return jsonify({"error": "ไม่พบห้องเรียนหรือคุณไม่มีสิทธิ์จัดการห้องนี้"}), 404
+
+            cursor.execute(
+                """
+                SELECT u.USER_ID, u.USERNAME, u.FULL_NAME, s.STUDENT_CODE, s.MAJOR, m.JOINED_AT,
+                       NVL(st.ATTEMPTS, 0), st.BEST_WPM, st.BEST_ACC, st.AVG_WPM
+                FROM U.CLASSROOM_MEMBERS m
+                JOIN U.USERS u ON m.STUDENT_ID = u.USER_ID
+                LEFT JOIN U.STUDENTS s ON s.STUDENT_ID = u.USER_ID
+                LEFT JOIN (
+                    SELECT sr.STUDENT_ID,
+                           COUNT(*) AS ATTEMPTS,
+                           MAX(sr.WPM) AS BEST_WPM,
+                           MAX(sr.ACCURACY) AS BEST_ACC,
+                           AVG(sr.WPM) AS AVG_WPM
+                    FROM U.SUBMISSION_RESULTS sr
+                    JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID
+                    WHERE a.CLASSROOM_ID = :cid
+                    GROUP BY sr.STUDENT_ID
+                ) st ON st.STUDENT_ID = u.USER_ID
+                WHERE m.CLASSROOM_ID = :cid
+                ORDER BY st.BEST_WPM DESC NULLS LAST, m.JOINED_AT ASC
+                """,
+                {"cid": room["classroom_id"]}
+            )
+            members = [{
+                "user_id": r[0],
+                "username": r[1],
+                "full_name": _display_name(r[2], r[1]),
+                "student_code": r[3] or "-",
+                "major": r[4] or "-",
+                "joined_at": _fmt_dt(r[5]),
+                "attempts": int(r[6] or 0),
+                "best_wpm": _num(r[7]),
+                "best_accuracy": _num(r[8], 2),
+                "avg_wpm": _num(r[9]),
+            } for r in cursor.fetchall()]
+
+            cursor.execute(
+                """
+                SELECT sr.RESULT_ID, sr.SUBMITTED_AT, u.USERNAME, u.FULL_NAME, s.STUDENT_CODE,
+                       sr.WPM, sr.ACCURACY, sr.TIME_SPENT, sr.ERROR_COUNT, sr.GRADE_OR_SCORE
+                FROM U.SUBMISSION_RESULTS sr
+                JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID
+                JOIN U.USERS u ON sr.STUDENT_ID = u.USER_ID
+                LEFT JOIN U.STUDENTS s ON s.STUDENT_ID = u.USER_ID
+                WHERE a.CLASSROOM_ID = :cid
+                ORDER BY sr.SUBMITTED_AT DESC
+                FETCH FIRST 50 ROWS ONLY
+                """,
+                {"cid": room["classroom_id"]}
+            )
+            results = [{
+                "result_id": r[0],
+                "submitted_at": _fmt_dt(r[1]),
+                "full_name": _display_name(r[3], r[2]),
+                "student_code": r[4] or "-",
+                "wpm": _num(r[5]),
+                "accuracy": _num(r[6], 2),
+                "time_spent": int(r[7] or 0),
+                "error_count": int(r[8] or 0),
+                "score": _num(r[9]),
+            } for r in cursor.fetchall()]
+
+            return jsonify({"room": room, "members": members, "results": results}), 200
+    except Exception as e:
+        return jsonify({"error": f"ไม่สามารถดึงข้อมูลห้องเรียนได้: {e}"}), 500
+    finally:
+        conn.close()
+
+
+@teacher_bp.route("/api/rooms/<room_code>", methods=["DELETE"])
+@require_role("Teacher")
+def api_teacher_delete_room(room_code):
+    """ลบห้องเรียนพร้อมสมาชิก งานที่มอบหมาย และผลคะแนนที่เกี่ยวข้อง"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            teacher_id = get_current_teacher(cursor)
+            if teacher_id is None:
+                return jsonify({"error": "ไม่พบข้อมูลอาจารย์สำหรับบัญชีนี้"}), 403
+
+            room = _get_owned_room(cursor, room_code, teacher_id)
+            if not room:
+                return jsonify({"error": "ไม่พบห้องเรียนหรือคุณไม่มีสิทธิ์จัดการห้องนี้"}), 404
+
+            cid = {"cid": room["classroom_id"]}
+            cursor.execute(
+                """
+                DELETE FROM U.SUBMISSION_RESULTS
+                WHERE ASSIGNMENT_ID IN (SELECT ASSIGNMENT_ID FROM U.ASSIGNMENTS WHERE CLASSROOM_ID = :cid)
+                """,
+                cid
+            )
+            cursor.execute("DELETE FROM U.ASSIGNMENTS WHERE CLASSROOM_ID = :cid", cid)
+            cursor.execute("DELETE FROM U.CLASSROOM_MEMBERS WHERE CLASSROOM_ID = :cid", cid)
+            cursor.execute("DELETE FROM U.CLASSROOMS WHERE CLASSROOM_ID = :cid", cid)
+            conn.commit()
+
+            room_settings.pop(room["room_code"], None)
+            active_rooms.pop(room["room_code"], None)
+            return jsonify({"message": f"ลบห้องเรียน {room['room_name']} เรียบร้อยแล้ว"}), 200
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": f"ไม่สามารถลบห้องเรียนได้: {e}"}), 500
+    finally:
+        conn.close()
+
+
+@teacher_bp.route("/api/students", methods=["GET"])
+@require_role("Teacher")
+def api_teacher_students():
+    """รายชื่อนักศึกษาทั้งหมดในห้องเรียนของอาจารย์ พร้อมสถิติการพิมพ์"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            teacher_id = get_current_teacher(cursor)
+            if teacher_id is None:
+                return jsonify({"error": "ไม่พบข้อมูลอาจารย์สำหรับบัญชีนี้"}), 403
+
+            cursor.execute(
+                """
+                SELECT m.STUDENT_ID, c.ROOM_NAME, c.ROOM_CODE
+                FROM U.CLASSROOM_MEMBERS m
+                JOIN U.CLASSROOMS c ON m.CLASSROOM_ID = c.CLASSROOM_ID
+                WHERE c.TEACHER_ID = :teacher_id
+                ORDER BY c.ROOM_NAME
+                """,
+                {"teacher_id": teacher_id}
+            )
+            rooms_by_student = {}
+            for sid, room_name, code in cursor.fetchall():
+                rooms_by_student.setdefault(sid, []).append({"room_name": room_name, "room_code": code})
+
+            students = []
+            if rooms_by_student:
+                cursor.execute(
+                    """
+                    SELECT u.USER_ID, u.USERNAME, u.FULL_NAME, u.EMAIL, s.STUDENT_CODE, s.MAJOR
+                    FROM U.USERS u
+                    LEFT JOIN U.STUDENTS s ON s.STUDENT_ID = u.USER_ID
+                    WHERE u.USER_ID IN (
+                        SELECT m.STUDENT_ID
+                        FROM U.CLASSROOM_MEMBERS m
+                        JOIN U.CLASSROOMS c ON m.CLASSROOM_ID = c.CLASSROOM_ID
+                        WHERE c.TEACHER_ID = :teacher_id
+                    )
+                    ORDER BY s.STUDENT_CODE, u.FULL_NAME
+                    """,
+                    {"teacher_id": teacher_id}
+                )
+                user_rows = cursor.fetchall()
+
+                cursor.execute(
+                    """
+                    SELECT sr.STUDENT_ID, COUNT(*), MAX(sr.WPM), MAX(sr.ACCURACY),
+                           AVG(sr.WPM), AVG(sr.ACCURACY), NVL(SUM(sr.TIME_SPENT), 0)
+                    FROM U.SUBMISSION_RESULTS sr
+                    JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID
+                    JOIN U.CLASSROOMS c ON a.CLASSROOM_ID = c.CLASSROOM_ID
+                    WHERE c.TEACHER_ID = :teacher_id
+                    GROUP BY sr.STUDENT_ID
+                    """,
+                    {"teacher_id": teacher_id}
+                )
+                stats = {r[0]: r for r in cursor.fetchall()}
+
+                for u in user_rows:
+                    st = stats.get(u[0])
+                    rooms = rooms_by_student.get(u[0], [])
+                    students.append({
+                        "user_id": u[0],
+                        "username": u[1],
+                        "full_name": _display_name(u[2], u[1]),
+                        "email": u[3],
+                        "student_code": u[4] or "-",
+                        "major": u[5] or "-",
+                        "rooms": rooms,
+                        "room_count": len(rooms),
+                        "tests_completed": int(st[1]) if st else 0,
+                        "highest_wpm": _num(st[2]) if st else 0,
+                        "highest_accuracy": _num(st[3], 2) if st else 0,
+                        "avg_wpm": _num(st[4]) if st else 0,
+                        "avg_accuracy": _num(st[5], 2) if st else 0,
+                        "total_time_seconds": int(st[6] or 0) if st else 0,
+                    })
+
+            return jsonify({"students": students}), 200
+    except Exception as e:
+        return jsonify({"error": f"ไม่สามารถดึงข้อมูลนักศึกษาได้: {e}"}), 500
+    finally:
+        conn.close()
+
+
+@teacher_bp.route("/api/students/<int:student_id>", methods=["DELETE"])
+@require_role("Teacher")
+def api_teacher_remove_student(student_id):
+    """นำนักศึกษาออกจากห้องเรียนของอาจารย์ (ระบุ room_code เพื่อเลือกเฉพาะห้อง หรือไม่ระบุเพื่อนำออกจากทุกห้อง)"""
+    room_code = (request.args.get("room_code") or "").strip().upper()
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            teacher_id = get_current_teacher(cursor)
+            if teacher_id is None:
+                return jsonify({"error": "ไม่พบข้อมูลอาจารย์สำหรับบัญชีนี้"}), 403
+
+            sql = """
+                DELETE FROM U.CLASSROOM_MEMBERS
+                WHERE STUDENT_ID = :student_id
+                  AND CLASSROOM_ID IN (
+                      SELECT CLASSROOM_ID FROM U.CLASSROOMS
+                      WHERE TEACHER_ID = :teacher_id
+            """
+            params = {"student_id": student_id, "teacher_id": teacher_id}
+            if room_code:
+                sql += " AND UPPER(ROOM_CODE) = :room_code"
+                params["room_code"] = room_code
+            sql += ")"
+
+            cursor.execute(sql, params)
+            removed = cursor.rowcount
+            conn.commit()
+
+            if removed == 0:
+                return jsonify({"error": "ไม่พบนักศึกษาคนนี้ในห้องเรียนของคุณ"}), 404
+            return jsonify({"message": "นำนักศึกษาออกจากห้องเรียนเรียบร้อยแล้ว", "removed": removed}), 200
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": f"ไม่สามารถนำนักศึกษาออกได้: {e}"}), 500
+    finally:
+        conn.close()
+
+
+@teacher_bp.route("/api/history", methods=["GET"])
+@require_role("Teacher")
+def api_teacher_history():
+    """ประวัติผลคะแนนทั้งหมดในห้องเรียนของอาจารย์ (กรองตาม room_code ได้)"""
+    room_code = (request.args.get("room_code") or "").strip().upper()
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            teacher_id = get_current_teacher(cursor)
+            if teacher_id is None:
+                return jsonify({"error": "ไม่พบข้อมูลอาจารย์สำหรับบัญชีนี้"}), 403
+
+            cursor.execute(
+                """
+                SELECT ROOM_CODE, ROOM_NAME FROM U.CLASSROOMS
+                WHERE TEACHER_ID = :teacher_id
+                ORDER BY CLASSROOM_ID DESC
+                """,
+                {"teacher_id": teacher_id}
+            )
+            rooms = [{"room_code": r[0], "room_name": r[1]} for r in cursor.fetchall()]
+
+            room_filter = ""
+            params = {"teacher_id": teacher_id}
+            if room_code:
+                room_filter = " AND UPPER(c.ROOM_CODE) = :room_code"
+                params["room_code"] = room_code
+
+            cursor.execute(
+                f"""
+                SELECT COUNT(*), AVG(sr.WPM), AVG(sr.ACCURACY)
+                FROM U.SUBMISSION_RESULTS sr
+                JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID
+                JOIN U.CLASSROOMS c ON a.CLASSROOM_ID = c.CLASSROOM_ID
+                WHERE c.TEACHER_ID = :teacher_id{room_filter}
+                """,
+                params
+            )
+            agg = cursor.fetchone() or (0, None, None)
+
+            cursor.execute(
+                f"""
+                SELECT sr.RESULT_ID, sr.SUBMITTED_AT, c.ROOM_CODE, c.ROOM_NAME,
+                       u.USERNAME, u.FULL_NAME, s.STUDENT_CODE,
+                       sr.WPM, sr.ACCURACY, sr.TIME_SPENT, sr.ERROR_COUNT, sr.GRADE_OR_SCORE
+                FROM U.SUBMISSION_RESULTS sr
+                JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID
+                JOIN U.CLASSROOMS c ON a.CLASSROOM_ID = c.CLASSROOM_ID
+                JOIN U.USERS u ON sr.STUDENT_ID = u.USER_ID
+                LEFT JOIN U.STUDENTS s ON s.STUDENT_ID = u.USER_ID
+                WHERE c.TEACHER_ID = :teacher_id{room_filter}
+                ORDER BY sr.SUBMITTED_AT DESC
+                FETCH FIRST 500 ROWS ONLY
+                """,
+                params
+            )
+            history = []
+            for r in cursor.fetchall():
+                wpm = _num(r[7])
+                acc = _num(r[8], 2)
+                history.append({
+                    "result_id": r[0],
+                    "submitted_at": _fmt_dt(r[1]),
+                    "room_code": r[2],
+                    "room_name": r[3],
+                    "full_name": _display_name(r[5], r[4]),
+                    "student_code": r[6] or "-",
+                    "wpm": wpm,
+                    "accuracy": acc,
+                    "time_spent": int(r[9] or 0),
+                    "error_count": int(r[10] or 0),
+                    "score": _num(r[11]),
+                    "passed": wpm >= PASS_MIN_WPM and acc >= PASS_MIN_ACCURACY,
+                })
+
+            return jsonify({
+                "rooms": rooms,
+                "history": history,
+                "stats": {
+                    "total_tests": int(agg[0] or 0),
+                    "avg_wpm": _num(agg[1]),
+                    "avg_accuracy": _num(agg[2], 1),
+                },
+                "criteria": {"min_wpm": PASS_MIN_WPM, "min_accuracy": PASS_MIN_ACCURACY},
+            }), 200
+    except Exception as e:
+        return jsonify({"error": f"ไม่สามารถดึงประวัติผลคะแนนได้: {e}"}), 500
     finally:
         conn.close()
 
