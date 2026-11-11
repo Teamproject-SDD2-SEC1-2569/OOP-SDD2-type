@@ -304,6 +304,10 @@
         let studentName = storedUser.full_name || storedUser.username || localStorage.getItem('username') || 'นักเรียน';
         document.getElementById('studentNameDisplay').innerText = studentName;
         document.getElementById('lobbySelfName').innerText = studentName;
+        if (storedUser.profile_image_url) {
+            const sbAv = document.querySelector('.user-profile .avatar');
+            if (sbAv) sbAv.innerHTML = `<img src="${storedUser.profile_image_url}" alt="Profile" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.remove();">`;
+        }
 
         async function submitJoinRoom() {
             const code = document.getElementById('inputRoomCode').value.trim();

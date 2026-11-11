@@ -19,3 +19,7 @@ class Config:
     # Google OAuth Settings
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+
+    # OCI Object Storage Settings
+    OCI_STORAGE_PAR_URL = os.getenv("OCI_STORAGE_PAR_URL", "")
+    OCI_PUBLIC_URL_PREFIX = os.getenv("OCI_PUBLIC_URL_PREFIX", "")

@@ -4,12 +4,14 @@ import re
 import random
 import urllib.parse
 import urllib.request
+import requests
 from datetime import timedelta
 from dotenv import load_dotenv
 from flask import Blueprint, current_app, jsonify, redirect, request, url_for
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from ..database import get_db_connection
+from ..services.storage_service import upload_profile_image
 
 auth_bp = Blueprint("auth", __name__)
 bcrypt = Bcrypt()
@@ -339,19 +341,36 @@ def login():
         return jsonify({"error": "กรุณากรอก Username และ Password"}), 400
 
     user = None
+    profile_img_val = None
     try:
         conn = get_db_connection()
         if conn is not None:
             with conn:
                 with conn.cursor() as cursor:
                     cursor.execute("""
-                        SELECT USER_ID, USERNAME, PASSWORD_HASH, FULL_NAME, EMAIL, ROLE
+                        SELECT COUNT(*)
+                        FROM all_tab_columns
+                        WHERE owner = 'U'
+                          AND table_name = 'USERS'
+                          AND column_name = 'PROFILE_IMAGE_URL'
+                    """)
+                    has_img_col = (cursor.fetchone()[0] or 0) >= 1
+                    col_str = "USER_ID, USERNAME, PASSWORD_HASH, FULL_NAME, EMAIL, ROLE"
+                    if has_img_col:
+                        col_str += ", PROFILE_IMAGE_URL"
+
+                    cursor.execute(f"""
+                        SELECT {col_str}
                         FROM U.USERS
                         WHERE UPPER(USERNAME) = UPPER(:username)
                            OR LOWER(EMAIL) = LOWER(:username)
                     """, username=username)
 
-                    user = cursor.fetchone()
+                    user_row = cursor.fetchone()
+                    if user_row:
+                        user = user_row[:6]
+                        if has_img_col and len(user_row) > 6:
+                            profile_img_val = user_row[6]
     except Exception as e:
         print("Login DB fallback:", e)
 
@@ -367,6 +386,7 @@ def login():
                     u["email"],
                     u["role"]
                 )
+                profile_img_val = u.get("profile_image_url")
                 break
 
     if user is None:
@@ -403,38 +423,163 @@ def login():
             "username": db_username,
             "full_name": full_name,
             "email": email,
-            "role": role
+            "role": role,
+            "profile_image_url": profile_img_val
         }
+    }), 200
+
+
+@auth_bp.route("/api/user/avatar", methods=["POST"])
+@jwt_required()
+def upload_any_user_avatar():
+    """อัปโหลดรูปภาพโปรไฟล์ของผู้ใช้ที่ล็อกอินอยู่ (รองรับทั้งนักเรียนและอาจารย์)"""
+    identity = get_jwt_identity()
+    try:
+        user_id = int(identity)
+    except (TypeError, ValueError):
+        return jsonify({"error": "รหัสผู้ใช้ไม่ถูกต้อง"}), 400
+
+    file = request.files.get("avatar") or request.files.get("file")
+    if not file:
+        return jsonify({"error": "กรุณาเลือกไฟล์รูปภาพที่ต้องการอัปโหลด"}), 400
+
+    ok, result = upload_profile_image(file, user_id)
+    if not ok:
+        return jsonify({"error": result}), 400
+
+    image_url = result
+
+    conn = get_db_connection()
+    if conn:
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT COUNT(*)
+                    FROM all_tab_columns
+                    WHERE owner = 'U'
+                      AND table_name = 'USERS'
+                      AND column_name = 'PROFILE_IMAGE_URL'
+                """)
+                if (cursor.fetchone()[0] or 0) == 0:
+                    cursor.execute("ALTER TABLE U.USERS ADD (PROFILE_IMAGE_URL VARCHAR2(500))")
+
+                cursor.execute(
+                    """
+                    UPDATE U.USERS
+                    SET PROFILE_IMAGE_URL = :url
+                    WHERE USER_ID = :user_id
+                    """,
+                    {"url": image_url, "user_id": user_id}
+                )
+                conn.commit()
+        except Exception as e:
+            print("Error updating avatar in DB:", e)
+            if conn:
+                conn.rollback()
+        finally:
+            conn.close()
+
+    if user_id in in_memory_users:
+        in_memory_users[user_id]["profile_image_url"] = image_url
+
+    return jsonify({
+        "message": "อัปโหลดรูปโปรไฟล์สำเร็จ",
+        "profile_image_url": image_url
+    }), 200
+
+
+@auth_bp.route("/api/user/avatar", methods=["DELETE"])
+@jwt_required()
+def delete_any_user_avatar():
+    """ลบรูปภาพโปรไฟล์ของผู้ใช้ที่ล็อกอินอยู่"""
+    identity = get_jwt_identity()
+    try:
+        user_id = int(identity)
+    except (TypeError, ValueError):
+        return jsonify({"error": "รหัสผู้ใช้ไม่ถูกต้อง"}), 400
+
+    conn = get_db_connection()
+    if conn:
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE U.USERS
+                    SET PROFILE_IMAGE_URL = NULL
+                    WHERE USER_ID = :user_id
+                    """,
+                    {"user_id": user_id}
+                )
+                conn.commit()
+        except Exception as e:
+            print("Error deleting avatar in DB:", e)
+            if conn:
+                conn.rollback()
+        finally:
+            conn.close()
+
+    if user_id in in_memory_users:
+        in_memory_users[user_id]["profile_image_url"] = None
+
+    return jsonify({
+        "message": "ลบรูปโปรไฟล์เรียบร้อยแล้ว",
+        "profile_image_url": None
     }), 200
 
 
 def _verify_google_tokens(id_token: str = "", access_token: str = ""):
     """ตรวจสอบ Token จริงกับ Google OAuth 2.0 API และดึงข้อมูลผู้ใช้ (email, name, sub)"""
+    custom_headers = {
+        "Accept": "application/json",
+        "User-Agent": "Typeclass-OAuth-Client/1.0"
+    }
+
     if id_token:
         url = f"https://oauth2.googleapis.com/tokeninfo?id_token={urllib.parse.quote(id_token)}"
-        req = urllib.request.Request(url, headers={"Accept": "application/json"})
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            info = json.loads(resp.read().decode("utf-8"))
-            client_id = current_app.config.get("GOOGLE_CLIENT_ID")
-            if client_id and info.get("aud") != client_id:
-                raise ValueError("Google Client ID mismatch")
-            return (
-                (info.get("email") or "").strip().lower(),
-                (info.get("name") or info.get("given_name") or "").strip(),
-                (info.get("sub") or "").strip(),
-            )
+        try:
+            resp = requests.get(url, headers=custom_headers, timeout=10)
+            if resp.ok:
+                info = resp.json()
+                client_id = current_app.config.get("GOOGLE_CLIENT_ID")
+                if client_id and info.get("aud") != client_id:
+                    raise ValueError("Google Client ID mismatch")
+                return (
+                    (info.get("email") or "").strip().lower(),
+                    (info.get("name") or info.get("given_name") or "").strip(),
+                    (info.get("sub") or "").strip(),
+                )
+            else:
+                raise ValueError(f"Google Tokeninfo error ({resp.status_code}): {resp.text[:120]}")
+        except Exception as e:
+            if isinstance(e, ValueError):
+                raise
+            raise ValueError(f"ไม่สามารถเชื่อมต่อ Google Tokeninfo ได้: {e}")
+
     if access_token:
-        req = urllib.request.Request(
-            "https://www.googleapis.com/oauth2/v3/userinfo",
-            headers={"Authorization": f"Bearer {access_token}", "Accept": "application/json"},
-        )
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            info = json.loads(resp.read().decode("utf-8"))
-            return (
-                (info.get("email") or "").strip().lower(),
-                (info.get("name") or info.get("given_name") or "").strip(),
-                (info.get("sub") or "").strip(),
-            )
+        headers = dict(custom_headers)
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # 1. ลองดึงข้อมูลจาก openidconnect endpoint
+        try:
+            resp = requests.get("https://openidconnect.googleapis.com/v1/userinfo", headers=headers, timeout=10)
+            if not resp.ok:
+                # 2. ลองดึงจาก oauth2/v3/userinfo endpoint สำรอง
+                resp = requests.get("https://www.googleapis.com/oauth2/v3/userinfo", headers=headers, timeout=10)
+
+            if resp.ok:
+                info = resp.json()
+                return (
+                    (info.get("email") or "").strip().lower(),
+                    (info.get("name") or info.get("given_name") or "").strip(),
+                    (info.get("sub") or "").strip(),
+                )
+            else:
+                raise ValueError(f"Google Userinfo error ({resp.status_code}): {resp.text[:120]}")
+        except Exception as e:
+            if isinstance(e, ValueError):
+                raise
+            raise ValueError(f"ไม่สามารถเชื่อมต่อ Google Userinfo ได้: {e}")
+
     return "", "", ""
 
 

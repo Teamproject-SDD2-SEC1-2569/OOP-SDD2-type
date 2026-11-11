@@ -187,6 +187,10 @@
         const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
         const displayName = storedUser.full_name || storedUser.username || localStorage.getItem('username') || 'นักเรียน';
         document.getElementById('sidebarStudentName').innerText = displayName;
+        if (storedUser.profile_image_url) {
+            const sbAv = document.querySelector('.user-profile .avatar');
+            if (sbAv) sbAv.innerHTML = `<img src="${storedUser.profile_image_url}" alt="Profile" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.remove();">`;
+        }
 
         // ควบคุม Profile Dropdown
         function toggleProfileMenu(event) {
