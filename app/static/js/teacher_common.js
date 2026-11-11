@@ -19,8 +19,13 @@
     };
 
     TC.logout = function () {
-        localStorage.clear();
-        window.location.href = '/';
+        if (typeof window.logout === 'function') {
+            window.logout(true);
+        } else {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.replace('/');
+        }
     };
 
     /** ป้องกันบัญชีที่ไม่ใช่อาจารย์เข้าหน้าอาจารย์ */
