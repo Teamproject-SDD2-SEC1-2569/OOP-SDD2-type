@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบห้องเรียนฝึกพิมพ์</title>
+    <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
+    <script>redirectIfAuthenticated();</script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: Arial, "Tahoma", sans-serif; background: #f4f8fc; color: #3d4652; }
