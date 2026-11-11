@@ -63,7 +63,13 @@
         const nameEl = document.querySelector('.user-profile .name');
         const avatarEl = document.querySelector('.user-profile .avatar');
         if (nameEl) nameEl.innerText = displayName;
-        if (avatarEl) avatarEl.innerText = TC.initials(fullName);
+        if (avatarEl) {
+            if (user.profile_image_url) {
+                avatarEl.innerHTML = `<img src="${user.profile_image_url}" alt="Profile" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.remove(); this.parentNode.innerText='${TC.initials(fullName)}';">`;
+            } else {
+                avatarEl.innerText = TC.initials(fullName);
+            }
+        }
 
         document.querySelectorAll('[data-logout]').forEach((el) => {
             el.addEventListener('click', (ev) => {

@@ -4,13 +4,38 @@ Student Web Views & API Controller
 """
 import os
 import random
+import logging
 from dotenv import load_dotenv
 from flask import Blueprint, current_app, jsonify, render_template, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from ..database import get_db_connection
+from ..services.storage_service import upload_profile_image
+from .auth_routes import in_memory_users
 from .teacher_routes import active_rooms, room_settings
 
+logger = logging.getLogger(__name__)
+
 student_bp = Blueprint('api', __name__)
+
+
+def _ensure_profile_image_column(cursor) -> bool:
+    """ตรวจสอบและเพิ่มคอลัมน์ PROFILE_IMAGE_URL ในตาราง U.USERS หากยังไม่มี"""
+    try:
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM all_tab_columns
+            WHERE owner = 'U'
+              AND table_name = 'USERS'
+              AND column_name = 'PROFILE_IMAGE_URL'
+            """
+        )
+        if (cursor.fetchone()[0] or 0) == 0:
+            cursor.execute("ALTER TABLE U.USERS ADD (PROFILE_IMAGE_URL VARCHAR2(500))")
+        return True
+    except Exception as e:
+        logger.warning(f"Note on PROFILE_IMAGE_URL column: {e}")
+        return False
 
 
 def _ensure_student_record(cursor, user_id: int) -> None:
@@ -180,6 +205,7 @@ def get_student_profile():
     try:
         with conn.cursor() as cursor:
             _ensure_student_record(cursor, user_id)
+            has_profile_img_col = _ensure_profile_image_column(cursor)
             conn.commit()
 
             cursor.execute(
@@ -193,40 +219,41 @@ def get_student_profile():
             )
             has_split_name_cols = (cursor.fetchone()[0] or 0) == 2
 
+            extra_cols = []
             if has_split_name_cols:
-                cursor.execute(
-                    """
-                    SELECT u.USER_ID, u.USERNAME, u.FULL_NAME, u.EMAIL, u.ROLE, u.CREATED_AT,
-                           s.STUDENT_CODE, s.MAJOR, u.FIRST_NAME, u.LAST_NAME
-                    FROM U.USERS u
-                    LEFT JOIN U.STUDENTS s ON u.USER_ID = s.STUDENT_ID
-                    WHERE u.USER_ID = :user_id
-                    """,
-                    {"user_id": user_id}
-                )
-            else:
-                cursor.execute(
-                    """
-                    SELECT u.USER_ID, u.USERNAME, u.FULL_NAME, u.EMAIL, u.ROLE, u.CREATED_AT,
-                           s.STUDENT_CODE, s.MAJOR
-                    FROM U.USERS u
-                    LEFT JOIN U.STUDENTS s ON u.USER_ID = s.STUDENT_ID
-                    WHERE u.USER_ID = :user_id
-                    """,
-                    {"user_id": user_id}
-                )
+                extra_cols.extend(["u.FIRST_NAME", "u.LAST_NAME"])
+            if has_profile_img_col:
+                extra_cols.append("u.PROFILE_IMAGE_URL")
+
+            extra_select = (", " + ", ".join(extra_cols)) if extra_cols else ""
+
+            cursor.execute(
+                f"""
+                SELECT u.USER_ID, u.USERNAME, u.FULL_NAME, u.EMAIL, u.ROLE, u.CREATED_AT,
+                       s.STUDENT_CODE, s.MAJOR{extra_select}
+                FROM U.USERS u
+                LEFT JOIN U.STUDENTS s ON u.USER_ID = s.STUDENT_ID
+                WHERE u.USER_ID = :user_id
+                """,
+                {"user_id": user_id}
+            )
             row = cursor.fetchone()
             if not row:
                 return jsonify({"error": "ไม่พบข้อมูลผู้ใช้"}), 404
 
             full_name_val = (row[2] or "").strip()
             name_parts = full_name_val.split(None, 1) if full_name_val else ["", ""]
-            first_name_val = (row[8] if has_split_name_cols and len(row) > 8 and row[8] else name_parts[0])
-            last_name_val = (
-                row[9]
-                if has_split_name_cols and len(row) > 9 and row[9]
-                else (name_parts[1] if len(name_parts) > 1 else "")
-            )
+            idx = 8
+            if has_split_name_cols:
+                first_name_val = row[idx] if len(row) > idx and row[idx] else name_parts[0]
+                idx += 1
+                last_name_val = row[idx] if len(row) > idx and row[idx] else (name_parts[1] if len(name_parts) > 1 else "")
+                idx += 1
+            else:
+                first_name_val = name_parts[0]
+                last_name_val = name_parts[1] if len(name_parts) > 1 else ""
+
+            profile_image_url = row[idx] if has_profile_img_col and len(row) > idx and row[idx] else None
 
             cursor.execute(
                 """
@@ -257,7 +284,8 @@ def get_student_profile():
                     "role": row[4],
                     "created_at": created_at_str,
                     "student_code": row[6] or f"68{row[0]:06d}",
-                    "major": row[7] or "General"
+                    "major": row[7] or "General",
+                    "profile_image_url": profile_image_url
                 },
                 "stats": {
                     "total_tests": int(stats_row[0] or 0),
@@ -391,6 +419,98 @@ def delete_student_profile():
         return jsonify({"error": f"ไม่สามารถลบบัญชีผู้ใช้ได้: {e}"}), 500
     finally:
         conn.close()
+
+
+@student_bp.route('/api/student/profile/avatar', methods=['POST'])
+@jwt_required()
+def upload_student_avatar():
+    """อัปโหลดรูปโปรไฟล์ของนักเรียน (รองรับ OCI Object Storage พร้อม Fallback บันทึกในเครื่อง)"""
+    identity = get_jwt_identity()
+    try:
+        user_id = int(identity)
+    except (TypeError, ValueError):
+        return jsonify({"error": "รหัสผู้ใช้ไม่ถูกต้อง"}), 400
+
+    file = request.files.get('avatar') or request.files.get('file')
+    if not file:
+        return jsonify({"error": "กรุณาเลือกไฟล์รูปภาพที่ต้องการอัปโหลด"}), 400
+
+    ok, result = upload_profile_image(file, user_id)
+    if not ok:
+        return jsonify({"error": result}), 400
+
+    image_url = result
+
+    # บันทึก URL ลงฐานข้อมูล Oracle
+    conn = get_db_connection()
+    if conn:
+        try:
+            with conn.cursor() as cursor:
+                _ensure_profile_image_column(cursor)
+                cursor.execute(
+                    """
+                    UPDATE U.USERS
+                    SET PROFILE_IMAGE_URL = :url
+                    WHERE USER_ID = :user_id
+                    """,
+                    {"url": image_url, "user_id": user_id}
+                )
+                conn.commit()
+        except Exception as e:
+            logger.error(f"Error updating avatar in DB: {e}")
+            if conn:
+                conn.rollback()
+        finally:
+            conn.close()
+
+    # อัปเดต In-Memory เผื่อไว้
+    if user_id in in_memory_users:
+        in_memory_users[user_id]["profile_image_url"] = image_url
+
+    return jsonify({
+        "message": "อัปโหลดรูปภาพโปรไฟล์สำเร็จ",
+        "profile_image_url": image_url
+    }), 200
+
+
+@student_bp.route('/api/student/profile/avatar', methods=['DELETE'])
+@jwt_required()
+def delete_student_avatar():
+    """ลบรูปโปรไฟล์ของนักเรียน (คืนค่าเป็นค่าเริ่มต้น)"""
+    identity = get_jwt_identity()
+    try:
+        user_id = int(identity)
+    except (TypeError, ValueError):
+        return jsonify({"error": "รหัสผู้ใช้ไม่ถูกต้อง"}), 400
+
+    conn = get_db_connection()
+    if conn:
+        try:
+            with conn.cursor() as cursor:
+                _ensure_profile_image_column(cursor)
+                cursor.execute(
+                    """
+                    UPDATE U.USERS
+                    SET PROFILE_IMAGE_URL = NULL
+                    WHERE USER_ID = :user_id
+                    """,
+                    {"user_id": user_id}
+                )
+                conn.commit()
+        except Exception as e:
+            logger.error(f"Error resetting avatar in DB: {e}")
+            if conn:
+                conn.rollback()
+        finally:
+            conn.close()
+
+    if user_id in in_memory_users:
+        in_memory_users[user_id]["profile_image_url"] = None
+
+    return jsonify({
+        "message": "ลบรูปโปรไฟล์เรียบร้อยแล้ว",
+        "profile_image_url": None
+    }), 200
 
 
 @student_bp.route('/api/student/classrooms', methods=['GET'])
