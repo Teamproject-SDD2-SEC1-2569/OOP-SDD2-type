@@ -4,6 +4,7 @@ import re
 import random
 import urllib.parse
 import urllib.request
+import requests
 from datetime import timedelta
 from dotenv import load_dotenv
 from flask import Blueprint, current_app, jsonify, redirect, request, url_for
@@ -528,31 +529,57 @@ def delete_any_user_avatar():
 
 def _verify_google_tokens(id_token: str = "", access_token: str = ""):
     """ตรวจสอบ Token จริงกับ Google OAuth 2.0 API และดึงข้อมูลผู้ใช้ (email, name, sub)"""
+    custom_headers = {
+        "Accept": "application/json",
+        "User-Agent": "Typeclass-OAuth-Client/1.0"
+    }
+
     if id_token:
         url = f"https://oauth2.googleapis.com/tokeninfo?id_token={urllib.parse.quote(id_token)}"
-        req = urllib.request.Request(url, headers={"Accept": "application/json"})
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            info = json.loads(resp.read().decode("utf-8"))
-            client_id = current_app.config.get("GOOGLE_CLIENT_ID")
-            if client_id and info.get("aud") != client_id:
-                raise ValueError("Google Client ID mismatch")
-            return (
-                (info.get("email") or "").strip().lower(),
-                (info.get("name") or info.get("given_name") or "").strip(),
-                (info.get("sub") or "").strip(),
-            )
+        try:
+            resp = requests.get(url, headers=custom_headers, timeout=10)
+            if resp.ok:
+                info = resp.json()
+                client_id = current_app.config.get("GOOGLE_CLIENT_ID")
+                if client_id and info.get("aud") != client_id:
+                    raise ValueError("Google Client ID mismatch")
+                return (
+                    (info.get("email") or "").strip().lower(),
+                    (info.get("name") or info.get("given_name") or "").strip(),
+                    (info.get("sub") or "").strip(),
+                )
+            else:
+                raise ValueError(f"Google Tokeninfo error ({resp.status_code}): {resp.text[:120]}")
+        except Exception as e:
+            if isinstance(e, ValueError):
+                raise
+            raise ValueError(f"ไม่สามารถเชื่อมต่อ Google Tokeninfo ได้: {e}")
+
     if access_token:
-        req = urllib.request.Request(
-            "https://www.googleapis.com/oauth2/v3/userinfo",
-            headers={"Authorization": f"Bearer {access_token}", "Accept": "application/json"},
-        )
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            info = json.loads(resp.read().decode("utf-8"))
-            return (
-                (info.get("email") or "").strip().lower(),
-                (info.get("name") or info.get("given_name") or "").strip(),
-                (info.get("sub") or "").strip(),
-            )
+        headers = dict(custom_headers)
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        # 1. ลองดึงข้อมูลจาก openidconnect endpoint
+        try:
+            resp = requests.get("https://openidconnect.googleapis.com/v1/userinfo", headers=headers, timeout=10)
+            if not resp.ok:
+                # 2. ลองดึงจาก oauth2/v3/userinfo endpoint สำรอง
+                resp = requests.get("https://www.googleapis.com/oauth2/v3/userinfo", headers=headers, timeout=10)
+
+            if resp.ok:
+                info = resp.json()
+                return (
+                    (info.get("email") or "").strip().lower(),
+                    (info.get("name") or info.get("given_name") or "").strip(),
+                    (info.get("sub") or "").strip(),
+                )
+            else:
+                raise ValueError(f"Google Userinfo error ({resp.status_code}): {resp.text[:120]}")
+        except Exception as e:
+            if isinstance(e, ValueError):
+                raise
+            raise ValueError(f"ไม่สามารถเชื่อมต่อ Google Userinfo ได้: {e}")
+
     return "", "", ""
 
 
