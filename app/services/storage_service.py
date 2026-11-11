@@ -105,3 +105,4 @@ def upload_profile_image(file_storage, user_id: int) -> Tuple[bool, str]:
     except Exception as local_err:
         logger.error(f"Local storage fallback failed: {local_err}")
         return False, "เกิดข้อผิดพลาดในการบันทึกรูปภาพลงระบบ"
+
