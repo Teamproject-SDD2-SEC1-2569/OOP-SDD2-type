@@ -2,6 +2,7 @@
 <html lang="th">
 
 <head>
+    <style id="auth-guard-style">html { display: none !important; }</style>
     <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
     <script>requireAuth('student');</script>
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>

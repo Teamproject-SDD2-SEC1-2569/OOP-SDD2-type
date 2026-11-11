@@ -12,6 +12,7 @@ from ..database import get_db_connection
 from ..services.storage_service import upload_profile_image
 from .auth_routes import in_memory_users
 from .teacher_routes import active_rooms, room_settings
+from .route_guards import view_require_auth, view_redirect_if_authenticated
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +122,7 @@ def _resolve_assignment_id(cursor, room_code: str = "") -> int:
 # ==================================================
 
 @student_bp.route('/')
+@view_redirect_if_authenticated()
 def login():
     """หน้าแรก: เข้าสู่ระบบสำหรับนักเรียนและอาจารย์"""
     load_dotenv(override=True)
@@ -131,54 +133,63 @@ def login():
 
 
 @student_bp.route('/register')
+@view_redirect_if_authenticated()
 def register():
     """หน้าสมัครสมาชิก"""
     return render_template('student/register.html')
 
 
 @student_bp.route("/join", methods=["GET"])
+@view_require_auth('student')
 def join_room_page():
     """หน้ารวม/กรอกรหัสเพื่อเข้าร่วมห้องเรียน"""
     return render_template("student/join.html")
 
 
 @student_bp.route('/classroom')
+@view_require_auth('student')
 def classroom():
     """หน้าห้องเรียนของนักเรียน"""
     return render_template('student/classroom.html')
 
 
 @student_bp.route('/progress')
+@view_require_auth('student')
 def progress():
     """หน้าดูความคืบหน้าและสถิติพัฒนาการ"""
     return render_template('student/progress.html')
 
 
 @student_bp.route('/typing')
+@view_require_auth('student')
 def typing():
     """หน้า Interactive Typing Arena สำหรับฝึกพิมพ์"""
     return render_template('student/typing.html')
 
 
 @student_bp.route('/classrooms')
+@view_require_auth('student')
 def student_classrooms_page():
     """หน้ารวมห้องเรียนของนักเรียน"""
     return render_template('student/classroom.html')
 
 
 @student_bp.route('/profile')
+@view_require_auth('student')
 def student_profile_page():
     """หน้าโปรไฟล์ของนักเรียน"""
     return render_template('student/profile.html')
 
 
 @student_bp.route('/history')
+@view_require_auth('student')
 def typing_history():
     """หน้าประวัติการพิมพ์ที่ผ่านมา"""
     return render_template('student/typing_history.html')
 
 
 @student_bp.route('/result')
+@view_require_auth('student')
 def typing_result():
     """หน้าสรุปผลคะแนนการพิมพ์"""
     return render_template('student/typing-result.html')

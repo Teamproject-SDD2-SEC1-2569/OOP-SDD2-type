@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบห้องเรียนฝึกพิมพ์</title>
+    <style id="auth-guard-style">html { display: none !important; }</style>
     <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
     <script>redirectIfAuthenticated();</script>
     <style>
@@ -169,18 +170,22 @@
             if (token) {
                 localStorage.setItem("token", token);
                 localStorage.setItem("accessToken", token);
+                document.cookie = "access_token=" + encodeURIComponent(token) + "; path=/; max-age=86400; SameSite=Lax";
             }
             if (data.user) {
                 localStorage.setItem("user", JSON.stringify(data.user));
                 localStorage.setItem("username", data.user.username || fallbackIdentifier);
+                if (data.user.role) {
+                    document.cookie = "user_role=" + encodeURIComponent(data.user.role) + "; path=/; max-age=86400; SameSite=Lax";
+                }
             }
 
             // 🌟 เช็ก Role จริงจาก Database เพื่อ Redirect 🌟
-            const userRole = data.user?.role;
-            if (userRole === "Teacher") {
-                window.location.href = "{{ url_for('teacher.teacher_dashboard_page') }}";
+            const userRole = (data.user?.role || "").trim().toLowerCase();
+            if (userRole === "teacher") {
+                window.location.replace("{{ url_for('teacher.teacher_dashboard_page') }}");
             } else {
-                window.location.href = "{{ url_for('api.classroom') }}";
+                window.location.replace("{{ url_for('api.classroom') }}");
             }
         }
 
