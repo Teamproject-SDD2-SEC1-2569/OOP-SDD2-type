@@ -86,7 +86,15 @@ pip install -r requirements.txt
 ```bash
 python run.py
 ```
-เปิดใช้งานผ่านเบราว์เซอร์ที่ `http://127.0.0.1:5000`
+เปิดใช้งานผ่านเบราว์เซอร์ที่ `http://127.0.0.1:5001` (หรือ `http://localhost:5001`)
+
+---
+
+## 📚 เอกสารประกอบโครงการ (Documentation)
+* [📘 คู่มือโครงสร้างระบบและฟังก์ชันฉบับละเอียด (Project Structure & Function Reference)](docs/PROJECT_STRUCTURE_AND_FUNCTION_REFERENCE.md)
+* [🗄️ แผนภาพฐานข้อมูล ER Diagram และ Data Dictionary (Oracle Cloud Database)](docs/oracle_database_erd.md)
+* [⚡ เอกสารระบบ WebSocket Real-time API Specification](docs/websocket_api_spec.md)
+* [🛠️ คู่มือการติดตั้งและทดสอบระบบ (Setup Guide)](docs/SETUP_GUIDE.md)
 
 ---
 
