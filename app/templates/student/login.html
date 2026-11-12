@@ -8,6 +8,8 @@
     <style id="auth-guard-style">html { display: none !important; }</style>
     <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
     <script>redirectIfAuthenticated();</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern_modal.css') }}">
+    <script src="{{ url_for('static', filename='js/modern_modal.js') }}"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -724,8 +726,17 @@
         async function handleLogin(e) {
             e.preventDefault();
 
-            const emailOrUsername = document.querySelector('input[name="username"]').value;
+            const emailOrUsername = document.querySelector('input[name="username"]').value.trim();
             const password = document.querySelector('input[name="password"]').value;
+
+            if (!emailOrUsername || !password) {
+                showModernPopup({
+                    type: 'warning',
+                    title: 'กรุณากรอกข้อมูล',
+                    message: 'กรุณากรอกชื่อผู้ใช้หรืออีเมล และรหัสผ่าน'
+                });
+                return;
+            }
 
             try {
                 const response = await fetch('/auth/login', {
@@ -744,11 +755,19 @@
                 if (response.ok) {
                     handleAuthSuccess(data, emailOrUsername);
                 } else {
-                    alert("เข้าสู่ระบบไม่สำเร็จ: " + (data.message || data.error || "กรุณาลองใหม่อีกครั้ง"));
+                    showModernPopup({
+                        type: 'error',
+                        title: 'เข้าสู่ระบบไม่สำเร็จ',
+                        message: data.message || data.error || 'กรุณาลองใหม่อีกครั้ง'
+                    });
                 }
             } catch (error) {
                 console.error("Error during login:", error);
-                alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+                showModernPopup({
+                    type: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'
+                });
             }
         }
 
@@ -812,13 +831,33 @@
                     }
                     handleAuthSuccess(data, email);
                 } else {
-                    alert("เข้าสู่ระบบด้วย Google ไม่สำเร็จ: " + (data.message || data.error || "กรุณาลองใหม่อีกครั้ง"));
+                    showModernPopup({
+                        type: 'error',
+                        title: 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ',
+                        message: data.message || data.error || 'กรุณาลองใหม่อีกครั้ง'
+                    });
                 }
             } catch (error) {
                 console.error("Error during Google login:", error);
-                alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+                showModernPopup({
+                    type: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'
+                });
             }
         }
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const errorMsg = params.get('error');
+            if (errorMsg) {
+                showModernPopup({
+                    type: 'error',
+                    title: 'แจ้งเตือน',
+                    message: decodeURIComponent(errorMsg)
+                });
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
     </script>
 </body>
 

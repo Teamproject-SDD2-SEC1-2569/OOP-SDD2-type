@@ -5,6 +5,8 @@
     <style id="auth-guard-style">html { display: none !important; }</style>
     <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
     <script>requireAuth('student');</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern_modal.css') }}">
+    <script src="{{ url_for('static', filename='js/modern_modal.js') }}"></script>
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -314,7 +316,14 @@
 
         async function submitJoinRoom() {
             const code = document.getElementById('inputRoomCode').value.trim();
-            if(!code) return alert('กรุณากรอกรหัสห้อง');
+            if(!code) {
+                showModernPopup({
+                    type: 'warning',
+                    title: 'กรุณากรอกข้อมูล',
+                    message: 'กรุณากรอกรหัสห้อง'
+                });
+                return;
+            }
 
             const roomCodeUpper = code.toUpperCase();
 
@@ -331,7 +340,11 @@
                     });
                     if (joinRes.status === 404) {
                         const errData = await joinRes.json();
-                        alert(errData.error || `ไม่พบห้องเรียนรหัส ${roomCodeUpper}`);
+                        showModernPopup({
+                            type: 'error',
+                            title: 'ไม่พบห้องเรียน',
+                            message: errData.error || `ไม่พบห้องเรียนรหัส ${roomCodeUpper}`
+                        });
                         return;
                     }
                 } catch (e) {
@@ -362,8 +375,15 @@
             }
         }
 
-        function exitRoom() {
-            if(confirm('ต้องการออกจากห้องสอบและกลับสู่โหมดฝึกซ้อมหรือไม่?')) {
+        async function exitRoom() {
+            const confirmed = await showModernConfirm({
+                type: 'warning',
+                title: 'ออกจากห้องสอบ',
+                message: 'ต้องการออกจากห้องสอบและกลับสู่โหมดฝึกซ้อมหรือไม่?',
+                confirmText: 'ออกจากห้อง',
+                cancelText: 'อยู่ต่อ'
+            });
+            if (confirmed) {
                 isExamMode = false;
                 currentRoom = '';
                 
