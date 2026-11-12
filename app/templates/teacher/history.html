@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* ================= สไตล์พื้นฐาน ================= */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Prompt', 'Inter', sans-serif; }
         body { background-color: #F4F7FC; height: 100vh; display: flex; overflow: hidden; }
         
@@ -47,55 +48,99 @@
 
         .content-scroll { flex: 1; overflow-y: auto; padding: 25px 30px; display: flex; flex-direction: column; gap: 20px; }
         .page-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .page-header h1 { color: #063376; font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+        .page-header h1 { color: #063376; font-size: 24px; font-weight: 700; margin-bottom: 5px; }
         .page-header p { color: #71829B; font-size: 14px; }
-        
-        /* Summary Stats */
-        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        .stat-box { padding: 15px 20px; background: #fff; border-radius: 16px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-        .stat-icon { width: 45px; height: 45px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 22px; }
-        .stat-info h4 { font-size: 22px; font-weight: 700; color: #063376; }
-        .stat-info p { font-size: 12px; color: #71829B; margin-top: 2px; }
+        .header-actions { display: flex; gap: 10px; }
 
-        .card { background: #fff; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(6, 51, 118, 0.03); }
-        .card-title { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;}
-        .card-title h3 { color: #063376; font-size: 18px; font-weight: 700; }
-        
-        .header-actions { display: flex; gap: 10px; align-items: center; }
-        .btn-primary { background: #288CF0; color: #fff; padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; transition: 0.2s;}
-        .btn-primary:hover { background: #1e70c4; }
-        .btn-outline { background: #fff; border: 1px solid #D8E7F4; color: #063376; padding: 10px 18px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; transition: 0.2s; }
+        .btn-primary { background: #288CF0; color: #fff; border: none; border-radius: 12px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; font-family: inherit; }
+        .btn-primary:hover { background: #1C74CC; }
+        .btn-outline { background: #fff; color: #063376; border: 1px solid #D8E7F4; border-radius: 12px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; font-family: inherit; }
         .btn-outline:hover { border-color: #288CF0; color: #288CF0; }
 
-        .filter-tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-        .search-box { position: relative; }
-        .search-box i { position: absolute; left: 15px; top: 12px; color: #71829B; }
-        .search-box input { padding: 10px 15px 10px 40px; border-radius: 12px; border: 1px solid #D8E7F4; outline: none; width: 220px; font-family: 'Prompt';}
-        .filter-select { padding: 10px 15px; border-radius: 12px; border: 1px solid #D8E7F4; outline: none; font-size: 14px; color: #063376; background-color: #fff; font-family: 'Prompt'; cursor: pointer;}
+        /* ================= Grid เลือกระดับห้องเรียน ================= */
+        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-top: 5px; }
+        .classroom-card { background: #fff; border-radius: 18px; padding: 22px 24px; border: 1px solid #D8E7F4; box-shadow: 0 4px 15px rgba(6, 51, 118, 0.04); transition: all 0.25s ease; display: flex; flex-direction: column; cursor: pointer; }
+        .classroom-card:hover { transform: translateY(-3px); border-color: #288CF0; box-shadow: 0 10px 25px rgba(40, 140, 240, 0.12); }
+        .classroom-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .classroom-code-pill { background: #E7F3FE; color: #288CF0; font-family: 'Inter', monospace; font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 8px; letter-spacing: 0.5px; }
+        .status-pill { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+        .status-pill.open { background: #E4F7F0; color: #20A873; }
+        .status-pill.closed { background: #FDEBED; color: #E95C68; }
+        .classroom-card-title { color: #063376; font-size: 17px; font-weight: 700; margin-bottom: 15px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .classroom-card-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: #F8FBFE; border-radius: 12px; padding: 12px 10px; margin-bottom: 18px; border: 1px solid #EBF3FA; }
+        .stat-item { text-align: center; }
+        .stat-item .val { font-size: 15px; font-weight: 700; color: #063376; font-family: 'Inter', sans-serif; }
+        .stat-item .lbl { font-size: 11px; color: #71829B; margin-top: 2px; }
+        .classroom-card-btn { width: 100%; height: 42px; background: #E7F3FE; color: #288CF0; border: none; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease; font-family: inherit; }
+        .classroom-card:hover .classroom-card-btn { background: #288CF0; color: #fff; }
+
+        /* All Rooms Summary Card */
+        .all-rooms-card { background: linear-gradient(135deg, #063376 0%, #1a4f9c 100%); color: #fff; border-color: transparent; }
+        .all-rooms-card:hover { border-color: transparent; box-shadow: 0 10px 30px rgba(6, 51, 118, 0.3); }
+        .all-rooms-card .classroom-card-title { color: #fff; }
+        .all-rooms-card .classroom-card-stats { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.15); }
+        .all-rooms-card .stat-item .val { color: #fff; }
+        .all-rooms-card .stat-item .lbl { color: #DDF0FD; }
+        .all-rooms-card .classroom-card-btn { background: rgba(255,255,255,0.2); color: #fff; }
+        .all-rooms-card:hover .classroom-card-btn { background: #fff; color: #063376; }
+
+        /* ================= Navigation Bar ของหน้ารายละเอียดห้อง ================= */
+        .room-nav-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background: #fff; border-radius: 16px; padding: 14px 20px; border: 1px solid #D8E7F4; box-shadow: 0 4px 15px rgba(6, 51, 118, 0.03); }
+        .room-nav-left { display: flex; align-items: center; gap: 12px; }
+        .btn-back-rooms { display: inline-flex; align-items: center; gap: 8px; background: #F4F7FC; color: #063376; border: 1px solid #D8E7F4; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+        .btn-back-rooms:hover { background: #E7F3FE; color: #288CF0; border-color: #B2DCFA; }
+        .room-title-badge { font-size: 16px; font-weight: 700; color: #063376; display: flex; align-items: center; gap: 10px; }
+        .room-quick-select { height: 38px; border-radius: 10px; border: 1px solid #D8E7F4; background: #F8FBFE; color: #063376; font-size: 13px; font-weight: 600; padding: 0 12px; outline: none; font-family: inherit; cursor: pointer; }
+
+        /* Stats Cards */
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .stat-box { background-color: #fff; border-radius: 16px; padding: 20px; border: 1px solid #D8E7F4; display: flex; align-items: center; gap: 15px; }
+        .stat-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; justify-content: center; align-items: center; font-size: 20px; }
+        .stat-info h4 { color: #063376; font-size: 20px; font-weight: 700; font-family: 'Inter'; }
+        .stat-info p { color: #71829B; font-size: 12px; }
+
+        /* Table Card */
+        .card { background: #fff; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(6, 51, 118, 0.03); border: 1px solid #D8E7F4; }
+        .card-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; }
+        .card-title h3 { color: #063376; font-size: 16px; font-weight: 700; }
         
+        .filter-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .search-box { display: flex; align-items: center; background: #F4F7FC; border-radius: 12px; padding: 8px 15px; width: 280px; border: 1px solid #D8E7F4; }
+        .search-box i { color: #71829B; margin-right: 10px; font-size: 14px; }
+        .search-box input { border: none; background: transparent; outline: none; width: 100%; color: #063376; font-size: 13px; font-family: inherit; }
+        .filter-select { background: #F4F7FC; border: 1px solid #D8E7F4; border-radius: 12px; padding: 8px 15px; color: #063376; font-size: 13px; font-weight: 500; outline: none; cursor: pointer; font-family: inherit; height: 38px; }
+
         table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { background: #F4F7FC; padding: 15px; color: #71829B; font-size: 13px; font-weight: 700; border-radius: 8px 8px 0 0;}
-        td { padding: 15px; border-bottom: 1px solid #D8E7F4; font-size: 14px; color: #17345C; font-weight: 500; }
-        tr:hover td { background-color: #f9fbff; }
-        .room-code-badge { background-color: #063376; color: #fff; padding: 5px 12px; border-radius: 6px; font-family: 'Inter'; font-weight: 700; font-size: 13px; letter-spacing: 1px;}
-        .status-badge { padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+        th { color: #71829B; font-size: 13px; font-weight: 600; padding: 12px 15px; border-bottom: 2px solid #F4F7FC; }
+        td { padding: 15px; border-bottom: 1px solid #F4F7FC; font-size: 14px; color: #17345C; vertical-align: middle; }
+        tr:hover td { background-color: #F8FAFC; }
+
+        .room-code-badge { background-color: #E7F3FE; color: #288CF0; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; font-family: 'Inter', monospace; }
+        
+        .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
         .status-pass { background-color: #E4F7F0; color: #20A873; }
         .status-fail { background-color: #FDEBED; color: #E95C68; }
-        .loading-state { text-align: center; padding: 40px; color: #71829B; }
+
+        .loading-state { text-align: center; color: #71829B; padding: 40px 0; font-size: 14px; }
     </style>
 </head>
 <body>
+
+    <!-- Sidebar -->
     <aside class="sidebar">
         <a href="{{ url_for('teacher.teacher_dashboard_page') }}" class="brand">
-            <div class="brand-icon"><i class="fa-regular fa-keyboard"></i></div>
-            <div class="brand-text"><h2>ห้องเรียนฝึกพิมพ์</h2><p>ระบบติดตามผลนักศึกษา</p></div>
+            <div class="brand-icon"><i class="fa-solid fa-keyboard"></i></div>
+            <div class="brand-text">
+                <h2>TypeClass</h2>
+                <p>Teacher Portal</p>
+            </div>
         </a>
 
         <div class="user-profile" onclick="toggleProfileMenu(event)">
-            <div class="avatar">อจ</div>
+            <div class="avatar" id="sidebarAvatar">T</div>
             <div class="user-info">
-                <div class="name">กำลังโหลด...</div>
-                <div class="role">อาจารย์ผู้สอน</div>
+                <div class="name" id="sidebarName">อาจารย์</div>
+                <div class="role">Teacher</div>
             </div>
             <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
             <div class="dropdown-menu" id="profileDropdown">
@@ -119,74 +164,107 @@
         </header>
 
         <main class="content-scroll">
-            <div class="page-header">
-                <div>
-                    <h1>รายงานผลคะแนนและประวัติการพิมพ์</h1>
-                    <p>ตรวจสอบผลการทดสอบย้อนหลังของแต่ละห้องเรียนและส่งออกเป็นไฟล์ CSV จากฐานข้อมูลจริง</p>
+
+            <!-- VIEW 1: เลือกระดับห้องเรียน (Classroom Grid View) -->
+            <div id="classroomGridView">
+                <div class="page-header">
+                    <div>
+                        <h1>รายงานผลคะแนนตามห้องเรียน</h1>
+                        <p>เลือกห้องเรียนเพื่อดูผลการทดสอบ ประวัติคะแนน และส่งออกข้อมูลของแต่ละห้อง</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn-outline" onclick="loadData()"><i class="fa-solid fa-rotate"></i> รีเฟรช</button>
+                        <button class="btn-primary" onclick="openAllHistoryView()"><i class="fa-solid fa-chart-pie"></i> ดูผลคะแนนรวมทุกห้อง</button>
+                    </div>
                 </div>
-                <div class="header-actions">
-                    <button class="btn-outline" onclick="loadHistory()"><i class="fa-solid fa-rotate"></i> รีเฟรช</button>
-                    <button class="btn-primary" onclick="exportHistoryCSV()"><i class="fa-solid fa-file-csv"></i> ส่งออกรายงาน (Export CSV)</button>
-                </div>
-            </div>
-            
-            <!-- สรุปสถิติจริงจากฐานข้อมูล -->
-            <div class="stats-row">
-                <div class="stat-box">
-                    <div class="stat-icon" style="background: #E7F3FE; color: #288CF0;"><i class="fa-solid fa-file-lines"></i></div>
-                    <div class="stat-info"><h4 id="statTotalTests">- ครั้ง</h4><p>จำนวนการทดสอบทั้งหมด</p></div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-icon" style="background: #FFF3DD; color: #F2A93B;"><i class="fa-solid fa-gauge-high"></i></div>
-                    <div class="stat-info"><h4 id="statAvgWpm">- WPM</h4><p>ความเร็วเฉลี่ย (WPM)</p></div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-icon" style="background: #E4F7F0; color: #20A873;"><i class="fa-solid fa-bullseye"></i></div>
-                    <div class="stat-info"><h4 id="statAvgAcc">-%</h4><p>ความแม่นยำเฉลี่ย</p></div>
+
+                <div class="room-grid" id="roomGridContainer">
+                    <div class="loading-state" style="grid-column: 1 / -1;"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดห้องเรียน...</div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-title">
-                    <h3>บันทึกประวัติการทดสอบ (<span id="historyRowCount">0</span> รายการ)</h3>
-                    <div class="filter-tools">
-                        <div class="search-box">
-                            <i class="fa-solid fa-search"></i>
-                            <input type="text" id="searchInput" placeholder="ค้นหาชื่อ, รหัสนักศึกษา..." oninput="renderTable()">
+            <!-- VIEW 2: ตารางรายงานผลคะแนนของห้องที่เลือก (History Table View) -->
+            <div id="historyTableView" style="display: none; display: flex; flex-direction: column; gap: 20px;">
+                <div class="room-nav-bar">
+                    <div class="room-nav-left">
+                        <button class="btn-back-rooms" onclick="showClassroomGrid()"><i class="fa-solid fa-arrow-left"></i> ย้อนกลับไปเลือกห้องเรียน</button>
+                        <div class="room-title-badge">
+                            <span id="roomTitleText">ห้องเรียน</span>
+                            <span class="room-code-badge" id="roomBadgeText">TYP-XXXX</span>
                         </div>
-                        <select class="filter-select" id="roomFilter" onchange="loadHistory()">
-                            <option value="">แสดงผลทุกห้องเรียน</option>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 13px; color: #71829B;">สลับห้อง:</span>
+                        <select class="room-quick-select" id="roomQuickSelect" onchange="onQuickSelectChange(this.value)">
+                            <option value="">กำลังโหลด...</option>
                         </select>
+                        <button class="btn-primary" onclick="exportHistoryCSV()"><i class="fa-solid fa-file-csv"></i> ส่งออกรายงาน (CSV)</button>
                     </div>
                 </div>
-                <div style="overflow-x: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>วันที่ - เวลา</th>
-                                <th>รหัสห้อง</th>
-                                <th>รหัสนักศึกษา</th>
-                                <th>ชื่อนักศึกษา</th>
-                                <th>ความเร็ว (WPM)</th>
-                                <th>ความแม่นยำ (%)</th>
-                                <th>คำผิด</th>
-                                <th>คะแนน</th>
-                                <th>ผลประเมิน</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTableBody">
-                            <tr><td colspan="9" class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดประวัติผลคะแนน...</td></tr>
-                        </tbody>
-                    </table>
+
+                <!-- สรุปสถิติจริงของห้องนี้ -->
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-icon" style="background: #E7F3FE; color: #288CF0;"><i class="fa-solid fa-file-lines"></i></div>
+                        <div class="stat-info"><h4 id="statTotalTests">- ครั้ง</h4><p>จำนวนการทดสอบในห้องนี้</p></div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon" style="background: #FFF3DD; color: #F2A93B;"><i class="fa-solid fa-gauge-high"></i></div>
+                        <div class="stat-info"><h4 id="statAvgWpm">- WPM</h4><p>ความเร็วเฉลี่ย (WPM)</p></div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon" style="background: #E4F7F0; color: #20A873;"><i class="fa-solid fa-bullseye"></i></div>
+                        <div class="stat-info"><h4 id="statAvgAcc">-%</h4><p>ความแม่นยำเฉลี่ย</p></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">
+                        <h3>บันทึกประวัติการทดสอบ (<span id="historyRowCount">0</span> รายการ)</h3>
+                        <div class="filter-tools">
+                            <div class="search-box">
+                                <i class="fa-solid fa-search"></i>
+                                <input type="text" id="searchInput" placeholder="ค้นหาชื่อ, รหัสนักศึกษา..." oninput="renderTable()">
+                            </div>
+                            <select class="filter-select" id="statusFilter" onchange="renderTable()">
+                                <option value="all">ผลประเมินทั้งหมด</option>
+                                <option value="pass">เฉพาะผ่านเกณฑ์</option>
+                                <option value="fail">เฉพาะควรปรับปรุง</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>วันที่ - เวลา</th>
+                                    <th>รหัสห้อง</th>
+                                    <th>รหัสนักศึกษา</th>
+                                    <th>ชื่อนักศึกษา</th>
+                                    <th>ความเร็ว (WPM)</th>
+                                    <th>ความแม่นยำ (%)</th>
+                                    <th>คำผิด</th>
+                                    <th>คะแนน</th>
+                                    <th>ผลประเมิน</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <tr><td colspan="9" class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดประวัติผลคะแนน...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+
         </main>
     </div>
 
     <script src="{{ url_for('static', filename='js/teacher_common.js') }}"></script>
     <script>
+        let allRooms = [];
         let allHistory = [];
-        let availableRooms = [];
+        let currentRoomCode = null; // null = grid, "ALL" = all rooms, or room code
+        let currentRoomInfo = null;
 
         function toggleProfileMenu(event) {
             event.stopPropagation();
@@ -202,16 +280,150 @@
             }
         }
 
-        async function loadHistory() {
-            const selectedRoom = document.getElementById('roomFilter').value;
-            const queryParam = selectedRoom ? `?room_code=${encodeURIComponent(selectedRoom)}` : '';
+        // โหลดข้อมูลห้องเรียนและตรวจสอบ Query Parameter
+        async function loadData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomFromUrl = urlParams.get('room_code');
+
+            if (roomFromUrl) {
+                await selectRoom(roomFromUrl, false);
+            } else {
+                await fetchRoomsAndRenderGrid();
+            }
+        }
+
+        async function fetchRoomsAndRenderGrid() {
+            currentRoomCode = null;
+            document.getElementById('classroomGridView').style.display = 'block';
+            document.getElementById('historyTableView').style.display = 'none';
+
+            const container = document.getElementById('roomGridContainer');
+            container.innerHTML = `<div class="loading-state" style="grid-column: 1 / -1;"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดห้องเรียน...</div>`;
+
+            const { ok, data } = await TC.api('/teacher/api/history?room_code=ALL');
+            if (!ok) {
+                container.innerHTML = `<div class="loading-state" style="grid-column: 1 / -1; color:#E95C68;">${TC.escape(data.error || 'โหลดข้อมูลห้องเรียนไม่สำเร็จ')}</div>`;
+                return;
+            }
+
+            allRooms = data.rooms || [];
+            const overallStats = data.stats || {};
+            renderRoomGrid(allRooms, overallStats);
+        }
+
+        function renderRoomGrid(rooms, overallStats) {
+            const container = document.getElementById('roomGridContainer');
+            if (!rooms || rooms.length === 0) {
+                container.innerHTML = `
+                    <div class="loading-state" style="grid-column: 1 / -1; padding: 60px 0;">
+                        <i class="fa-solid fa-chalkboard" style="font-size: 40px; margin-bottom: 15px; color:#B2DCFA;"></i>
+                        <h3 style="color:#063376; margin-bottom:8px;">ยังไม่มีห้องเรียน</h3>
+                        <p style="color:#71829B;">คุณยังไม่ได้สร้างห้องเรียนในระบบ ไปที่เมนู "ภาพรวมห้องเรียน" เพื่อสร้างห้องใหม่</p>
+                    </div>`;
+                return;
+            }
+
+            let html = `
+                <!-- การ์ดรายงานผลรวมทุกห้อง -->
+                <div class="classroom-card all-rooms-card" onclick="selectRoom('ALL', true)">
+                    <div class="classroom-card-header">
+                        <span class="classroom-code-pill" style="background: rgba(255,255,255,0.2); color:#fff;"><i class="fa-solid fa-chart-pie"></i> ทุกห้องเรียน</span>
+                        <span class="status-pill open" style="background: rgba(255,255,255,0.2); color:#fff;"><i class="fa-solid fa-globe"></i> ทั้งหมด</span>
+                    </div>
+                    <div class="classroom-card-title">รายงานผลคะแนนรวมทุกห้อง</div>
+                    <div class="classroom-card-stats">
+                        <div class="stat-item">
+                            <div class="val">${overallStats.total_tests || 0}</div>
+                            <div class="lbl">การทดสอบรวม</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="val">${overallStats.avg_wpm || 0}</div>
+                            <div class="lbl">WPM เฉลี่ยรวม</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="val">${overallStats.avg_accuracy || 0}%</div>
+                            <div class="lbl">แม่นยำเฉลี่ย</div>
+                        </div>
+                    </div>
+                    <button type="button" class="classroom-card-btn">
+                        ดูผลคะแนนรวมทุกห้อง <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            `;
+
+            html += rooms.map(r => {
+                const isClosed = r.status === 'closed';
+                const statusBadge = isClosed 
+                    ? `<span class="status-pill closed"><i class="fa-solid fa-lock"></i> ปิดแล้ว</span>`
+                    : `<span class="status-pill open"><i class="fa-solid fa-circle" style="font-size:6px;"></i> เปิดทดสอบ</span>`;
+
+                return `
+                <div class="classroom-card" onclick="selectRoom('${TC.escape(r.room_code)}', true)">
+                    <div class="classroom-card-header">
+                        <span class="classroom-code-pill">${TC.escape(r.room_code)}</span>
+                        ${statusBadge}
+                    </div>
+                    <div class="classroom-card-title" title="${TC.escape(r.room_name)}">${TC.escape(r.room_name)}</div>
+                    <div class="classroom-card-stats">
+                        <div class="stat-item">
+                            <div class="val">${r.total_tests || 0}</div>
+                            <div class="lbl">ส่งผลสอบ (ครั้ง)</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="val">${r.avg_wpm || 0}</div>
+                            <div class="lbl">WPM เฉลี่ย</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="val">${r.avg_accuracy || 0}%</div>
+                            <div class="lbl">แม่นยำเฉลี่ย</div>
+                        </div>
+                    </div>
+                    <button type="button" class="classroom-card-btn">
+                        ดูรายงานผลคะแนนห้องนี้ <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>`;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        // เลือกห้องเรียนและแสดงตารางคะแนนเฉพาะห้องนั้น
+        async function selectRoom(roomCode, updateHistory = true) {
+            currentRoomCode = roomCode;
+            if (updateHistory) {
+                const newUrl = roomCode === 'ALL' ? window.location.pathname + '?room_code=ALL' : window.location.pathname + '?room_code=' + encodeURIComponent(roomCode);
+                window.history.pushState({ room_code: roomCode }, '', newUrl);
+            }
+
+            document.getElementById('classroomGridView').style.display = 'none';
+            document.getElementById('historyTableView').style.display = 'flex';
+
             const tbody = document.getElementById('historyTableBody');
             tbody.innerHTML = `<tr><td colspan="9" class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลดประวัติผลคะแนน...</td></tr>`;
 
+            const queryParam = (roomCode && roomCode !== 'ALL') ? `?room_code=${encodeURIComponent(roomCode)}` : '?room_code=ALL';
             const { ok, data } = await TC.api(`/teacher/api/history${queryParam}`);
             if (!ok) {
                 tbody.innerHTML = `<tr><td colspan="9" class="loading-state" style="color:#E95C68;">${TC.escape(data.error || 'โหลดประวัติไม่สำเร็จ')}</td></tr>`;
                 return;
+            }
+
+            allRooms = data.rooms || [];
+            currentRoomInfo = data.current_room || null;
+            allHistory = data.history || [];
+
+            updateQuickSelectDropdown(roomCode);
+
+            // ปรับแต่งหัวข้อห้อง
+            if (roomCode === 'ALL') {
+                document.getElementById('roomTitleText').innerText = 'ผลคะแนนรวมทุกห้องเรียน';
+                document.getElementById('roomBadgeText').innerText = 'ALL';
+            } else if (currentRoomInfo) {
+                document.getElementById('roomTitleText').innerText = currentRoomInfo.room_name;
+                document.getElementById('roomBadgeText').innerText = currentRoomInfo.room_code;
+            } else {
+                document.getElementById('roomTitleText').innerText = `ห้องรหัส ${roomCode}`;
+                document.getElementById('roomBadgeText').innerText = roomCode;
             }
 
             const stats = data.stats || {};
@@ -219,38 +431,68 @@
             document.getElementById('statAvgWpm').innerText = `${stats.avg_wpm ?? 0} WPM`;
             document.getElementById('statAvgAcc').innerText = `${stats.avg_accuracy ?? 0}%`;
 
-            availableRooms = data.rooms || [];
-            updateRoomFilterDropdown(selectedRoom);
-
-            allHistory = data.history || [];
             renderTable();
         }
 
-        function updateRoomFilterDropdown(currentSelection) {
-            const select = document.getElementById('roomFilter');
-            const options = ['<option value="">แสดงผลทุกห้องเรียน</option>'];
-            availableRooms.forEach(r => {
-                const isSelected = r.room_code === currentSelection ? 'selected' : '';
-                options.push(`<option value="${TC.escape(r.room_code)}" ${isSelected}>${TC.escape(r.room_name)} (${TC.escape(r.room_code)})</option>`);
+        function showClassroomGrid() {
+            currentRoomCode = null;
+            window.history.pushState({}, '', window.location.pathname);
+            fetchRoomsAndRenderGrid();
+        }
+
+        window.onpopstate = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const r = urlParams.get('room_code');
+            if (r) {
+                selectRoom(r, false);
+            } else {
+                showClassroomGrid();
+            }
+        };
+
+        function updateQuickSelectDropdown(selectedCode) {
+            const select = document.getElementById('roomQuickSelect');
+            const options = ['<option value="ALL">รวมทุกห้องเรียน (ALL)</option>'];
+            allRooms.forEach(r => {
+                const isSel = r.room_code === selectedCode ? 'selected' : '';
+                options.push(`<option value="${TC.escape(r.room_code)}" ${isSel}>${TC.escape(r.room_name)} (${TC.escape(r.room_code)})</option>`);
             });
             select.innerHTML = options.join('');
+        }
+
+        function onQuickSelectChange(newRoomCode) {
+            if (newRoomCode) {
+                selectRoom(newRoomCode, true);
+            }
+        }
+
+        function openAllHistoryView() {
+            selectRoom('ALL', true);
         }
 
         function renderTable() {
             const tbody = document.getElementById('historyTableBody');
             const q = document.getElementById('searchInput').value.toLowerCase().trim();
-            const list = allHistory.filter(h =>
-                !q ||
-                (h.student_code && h.student_code.toLowerCase().includes(q)) ||
-                (h.full_name && h.full_name.toLowerCase().includes(q)) ||
-                (h.room_code && h.room_code.toLowerCase().includes(q)) ||
-                (h.room_name && h.room_name.toLowerCase().includes(q))
-            );
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            const list = allHistory.filter(h => {
+                const matchSearch = !q ||
+                    (h.student_code && h.student_code.toLowerCase().includes(q)) ||
+                    (h.full_name && h.full_name.toLowerCase().includes(q)) ||
+                    (h.room_code && h.room_code.toLowerCase().includes(q)) ||
+                    (h.room_name && h.room_name.toLowerCase().includes(q));
+                
+                const matchStatus = statusFilter === 'all' || 
+                    (statusFilter === 'pass' && h.passed) ||
+                    (statusFilter === 'fail' && !h.passed);
+
+                return matchSearch && matchStatus;
+            });
 
             document.getElementById('historyRowCount').innerText = list.length;
 
             if (allHistory.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="loading-state">ยังไม่มีประวัติการส่งผลคะแนนในห้องเรียนของคุณ</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="loading-state">ยังไม่มีประวัติการส่งผลคะแนนในห้องเรียนนี้</td></tr>`;
                 return;
             }
             if (list.length === 0) {
@@ -300,13 +542,13 @@
                     h.passed ? 'Passed' : 'Needs Improvement'
                 ]);
             });
-            const roomPrefix = document.getElementById('roomFilter').value || 'All_Rooms';
-            TC.downloadCSV(`Typing_Report_${roomPrefix}_${new Date().toISOString().slice(0, 10)}.csv`, rows);
+            const roomPrefix = (currentRoomCode && currentRoomCode !== 'ALL') ? `Report_${currentRoomCode}` : 'Report_All_Rooms';
+            TC.downloadCSV(`Typing_${roomPrefix}_${new Date().toISOString().slice(0, 10)}.csv`, rows);
         }
 
         if (TC.guardTeacher()) {
             TC.renderSidebarUser();
-            loadHistory();
+            loadData();
         }
     </script>
 </body>
