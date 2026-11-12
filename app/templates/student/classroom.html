@@ -1,177 +1,405 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ห้องเรียน | TypeClass</title>
+    <title>ห้องเรียนของฉัน - ระบบห้องเรียนฝึกพิมพ์</title>
+    <style id="auth-guard-style">html { display: none !important; }</style>
+    <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
+    <script>requireAuth('student');</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern_modal.css') }}">
+    <script src="{{ url_for('static', filename='js/modern_modal.js') }}"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; font-family: Arial, "Noto Sans Thai", sans-serif; background: #f7fbff; color: #29445f; }
-        .classroom-page { width: 100%; min-height: 100vh; display: flex; background: #f7fbff; }
-        .sidebar { width: 245px; min-width: 245px; min-height: 100vh; padding: 30px 20px; background: #ffffff; border-right: 1px solid #e5edf5; }
-        .profile { text-align: center; padding-bottom: 30px; border-bottom: 1px solid #edf2f7; }
-        .profile-avatar { width: 70px; height: 70px; margin: 0 auto; border-radius: 50%; background: #dceeff; display: flex; align-items: center; justify-content: center; font-size: 35px; }
-        .profile h3 { margin: 12px 0 5px; font-size: 16px; color: #385a76; }
-        .profile span { font-size: 13px; color: #8ca0b3; }
-        .menu { margin-top: 30px; }
-        .menu-item { display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin-bottom: 10px; border-radius: 12px; color: #6d8296; text-decoration: none; font-size: 15px; transition: 0.2s; }
-        .menu-item:hover, .menu-item.active { background: #eaf5ff; color: #4c98d8; }
-        .menu-icon { width: 25px; text-align: center; font-size: 19px; }
-        .logout { margin-top: 30px; color: #e77d7d; }
-        .main-content { flex: 1; min-width: 500px; padding: 45px 40px; display: flex; justify-content: center; align-items: center; }
-        .join-card { width: 100%; max-width: 600px; text-align: center; }
-        .illustration { width: 210px; height: 170px; margin: 0 auto 25px; position: relative; background: #eaf6ff; border-radius: 45% 55% 50% 50%; display: flex; align-items: center; justify-content: center; }
-        .keyboard { font-size: 70px; }
-        .trophy { position: absolute; top: 10px; right: 25px; font-size: 40px; }
-        .clock { position: absolute; bottom: 15px; left: 20px; font-size: 35px; }
-        .join-card h1 { margin: 0; font-size: 32px; color: #315b80; }
-        .description { margin: 12px 0 30px; color: #91a2b2; font-size: 15px; }
-        .input-wrapper { width: 100%; display: flex; align-items: center; background: #ffffff; border: 1px solid #d8e4ee; border-radius: 15px; padding: 0 18px; margin-bottom: 18px; }
-        .input-icon { font-size: 22px; color: #8cb9df; }
-        .room-input { width: 100%; border: none; outline: none; padding: 17px 12px; font-size: 16px; color: #405d75; background: transparent; }
-        .room-input::placeholder { color: #a9b8c5; }
-        .join-button { width: 100%; border: none; border-radius: 15px; padding: 16px; background: #62a7e5; color: #ffffff; font-size: 17px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .join-button:hover { background: #438fd1; }
-        .right-panel { width: 390px; min-width: 390px; padding: 45px 30px; background: #f7fbff; }
-        .leaderboard { width: 100%; padding: 25px; background: #ffffff; border: 1px solid #e2edf6; border-radius: 20px; box-shadow: 0 5px 18px rgba(70, 130, 180, 0.08); }
-        .leaderboard-title { display: flex; align-items: center; gap: 10px; margin-bottom: 25px; }
-        .leaderboard-title span { font-size: 25px; }
-        .leaderboard-title h2 { margin: 0; font-size: 21px; color: #315b80; }
-        .rank-header { display: grid; grid-template-columns: 60px 1fr 70px; align-items: center; padding: 0 10px 12px; border-bottom: 1px solid #edf2f7; color: #9aabb9; font-size: 13px; }
-        .rank-header span:nth-child(1) { text-align: center; }
-        .rank-header span:nth-child(2) { text-align: left; }
-        .rank-header span:nth-child(3) { text-align: right; }
-        .rank-item { display: grid; grid-template-columns: 60px 1fr 70px; align-items: center; min-height: 70px; padding: 10px; border-bottom: 1px solid #f0f4f8; }
-        .rank-item:last-child { border-bottom: none; }
-        .rank-number { text-align: center; font-size: 22px; }
-        .rank-user { min-width: 0; display: flex; align-items: center; gap: 10px; }
-        .avatar-small { width: 38px; height: 38px; min-width: 38px; border-radius: 50%; background: #eaf5ff; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-        .rank-user span { font-size: 14px; color: #526f88; white-space: nowrap; }
-        .score { text-align: right; font-size: 15px; font-weight: bold; color: #4c98d8; }
-        .hint { display: flex; align-items: flex-start; gap: 14px; margin-top: 20px; padding: 18px; background: #eaf6ff; border: 1px solid #d8ebfa; border-radius: 16px; }
-        .hint-icon { font-size: 24px; flex-shrink: 0; }
-        .hint strong { display: block; margin-bottom: 7px; font-size: 15px; color: #3973a4; }
-        .hint p { margin: 0; font-size: 13px; line-height: 1.6; color: #7693aa; }
-        @media (max-width: 1100px) {
-            .sidebar { width: 200px; min-width: 200px; }
-            .main-content { min-width: 430px; padding: 30px 20px; }
-            .right-panel { width: 340px; min-width: 340px; padding: 35px 20px; }
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Prompt', 'Inter', sans-serif; }
+        body { background-color: #F4F7FC; height: 100vh; display: flex; overflow: hidden; }
+        
+        /* ================= SIDEBAR ================= */
+        .sidebar { width: 260px; background-color: #fff; padding: 25px 20px; display: flex; flex-direction: column; z-index: 10; border-right: 1px solid #D8E7F4; flex-shrink: 0;}
+        .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; text-decoration: none;}
+        .brand-icon { width: 40px; height: 40px; background-color: #288CF0; border-radius: 12px; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 20px; }
+        .brand-text h2 { color: #17345C; font-size: 16px; font-weight: 700; }
+        .brand-text p { color: #71829B; font-size: 11px; }
+        
+        /* Profile Dropdown */
+        .user-profile { background-color: #F4F7FC; padding: 12px; border-radius: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 30px; position: relative; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
+        .user-profile:hover { border-color: #288CF0; }
+        .avatar { width: 40px; height: 40px; background-color: #DDF0FD; border: 2px solid #288CF0; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #288CF0; font-size: 18px; flex-shrink: 0;}
+        .user-info { flex: 1; overflow: hidden; }
+        .user-info .name { color: #17345C; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-info .role { color: #20A873; font-size: 12px; font-weight: 600; }
+        
+        .dropdown-menu { display: none; position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: #fff; border-radius: 12px; box-shadow: 0 5px 15px rgba(23, 52, 92, 0.1); flex-direction: column; overflow: hidden; z-index: 100; border: 1px solid #D8E7F4; }
+        .dropdown-menu.show { display: flex; }
+        .dropdown-menu a { padding: 12px 15px; color: #17345C; text-decoration: none; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .dropdown-menu a:hover { background: #F4F7FC; color: #288CF0; }
+        .dropdown-menu a.text-danger:hover { color: #E95C68; background: #FDEBED; }
+
+        .menu-list { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+        .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; color: #71829B; text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.2s; }
+        .menu-item:hover { background-color: #F4F7FC; color: #17345C; }
+        .menu-item.active { background-color: #288CF0; color: #fff; font-weight: 700; box-shadow: 0 4px 10px rgba(40, 140, 240, 0.2); }
+        .menu-item i { font-size: 18px; width: 24px; text-align: center; }
+
+        /* ================= MAIN CONTENT ================= */
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .topbar { padding: 25px 30px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .content-scroll { flex: 1; overflow-y: auto; padding: 0 30px 30px 30px; display: flex; flex-direction: column; gap: 20px; }
+        
+        .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;}
+        .page-header h1 { color: #17345C; font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+        .page-header p { color: #71829B; font-size: 14px; }
+        
+        .btn-primary { background: #288CF0; color: #fff; padding: 12px 20px; border-radius: 14px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s;}
+        .btn-primary:hover { background: #1e70c4; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(40, 140, 240, 0.2);}
+
+        /* ================= ROOM CARDS GRID ================= */
+        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        
+        .room-card { background: #fff; border-radius: 20px; padding: 25px; box-shadow: 0 4px 20px rgba(6, 51, 118, 0.04); border: 1px solid #e4edf3; display: flex; flex-direction: column; gap: 15px; transition: 0.2s;}
+        .room-card:hover { border-color: #B8DCFF; box-shadow: 0 8px 25px rgba(6, 51, 118, 0.08);}
+        
+        .room-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .room-code-badge { background: #17345C; color: #fff; padding: 6px 12px; border-radius: 8px; font-family: 'Inter'; font-size: 14px; font-weight: 700; letter-spacing: 1px;}
+        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;}
+        .status-badge.live { background: #E4F7F0; color: #20A873; }
+        .status-badge.closed { background: #F4F7FC; color: #71829B; }
+        
+        .room-title { font-size: 18px; font-weight: 700; color: #17345C; line-height: 1.4; margin-bottom: 5px;}
+        .room-teacher { font-size: 13px; color: #71829B; display: flex; align-items: center; gap: 8px;}
+        
+        .room-stats { display: flex; gap: 15px; padding: 15px 0; border-top: 1px dashed #D8E7F4; border-bottom: 1px dashed #D8E7F4; margin-top: 5px;}
+        .r-stat { display: flex; flex-direction: column; gap: 3px; flex: 1;}
+        .r-stat-label { font-size: 11px; color: #71829B; font-weight: 600; text-transform: uppercase;}
+        .r-stat-val { font-size: 15px; font-weight: 700; color: #17345C; font-family: 'Inter';}
+        
+        .room-actions { display: flex; gap: 10px; margin-top: auto; padding-top: 10px;}
+        .btn-enter { flex: 1; background: #E7F3FE; color: #288CF0; padding: 10px; border-radius: 10px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none;}
+        .btn-enter:hover { background: #288CF0; color: #fff; }
+        .btn-leave { width: 42px; height: 42px; background: #fff; border: 1px solid #D8E7F4; color: #71829B; border-radius: 10px; font-size: 16px; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center;}
+        .btn-leave:hover { color: #E95C68; border-color: #E95C68; background: #FDEBED;}
+
+        /* ================= JOIN ROOM MODAL ================= */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(23, 52, 92, 0.5); display: none; justify-content: center; align-items: center; z-index: 200; backdrop-filter: blur(3px);}
+        .modal-overlay.show { display: flex; }
+        .modal-card { background: #fff; width: 100%; max-width: 450px; border-radius: 24px; padding: 40px; box-shadow: 0 15px 40px rgba(0,0,0,0.15); display: flex; flex-direction: column; align-items: center; text-align: center;}
+        
+        .modal-icon { width: 60px; height: 60px; background: #E7F3FE; border-radius: 16px; display: flex; justify-content: center; align-items: center; font-size: 28px; color: #288CF0; margin-bottom: 20px;}
+        .modal-card h3 { color: #17345C; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+        .modal-card p { color: #71829B; font-size: 14px; margin-bottom: 30px; }
+
+        .form-group { display: flex; flex-direction: column; gap: 8px; width: 100%; text-align: left; margin-bottom: 20px;}
+        .form-label { color: #17345C; font-size: 13px; font-weight: 700; }
+        .input-with-icon { position: relative; }
+        .input-with-icon i { position: absolute; left: 15px; top: 14px; color: #A0CEF8; }
+        .form-input { padding: 12px 15px 12px 45px; border-radius: 12px; border: 1px solid #D8E7F4; font-size: 15px; width: 100%; outline: none; font-family: 'Prompt'; background: #F8FBFD; transition: 0.2s;}
+        .form-input:focus { border-color: #288CF0; background: #fff; box-shadow: 0 0 0 3px rgba(40,140,240,0.1);}
+        
+        .btn-join-submit { width: 100%; background: #288CF0; color: #fff; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; margin-top: 10px;}
+        .btn-join-submit:hover { background: #1e70c4; transform: translateY(-2px);}
+        .btn-close-modal { margin-top: 15px; background: none; border: none; color: #71829B; font-size: 14px; font-weight: 600; cursor: pointer;}
+        .btn-close-modal:hover { color: #E95C68; }
+
     </style>
 </head>
-
 <body>
+    <aside class="sidebar">
+        <a href="#" class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-keyboard"></i></div>
+            <div class="brand-text"><h2>ห้องเรียนฝึกพิมพ์</h2><p>โหมดนักศึกษา</p></div>
+        </a>
 
-    <div class="classroom-page">
-        <aside class="sidebar">
-            <div class="profile">
-                <div class="profile-avatar">👩🏻</div>
-                <h3>Ratsamee Saengthong</h3>
-                <span>นักเรียน</span>
+        <div class="user-profile" onclick="toggleProfileMenu(event)">
+            <div class="avatar"><i class="fa-regular fa-face-smile"></i></div>
+            <div class="user-info">
+                <div class="name" id="sidebarStudentName">นักเรียนนิรนาม</div>
+                <div class="role"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> กำลังออนไลน์</div>
             </div>
-
-            <nav class="menu">
-                <a href="{{ url_for('api.classroom') }}" class="menu-item active">
-                    <span class="menu-icon">🏠</span>
-                    <span>ห้องเรียน</span>
-                </a>
-                <a href="{{ url_for('api.progress') }}" class="menu-item">
-                    <span class="menu-icon">📊</span>
-                    <span>พัฒนาการ</span>
-                </a>
-                <a href="{{ url_for('api.typing_history') }}" class="menu-item">
-                    <span class="menu-icon">📝</span>
-                    <span>ประวัติการพิมพ์</span>
-                </a>
-                <a href="{{ url_for('api.login') }}" class="menu-item logout">
-                    <span class="menu-icon">🚪</span>
-                    <span>ออกจากระบบ</span>
-                </a>
-            </nav>
-        </aside>
-
-        <main class="main-content">
-            <div class="join-card">
-                <div class="illustration">
-                    <div class="trophy">🏆</div>
-                    <div class="keyboard">⌨️</div>
-                    <div class="clock">⏱️</div>
-                </div>
-
-                <h1>เข้าร่วมห้องเรียน</h1>
-                <p class="description">กรุณาใส่เลขห้องเพื่อเข้าร่วมการพิมพ์</p>
-
-                <div class="input-wrapper">
-                    <span class="input-icon">🔑</span>
-                    <input type="text" id="roomCode" class="room-input" placeholder="ใส่เลขห้อง (เช่น 1234)">
-                </div>
-
-                <button type="button" class="join-button" onclick="joinRoom()">เข้าห้อง →</button>
+            <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
+            
+            <div class="dropdown-menu" id="profileDropdown">
+                <a href="{{ url_for('api.student_profile_page') }}"><i class="fa-solid fa-user-pen"></i> ดูโปรไฟล์ส่วนตัว</a>
+                <a href="{{ url_for('api.login') }}" class="text-danger" onclick="event.stopPropagation(); localStorage.clear();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
-        </main>
+        </div>
 
-        <aside class="right-panel">
-            <div class="leaderboard">
-                <div class="leaderboard-title">
-                    <span>🏆</span>
-                    <h2>สถิติคะแนนสูงสุด</h2>
-                </div>
+        <div class="menu-list">
+            <!-- เพิ่มลิงก์เมนูให้สมบูรณ์ -->
+            <a href="{{ url_for('api.typing') }}" class="menu-item">
+                <i class="fa-solid fa-keyboard"></i> ห้องฝึกพิมพ์
+            </a>
+            <!-- เมนูหน้าใหม่ "ห้องเรียนของฉัน" -->
+            <a href="{{ url_for('api.student_classrooms_page') }}" class="menu-item active">
+                <i class="fa-solid fa-door-open"></i> ห้องเรียนของฉัน
+            </a>
+            <a href="{{ url_for('api.typing_history') }}" class="menu-item">
+                <i class="fa-solid fa-chart-simple"></i> ประวัติการพิมพ์
+            </a>
+        </div>
+    </aside>
 
-                <div class="rank-header">
-                    <span>อันดับ</span>
-                    <span>ผู้ใช้</span>
-                    <span>คะแนน</span>
-                </div>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div></div> <!-- Spacer -->
+        </header>
 
-                <div class="rank-item">
-                    <div class="rank-number">🥇</div>
-                    <div class="rank-user">
-                        <div class="avatar-small">👩🏻</div>
-                        <span>Airada poipamee</span>
-                    </div>
-                    <div class="score">1250</div>
-                </div>
-
-                <div class="rank-item">
-                    <div class="rank-number">🥈</div>
-                    <div class="rank-user">
-                        <div class="avatar-small">👨🏻</div>
-                        <span>Jamjira chimanee</span>
-                    </div>
-                    <div class="score">1148</div>
-                </div>
-
-                <div class="rank-item">
-                    <div class="rank-number">🥉</div>
-                    <div class="rank-user">
-                        <div class="avatar-small">👦🏻</div>
-                        <span>sorasak jaikum</span>
-                    </div>
-                    <div class="score">1102</div>
-                </div>
-            </div>
-
-            <div class="hint">
-                <div class="hint-icon">💡</div>
+        <div class="content-scroll">
+            <div class="page-header">
                 <div>
-                    <strong>กรุณาใส่รหัสห้อง</strong>
-                    <p>ที่ได้รับจากอาจารย์เพื่อเข้าร่วมการแข่งขัน</p>
+                    <h1>ห้องเรียนของฉัน</h1>
+                    <p>จัดการห้องเรียนที่คุณเข้าร่วม และเข้าทำแบบทดสอบจากอาจารย์</p>
+                </div>
+                <button class="btn-primary" onclick="openJoinModal()">
+                    <i class="fa-solid fa-plus"></i> เพิ่มห้องเรียนใหม่
+                </button>
+            </div>
+
+            <!-- ตะกร้าการ์ดห้องเรียน (ดึงจากฐานข้อมูล Oracle จริง) -->
+            <div class="room-grid" id="roomGrid">
+                <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #71829B;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 28px; color: #288CF0; margin-bottom: 12px;"></i>
+                    <p>กำลังโหลดรายการห้องเรียนจากฐานข้อมูล...</p>
                 </div>
             </div>
-        </aside>
+        </div>
     </div>
 
+    <!-- ================= JOIN ROOM MODAL ================= -->
+    <div class="modal-overlay" id="joinModal">
+        <div class="modal-card">
+            <div class="modal-icon"><i class="fa-solid fa-door-open"></i></div>
+            <h3>เข้าร่วมห้องเรียน</h3>
+            <p>กรอกรหัสห้อง (Room Code) ที่ได้รับจากอาจารย์เพื่อเพิ่มเข้าสู่รายการห้องเรียนของคุณ</p>
+            
+            <div class="form-group">
+                <label class="form-label">รหัสห้องเรียน</label>
+                <div class="input-with-icon">
+                    <i class="fa-solid fa-hashtag"></i>
+                    <input type="text" id="inputRoomCode" class="form-input" placeholder="เช่น CS101-SEC1 หรือ TYP-1234">
+                </div>
+            </div>
+            
+            <button class="btn-join-submit" onclick="submitJoinRoom()">บันทึกและเข้าร่วม <i class="fa-solid fa-check"></i></button>
+            <button class="btn-close-modal" onclick="closeJoinModal()">ยกเลิก</button>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT ================= -->
     <script>
-        function joinRoom() {
-            const roomCode = document.getElementById("roomCode").value.trim();
-            if (roomCode === "") {
-                alert("กรุณาใส่เลขห้อง");
+        const authToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const displayName = storedUser.full_name || storedUser.username || localStorage.getItem('username') || 'นักเรียน';
+        document.getElementById('sidebarStudentName').innerText = displayName;
+        if (storedUser.profile_image_url) {
+            const sbAv = document.querySelector('.user-profile .avatar');
+            if (sbAv) sbAv.innerHTML = `<img src="${storedUser.profile_image_url}" alt="Profile" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.remove();">`;
+        }
+
+        // ควบคุม Profile Dropdown
+        function toggleProfileMenu(event) {
+            event.stopPropagation();
+            document.getElementById('profileDropdown').classList.toggle('show');
+        }
+        window.onclick = function(event) {
+            if (!event.target.closest('.user-profile')) {
+                const dropdown = document.getElementById('profileDropdown');
+                if (dropdown && dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            }
+        }
+
+        // ควบคุม Modal
+        function openJoinModal() {
+            document.getElementById('joinModal').classList.add('show');
+            document.getElementById('inputRoomCode').value = "";
+            document.getElementById('inputRoomCode').focus();
+        }
+        function closeJoinModal() {
+            document.getElementById('joinModal').classList.remove('show');
+        }
+
+        // ดึงข้อมูลห้องเรียนของนักเรียนจาก Oracle Database
+        async function loadStudentClassrooms() {
+            const grid = document.getElementById('roomGrid');
+            if (!authToken) {
+                window.location.href = "{{ url_for('api.login') }}";
                 return;
             }
-            window.location.href = "{{ url_for('api.typing') }}";
+            try {
+                const res = await fetch('/api/student/classrooms', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (res.status === 401 || res.status === 422) {
+                    localStorage.clear();
+                    window.location.href = "{{ url_for('api.login') }}";
+                    return;
+                }
+                const data = await res.json();
+                const rooms = data.rooms || [];
+
+                if (rooms.length === 0) {
+                    grid.innerHTML = `
+                        <div class="room-card" style="grid-column: 1 / -1; text-align: center; align-items: center; padding: 50px 25px;">
+                            <div style="width: 64px; height: 64px; border-radius: 50%; background: #E7F3FE; color: #288CF0; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                                <i class="fa-solid fa-door-open"></i>
+                            </div>
+                            <div class="room-title">คุณยังไม่ได้เข้าร่วมห้องเรียนใดๆ</div>
+                            <p style="color: #71829B; font-size: 14px; max-width: 420px;">
+                                กดปุ่ม <strong>"เพิ่มห้องเรียนใหม่"</strong> ด้านบน แล้วกรอกรหัสห้องที่ได้รับจากอาจารย์ (เช่น <code>CS101-SEC1</code>) เพื่อเริ่มต้นใช้งาน
+                            </p>
+                            <button class="btn-primary" onclick="openJoinModal()" style="margin-top: 10px;">
+                                <i class="fa-solid fa-plus"></i> เข้าร่วมห้องเรียนแรกของคุณ
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                grid.innerHTML = rooms.map(room => {
+                    const isClosed = room.status === 'closed';
+                    const badgeHtml = isClosed
+                        ? `<div class="status-badge closed"><i class="fa-solid fa-lock" style="font-size: 10px;"></i> ปิดทดสอบแล้ว</div>`
+                        : `<div class="status-badge live"><i class="fa-solid fa-circle" style="font-size: 6px;"></i> เปิดทดสอบ</div>`;
+                    const actionHtml = isClosed
+                        ? `<a href="#" class="btn-enter" style="background: #F4F7FC; color: #71829B;" onclick="showModernPopup({ type: 'warning', title: 'ห้องเรียนปิดการทดสอบ', message: 'ห้องนี้ปิดการทดสอบแล้ว คุณไม่สามารถเข้าสอบได้' }); return false;">
+                               <i class="fa-solid fa-ban"></i> ปิดทดสอบแล้ว
+                           </a>`
+                        : `<a href="{{ url_for('api.typing') }}?room_code=${encodeURIComponent(room.room_code)}" class="btn-enter">
+                               <i class="fa-solid fa-pen-nib"></i> เข้าห้องทดสอบ
+                           </a>`;
+
+                    return `
+                        <div class="room-card" id="room-${room.room_code}">
+                            <div class="room-header">
+                                <div class="room-code-badge" style="${isClosed ? 'background:#71829B;' : ''}">${room.room_code}</div>
+                                ${badgeHtml}
+                            </div>
+                            <div>
+                                <div class="room-title">${room.room_name}</div>
+                                <div class="room-teacher"><i class="fa-solid fa-chalkboard-user"></i> ${room.teacher_name}</div>
+                            </div>
+                            <div class="room-stats">
+                                <div class="r-stat">
+                                    <span class="r-stat-label">Best WPM</span>
+                                    <span class="r-stat-val" style="color: #20A873;">${room.best_wpm}</span>
+                                </div>
+                                <div class="r-stat">
+                                    <span class="r-stat-label">เวลาสอบ</span>
+                                    <span class="r-stat-val">${room.duration} วิ</span>
+                                </div>
+                            </div>
+                            <div class="room-actions">
+                                ${actionHtml}
+                                <button class="btn-leave" onclick="leaveRoom('${room.room_code}')" title="ออกจากห้องเรียน">
+                                    <i class="fa-solid fa-right-from-bracket"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("Load classrooms error:", err);
+                grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: #E95C68; padding: 40px;">ไม่สามารถดึงข้อมูลห้องเรียนได้ กรุณาลองใหม่อีกครั้ง</div>`;
+            }
         }
+
+        // บันทึกรหัสห้องเรียนลง Oracle Database
+        async function submitJoinRoom() {
+            const code = document.getElementById('inputRoomCode').value.trim().toUpperCase();
+            if (!code) {
+                showModernPopup({
+                    type: 'warning',
+                    title: 'กรุณากรอกข้อมูล',
+                    message: 'กรุณากรอกรหัสห้อง'
+                });
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/student/classrooms/join', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ room_code: code })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showModernPopup({
+                        type: 'success',
+                        title: 'สำเร็จ',
+                        message: data.message || `เข้าร่วมห้องเรียน ${code} สำเร็จ!`,
+                        onConfirm: async () => {
+                            closeJoinModal();
+                            await loadStudentClassrooms();
+                        }
+                    });
+                } else {
+                    showModernPopup({
+                        type: 'error',
+                        title: 'ไม่สามารถเข้าร่วมได้',
+                        message: data.error || 'ไม่พบรหัสห้องเรียนนี้ในระบบ'
+                    });
+                }
+            } catch (err) {
+                console.error("Join room error:", err);
+                showModernPopup({
+                    type: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'
+                });
+            }
+        }
+
+        // ออกจากห้องเรียนและลบจาก Oracle Database
+        async function leaveRoom(roomCode) {
+            const confirmed = await showModernConfirm({
+                type: 'warning',
+                title: 'ยืนยันการออกจากห้องเรียน',
+                message: `คุณต้องการออกจากห้องเรียน ${roomCode} ใช่หรือไม่?`,
+                confirmText: 'ออกจากห้อง',
+                cancelText: 'ยกเลิก',
+                danger: true
+            });
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch(`/api/student/classrooms/${encodeURIComponent(roomCode)}/leave`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showModernPopup({
+                        type: 'success',
+                        title: 'สำเร็จ',
+                        message: `ออกจากห้องเรียน ${roomCode} เรียบร้อยแล้ว`,
+                        onConfirm: async () => {
+                            await loadStudentClassrooms();
+                        }
+                    });
+                } else {
+                    showModernPopup({
+                        type: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        message: data.error || 'ไม่สามารถออกจากห้องเรียนได้'
+                    });
+                }
+            } catch (err) {
+                console.error("Leave room error:", err);
+                showModernPopup({
+                    type: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadStudentClassrooms);
     </script>
 </body>
-
 </html>

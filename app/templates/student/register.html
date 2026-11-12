@@ -5,33 +5,443 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>สมัครสมาชิก | Typing Competition</title>
+    <style id="auth-guard-style">
+        html {
+            display: none !important;
+        }
+    </style>
+    <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
+    <script>redirectIfAuthenticated();</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern_modal.css') }}">
+    <script src="{{ url_for('static', filename='js/modern_modal.js') }}"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; background: #f4f8ff; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
-        .register-container { width: 1100px; min-height: 650px; background: white; border-radius: 30px; box-shadow: 0 10px 35px rgba(70, 120, 180, 0.12); display: flex; overflow: hidden; }
-        .register-form { width: 58%; padding: 55px 65px; }
-        .title { color: #3f6fb5; font-size: 42px; font-weight: bold; margin-bottom: 8px; }
-        .subtitle { color: #777; font-size: 18px; margin-bottom: 28px; }
-        .section-title { color: #333; font-size: 18px; font-weight: bold; margin-bottom: 12px; }
-        .role-container { display: flex; gap: 18px; margin-bottom: 25px; }
-        .role-button { flex: 1; height: 55px; border: 1px solid #d7dce5; border-radius: 14px; background: white; color: #555; font-size: 17px; font-weight: bold; cursor: pointer; }
-        .role-button.active { background: #5d91df; color: white; border-color: #5d91df; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { color: #333; font-size: 17px; font-weight: bold; margin-bottom: 8px; }
-        .form-group input { height: 52px; border: 1px solid #d7dce5; border-radius: 14px; padding: 0 18px; font-size: 16px; outline: none; background: #fff; }
-        .form-group input:focus { border-color: #5d91df; box-shadow: 0 0 0 3px rgba(93, 145, 223, 0.12); }
-        .register-button { width: 70%; height: 58px; margin-top: 28px; border: none; border-radius: 15px; background: #5d91df; color: white; font-size: 20px; font-weight: bold; cursor: pointer; }
-        .register-button:hover { background: #4c80cf; }
-        .login-link { margin-top: 25px; text-align: center; color: #666; font-size: 16px; }
-        .login-link a { color: #5d91df; text-decoration: none; font-weight: bold; margin-left: 5px; }
-        .register-image { width: 42%; background: #eef5ff; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
-        .image-content { text-align: center; padding: 30px; }
-        .keyboard-icon { font-size: 150px; margin-bottom: 20px; }
-        .image-content h2 { color: #4778bd; font-size: 28px; margin-bottom: 10px; }
-        .image-content p { color: #777; font-size: 16px; }
-        @media (max-width: 850px) {
-            .register-container { width: 95%; } .register-form { width: 100%; padding: 40px; } .register-image { display: none; } .form-grid { grid-template-columns: 1fr; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Prompt', Arial, sans-serif;
+        }
+
+        body {
+            background: #f4f8ff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .register-container {
+            width: 1100px;
+            max-width: 100%;
+            min-height: 650px;
+            background: white;
+            border-radius: 30px;
+            box-shadow: 0 10px 35px rgba(70, 120, 180, 0.12);
+            display: flex;
+            overflow: hidden;
+        }
+
+        .register-form {
+            width: 58%;
+            padding: 45px 55px;
+        }
+
+        .title {
+            color: #3f6fb5;
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #777;
+            font-size: 18px;
+            margin-bottom: 28px;
+        }
+
+        .section-title {
+            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .role-container {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .role-button {
+            flex: 1;
+            height: 55px;
+            border: 1px solid #d7dce5;
+            border-radius: 14px;
+            background: white;
+            color: #555;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .role-button.active {
+            background: #5d91df;
+            color: white;
+            border-color: #5d91df;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 18px;
+            width: 100%;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .form-group label {
+            color: #333;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            height: 52px;
+            border: 1px solid #d7dce5;
+            border-radius: 14px;
+            padding: 0 16px;
+            font-size: 15px;
+            outline: none;
+            background: #fff;
+            color: #333;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            text-overflow: ellipsis;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #5d91df;
+            box-shadow: 0 0 0 3px rgba(93, 145, 223, 0.12);
+        }
+
+        .form-group input.input-error,
+        .form-group select.input-error {
+            border-color: #e11d48;
+            box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.14);
+            animation: shakeInput 0.35s ease;
+        }
+
+        @keyframes shakeInput {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .register-button {
+            width: 70%;
+            height: 58px;
+            margin-top: 28px;
+            border: none;
+            border-radius: 15px;
+            background: #5d91df;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .register-button:hover {
+            background: #4c80cf;
+        }
+
+        .login-link {
+            margin-top: 25px;
+            text-align: center;
+            color: #666;
+            font-size: 16px;
+        }
+
+        .login-link a {
+            color: #5d91df;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .register-image {
+            width: 42%;
+            background: #eef5ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .image-content {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .keyboard-icon {
+            font-size: 150px;
+            margin-bottom: 20px;
+        }
+
+        .image-content h2 {
+            color: #4778bd;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .image-content p {
+            color: #777;
+            font-size: 16px;
+        }
+
+        @media (max-width: 1024px) {
+            .register-container {
+                width: 100%;
+                max-width: 680px;
+                min-height: auto;
+                margin: 20px auto;
+            }
+
+            .register-form {
+                width: 100%;
+                padding: 40px 35px;
+            }
+
+            .register-image {
+                display: none;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .register-form {
+                padding: 30px 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .title {
+                font-size: 32px;
+            }
+
+            .register-button {
+                width: 100%;
+            }
+        }
+
+        /* Modern Notification Popup Modal */
+        .modern-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+            padding: 20px;
+        }
+
+        .modern-modal-backdrop.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modern-modal-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 420px;
+            border-radius: 28px;
+            padding: 36px 32px 30px;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(30, 64, 175, 0.18), 0 0 0 1px rgba(226, 232, 240, 0.8);
+            transform: translateY(20px) scale(0.94);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        .modern-modal-backdrop.show .modern-modal-card {
+            transform: translateY(0) scale(1);
+        }
+
+        .modern-modal-icon {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .modern-modal-icon.success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #059669;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.22);
+        }
+
+        .modern-modal-icon.error {
+            background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
+            color: #e11d48;
+            box-shadow: 0 10px 25px rgba(225, 29, 72, 0.2);
+        }
+
+        .modern-modal-icon.info {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #2563eb;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
+        }
+
+        .modern-modal-title {
+            color: #1e293b;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .modern-modal-message {
+            color: #64748b;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 26px;
+        }
+
+        .modern-modal-btn {
+            width: 100%;
+            height: 50px;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .modern-modal-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.96;
+        }
+
+        .modern-modal-btn:active {
+            transform: translateY(0);
+        }
+
+        .modern-modal-btn.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .modern-modal-btn.error {
+            background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+            box-shadow: 0 8px 20px rgba(225, 29, 72, 0.28);
+        }
+
+        .modern-modal-btn.info {
+            background: linear-gradient(135deg, #5d91df 0%, #3b82f6 100%);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Password Checklist */
+        .password-checklist {
+            grid-column: 1 / -1;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 14px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .password-checklist-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 2px;
+        }
+
+        .checklist-items {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #64748b;
+            min-width: 0;
+            word-break: break-word;
+            transition: color 0.2s ease;
+        }
+
+        .checklist-item .chk-badge {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1.5px solid #cbd5e1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: transparent;
+            background: #ffffff;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .checklist-item.valid {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .checklist-item.valid .chk-badge {
+            background: #10b981;
+            border-color: #10b981;
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.28);
         }
     </style>
 </head>
@@ -49,26 +459,97 @@
                 <button type="button" class="role-button">🎓 อาจารย์</button>
             </div>
 
-            <form onsubmit="handleRegister(event)">
+            <form onsubmit="handleRegister(event)" novalidate>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>ชื่อผู้ใช้</label>
-                        <input type="text" placeholder="กรอกชื่อผู้ใช้" required>
+                        <label>ชื่อจริง <span style="font-size:12px; color:#777; font-weight:normal;">(3-30
+                                ตัวอักษร)</span></label>
+                        <input type="text" id="regFirstName" placeholder="กรอกชื่อจริง (3-30 ตัวอักษร)" maxlength="30">
                     </div>
 
                     <div class="form-group">
-                        <label>รหัสผ่าน</label>
-                        <input type="password" placeholder="กรอกรหัสผ่าน" required>
+                        <label>นามสกุล <span style="font-size:12px; color:#777; font-weight:normal;">(3-30
+                                ตัวอักษร)</span></label>
+                        <input type="text" id="regLastName" placeholder="กรอกนามสกุล (3-30 ตัวอักษร)" maxlength="30">
+                    </div>
+
+                    <div class="form-group" id="teacherTitleGroup" style="display: none;">
+                        <label>คำนำหน้าทางวิชาการ</label>
+                        <select id="regAcademicTitle">
+                            <option value="" disabled selected>-- เลือกคำนำหน้าทางวิชาการ --</option>
+                            <option value="อ.">อาจารย์ (อ.)</option>
+                            <option value="ผศ.">ผู้ช่วยศาสตราจารย์ (ผศ.)</option>
+                            <option value="รศ.">รองศาสตราจารย์ (รศ.)</option>
+                            <option value="ศ.">ศาสตราจารย์ (ศ.)</option>
+                            <option value="ดร.">ดร.</option>
+                            <option value="ผศ.ดร.">ผศ.ดร.</option>
+                            <option value="รศ.ดร.">รศ.ดร.</option>
+                            <option value="ศ.ดร.">ศ.ดร.</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="teacherFacultyGroup" style="display: none;">
+                        <label>สถานศึกษา</label>
+                        <select id="regFaculty">
+                            <option value="สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง" selected>
+                                สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="studentCodeGroup">
+                        <label>รหัสนักศึกษา (8 หลัก)</label>
+                        <input type="text" id="regStudentCode" placeholder="กรอกรหัสนักศึกษา 8 หลัก" maxlength="8"
+                            inputmode="numeric" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 8)">
+                    </div>
+
+                    <div class="form-group" id="studentMajorGroup">
+                        <label>สาขาวิชา</label>
+                        <select id="regMajor">
+                            <option value="" disabled selected>-- เลือกสาขาวิชา --</option>
+                            <option value="คอมพิวเตอร์เทคโนโลยี">คอมพิวเตอร์เทคโนโลยี</option>
+                            <option value="อิเล็กทรอนิกส์และโทรคมนาคม">อิเล็กทรอนิกส์และโทรคมนาคม</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>ชื่อผู้ใช้ <span style="font-size:12px; color:#777; font-weight:normal;">(3-30
+                                ตัวอักษร)</span></label>
+                        <input type="text" id="regUsername" placeholder="กรอกชื่อผู้ใช้ (3-30 ตัวอักษร)" maxlength="30">
                     </div>
 
                     <div class="form-group">
                         <label>อีเมล</label>
-                        <input type="email" placeholder="กรอกอีเมล" required>
+                        <input type="email" id="regEmail" placeholder="กรอกอีเมล"
+                            oninput="if(!this.readOnly) this.value = this.value.replace(/[^\x21-\x7E]/g, '')">
+                    </div>
+
+                    <div class="form-group">
+                        <label>รหัสผ่าน</label>
+                        <input type="password" id="regPassword" placeholder="อย่างน้อย 8 ตัว และมีตัวอักษร ≥ 1 ตัว"
+                            oninput="updatePasswordChecklist()">
                     </div>
 
                     <div class="form-group">
                         <label>ยืนยันรหัสผ่าน</label>
-                        <input type="password" placeholder="ยืนยันรหัสผ่าน" required>
+                        <input type="password" id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน"
+                            oninput="updatePasswordChecklist()">
+                    </div>
+
+                    <div class="password-checklist" id="passwordChecklist">
+                        <div class="checklist-items">
+                            <div class="checklist-item" id="chkLen">
+                                <span class="chk-badge">✓</span>
+                                <span>มีความยาวอย่างน้อย 8 ตัวอักษร</span>
+                            </div>
+                            <div class="checklist-item" id="chkLetter">
+                                <span class="chk-badge">✓</span>
+                                <span>มีตัวอักษรอย่างน้อย 1 ตัว</span>
+                            </div>
+                            <div class="checklist-item" id="chkMatch">
+                                <span class="chk-badge">✓</span>
+                                <span>รหัสผ่านและยืนยันรหัสผ่านตรงกัน</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -90,19 +571,291 @@
         </div>
     </div>
 
+    <!-- Modern Custom Notification Modal -->
+    <div class="modern-modal-backdrop" id="modernPopupModal" onclick="handleBackdropClick(event)">
+        <div class="modern-modal-card">
+            <div class="modern-modal-icon info" id="modernPopupIcon">✦</div>
+            <h3 class="modern-modal-title" id="modernPopupTitle">แจ้งเตือน</h3>
+            <p class="modern-modal-message" id="modernPopupMessage">รายละเอียดข้อความ</p>
+            <button type="button" class="modern-modal-btn info" id="modernPopupBtn"
+                onclick="closeModernPopup()">ตกลง</button>
+        </div>
+    </div>
+
     <script>
+        let selectedRole = "Student";
+        let prefilledFullName = "";
+        let popupConfirmCallback = null;
+
+        function showModernPopup({ type = 'info', title = 'แจ้งเตือน', message = '', buttonText = 'ตกลง', onConfirm = null }) {
+            const modal = document.getElementById('modernPopupModal');
+            const icon = document.getElementById('modernPopupIcon');
+            const titleEl = document.getElementById('modernPopupTitle');
+            const msgEl = document.getElementById('modernPopupMessage');
+            const btn = document.getElementById('modernPopupBtn');
+
+            icon.className = `modern-modal-icon ${type}`;
+            btn.className = `modern-modal-btn ${type}`;
+
+            if (type === 'success') {
+                icon.innerText = '✓';
+            } else if (type === 'error') {
+                icon.innerText = '!';
+            } else {
+                icon.innerText = '✦';
+            }
+
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+            btn.innerText = buttonText;
+            popupConfirmCallback = onConfirm;
+
+            modal.classList.add('show');
+            setTimeout(() => btn.focus(), 50);
+        }
+
+        function closeModernPopup() {
+            const modal = document.getElementById('modernPopupModal');
+            modal.classList.remove('show');
+            if (typeof popupConfirmCallback === 'function') {
+                const cb = popupConfirmCallback;
+                popupConfirmCallback = null;
+                cb();
+            }
+        }
+
+        function handleBackdropClick(e) {
+            if (e.target.id === 'modernPopupModal') {
+                closeModernPopup();
+            }
+        }
+        function updateRoleFields() {
+            const studentCodeGroup = document.getElementById('studentCodeGroup');
+            const studentMajorGroup = document.getElementById('studentMajorGroup');
+            const teacherTitleGroup = document.getElementById('teacherTitleGroup');
+            const teacherFacultyGroup = document.getElementById('teacherFacultyGroup');
+
+            if (selectedRole === 'Student') {
+                studentCodeGroup.style.display = 'flex';
+                studentMajorGroup.style.display = 'flex';
+                teacherTitleGroup.style.display = 'none';
+                teacherFacultyGroup.style.display = 'none';
+            } else {
+                studentCodeGroup.style.display = 'none';
+                studentMajorGroup.style.display = 'none';
+                teacherTitleGroup.style.display = 'flex';
+                teacherFacultyGroup.style.display = 'flex';
+            }
+        }
+
         const roleBtns = document.querySelectorAll('.role-button');
         roleBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 roleBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+                selectedRole = btn.innerText.includes('อาจารย์') ? 'Teacher' : 'Student';
+                updateRoleFields();
             });
         });
 
-        function handleRegister(e) {
+        // ดึงข้อมูลเบื้องต้นกรณีถูกส่งมาจาก Google Login สำหรับอีเมลใหม่ที่ยังไม่เคยสมัคร
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const emailParam = params.get('email');
+            const usernameParam = params.get('username');
+            const fullNameParam = params.get('full_name');
+            const roleParam = params.get('role');
+
+            if (emailParam) {
+                const emailInput = document.getElementById('regEmail');
+                emailInput.value = emailParam;
+                emailInput.readOnly = true;
+                emailInput.style.backgroundColor = '#eef2f7';
+                emailInput.style.color = '#64748b';
+                emailInput.style.cursor = 'not-allowed';
+                emailInput.title = 'อีเมลจากบัญชี Google ไม่สามารถแก้ไขได้';
+            }
+            if (usernameParam) {
+                document.getElementById('regUsername').value = usernameParam;
+            }
+            if (fullNameParam) {
+                prefilledFullName = fullNameParam.trim();
+                const parts = prefilledFullName.split(/\s+/);
+                document.getElementById('regFirstName').value = parts[0] || '';
+                document.getElementById('regLastName').value = parts.slice(1).join(' ') || '';
+            }
+            if (roleParam && roleParam.toLowerCase() === 'teacher') {
+                selectedRole = 'Teacher';
+                roleBtns.forEach(b => {
+                    if (b.innerText.includes('อาจารย์')) {
+                        b.classList.add('active');
+                    } else {
+                        b.classList.remove('active');
+                    }
+                });
+            }
+            updateRoleFields();
+            if (emailParam) {
+                showModernPopup({
+                    type: 'info',
+                    title: 'กรอกข้อมูลเพื่อสมัครสมาชิก',
+                    message: `บัญชี Google (${emailParam}) ยังไม่เคยลงทะเบียนในระบบ กรุณากรอกข้อมูลเพิ่มเติมเพื่อสร้างบัญชีของคุณ`,
+                    buttonText: 'ดำเนินการต่อ',
+                    onConfirm: () => {
+                        if (!document.getElementById('regFirstName').value) {
+                            document.getElementById('regFirstName').focus();
+                        } else if (selectedRole === 'Student' && !document.getElementById('regStudentCode').value) {
+                            document.getElementById('regStudentCode').focus();
+                        } else if (selectedRole === 'Teacher' && !document.getElementById('regAcademicTitle').value) {
+                            document.getElementById('regAcademicTitle').focus();
+                        } else {
+                            document.getElementById('regPassword').focus();
+                        }
+                    }
+                });
+            }
+        });
+
+        function updatePasswordChecklist() {
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+            const hasMinLen = password.length >= 8;
+            const hasLetter = /[A-Za-z\u0E00-\u0E7F]/.test(password);
+            const isMatched = password.length > 0 && password === confirmPassword;
+
+            document.getElementById('chkLen').classList.toggle('valid', hasMinLen);
+            document.getElementById('chkLetter').classList.toggle('valid', hasLetter);
+            document.getElementById('chkMatch').classList.toggle('valid', isMatched);
+        }
+
+        function markFieldError(fieldId, title, message) {
+            document.querySelectorAll('.form-group input, .form-group select').forEach(el => el.classList.remove('input-error'));
+            const el = document.getElementById(fieldId);
+            if (el) {
+                el.classList.add('input-error');
+                el.addEventListener('input', () => el.classList.remove('input-error'), { once: true });
+                el.addEventListener('change', () => el.classList.remove('input-error'), { once: true });
+            }
+            showModernPopup({
+                type: 'error',
+                title: title,
+                message: message,
+                onConfirm: () => {
+                    if (el) el.focus();
+                }
+            });
+        }
+
+        async function handleRegister(e) {
             e.preventDefault();
-            alert("สมัครสมาชิกสำเร็จ!");
-            window.location.href = "{{ url_for('api.login') }}";
+            const firstName = document.getElementById('regFirstName').value.trim();
+            const lastName = document.getElementById('regLastName').value.trim();
+            const fullName = `${firstName} ${lastName}`.trim();
+            const studentCode = document.getElementById('regStudentCode').value.trim();
+            const major = document.getElementById('regMajor').value.trim();
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const email = document.getElementById('regEmail').value.trim();
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+            if (!firstName || firstName.length < 3 || firstName.length > 30) {
+                markFieldError('regFirstName', 'ความยาวชื่อจริงไม่ถูกต้อง', 'ชื่อจริงต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร');
+                return;
+            }
+            if (!lastName || lastName.length < 3 || lastName.length > 30) {
+                markFieldError('regLastName', 'ความยาวนามสกุลไม่ถูกต้อง', 'นามสกุลต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร');
+                return;
+            }
+            if (selectedRole === 'Student' && !/^\d{8}$/.test(studentCode)) {
+                markFieldError('regStudentCode', 'รหัสนักศึกษาไม่ถูกต้อง', 'กรุณากรอกรหัสนักศึกษาเป็นตัวเลข 8 หลักเท่านั้น');
+                return;
+            }
+            if (selectedRole === 'Student' && !major) {
+                markFieldError('regMajor', 'ยังไม่ได้เลือกสาขาวิชา', 'กรุณาเลือกสาขาวิชาของคุณจากรายการ');
+                return;
+            }
+            if (selectedRole === 'Teacher') {
+                const academicTitle = document.getElementById('regAcademicTitle').value.trim();
+                const faculty = document.getElementById('regFaculty').value.trim();
+                if (!academicTitle) {
+                    markFieldError('regAcademicTitle', 'ยังไม่ได้เลือกคำนำหน้าทางวิชาการ', 'กรุณาเลือกคำนำหน้าทางวิชาการจากรายการ');
+                    return;
+                }
+                if (!faculty) {
+                    markFieldError('regFaculty', 'ยังไม่ได้เลือกสถานศึกษา', 'กรุณาเลือกสถานศึกษา');
+                    return;
+                }
+            }
+            if (!username || username.length < 3 || username.length > 30) {
+                markFieldError('regUsername', 'ความยาวชื่อผู้ใช้ไม่ถูกต้อง', 'ชื่อผู้ใช้ (Username) ต้องมีความยาวตั้งแต่ 3 ถึง 30 ตัวอักษร');
+                return;
+            }
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                markFieldError('regEmail', 'รูปแบบอีเมลไม่ถูกต้อง', 'กรุณากรอกอีเมลให้ถูกต้อง เช่น example@email.com');
+                return;
+            }
+            if (!password || password.length < 8) {
+                markFieldError('regPassword', 'รหัสผ่านสั้นเกินไป', 'รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
+                return;
+            }
+            if (!/[A-Za-z\u0E00-\u0E7F]/.test(password)) {
+                markFieldError('regPassword', 'รูปแบบรหัสผ่านไม่ครบถ้วน', 'รหัสผ่านต้องมีตัวอักษรอย่างน้อย 1 ตัว');
+                return;
+            }
+            if (!confirmPassword || password !== confirmPassword) {
+                markFieldError('regConfirmPassword', 'รหัสผ่านไม่ตรงกัน', 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง');
+                return;
+            }
+
+            try {
+                const payload = {
+                    first_name: firstName,
+                    last_name: lastName,
+                    full_name: fullName,
+                    username: username,
+                    password: password,
+                    email: email,
+                    role: selectedRole
+                };
+                if (selectedRole === 'Student') {
+                    payload.student_code = studentCode;
+                    payload.major = major;
+                } else if (selectedRole === 'Teacher') {
+                    payload.academic_title = document.getElementById('regAcademicTitle').value.trim();
+                    payload.faculty = document.getElementById('regFaculty').value.trim();
+                }
+                const res = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showModernPopup({
+                        type: 'success',
+                        title: 'สมัครสมาชิกสำเร็จ! 🎉',
+                        message: 'บัญชีของคุณถูกสร้างเรียบร้อยแล้ว กดปุ่มด้านล่างเพื่อเข้าสู่ระบบ',
+                        buttonText: 'ไปหน้าเข้าสู่ระบบ ➜',
+                        onConfirm: () => {
+                            window.location.href = "{{ url_for('api.login') }}";
+                        }
+                    });
+                } else {
+                    showModernPopup({
+                        type: 'error',
+                        title: 'สมัครสมาชิกไม่สำเร็จ',
+                        message: data.error || data.message || 'กรุณาตรวจสอบข้อมูลอีกครั้ง'
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+                showModernPopup({
+                    type: 'error',
+                    title: 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ',
+                    message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง'
+                });
+            }
         }
     </script>
 </body>

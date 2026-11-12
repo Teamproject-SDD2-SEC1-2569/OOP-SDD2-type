@@ -3,371 +3,454 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live: จัดการห้องเรียน - ระบบห้องเรียนฝึกพิมพ์</title>
+    <title>ควบคุมห้องสอบ - ระบบห้องเรียนฝึกพิมพ์</title>
+    <style id="auth-guard-style">html { display: none !important; }</style>
+    <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
+    <script>requireAuth('teacher');</script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- นำเข้า Socket.IO Client -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.1/socket.io.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Prompt', 'Inter', sans-serif; }
         body { background-color: #F4F7FC; height: 100vh; display: flex; overflow: hidden; }
-
-        /* Sidebar & Topbar (ดีไซน์เดิม) */
-        .sidebar { width: 260px; background-color: #B2DCFA; padding: 25px 20px; display: flex; flex-direction: column; flex-shrink: 0; z-index: 10; border-right: 2px solid #D8E7F4; }
-        .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; }
-        .brand-icon { width: 40px; height: 40px; background-color: #063376; border-radius: 12px; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 20px; }
+        
+        /* Sidebar */
+        .sidebar { width: 265px; background-color: #B2DCFA; padding: 25px 20px; display: flex; flex-direction: column; flex-shrink: 0; z-index: 10; border-right: 2px solid #D8E7F4; }
+        .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 25px; cursor: pointer; text-decoration: none;}
+        .brand-icon { width: 42px; height: 42px; background-color: #063376; border-radius: 12px; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 20px; }
         .brand-text h2 { color: #063376; font-size: 16px; font-weight: 700; }
         .brand-text p { color: #6F8DBA; font-size: 11px; }
-        .user-profile { background-color: #DDF0FD; padding: 12px; border-radius: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 30px; }
+        
+        /* Profile & Dropdown */
+        .user-profile { background-color: #DDF0FD; padding: 12px; border-radius: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 25px; position: relative; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        .user-profile:hover { border-color: #288CF0; }
         .avatar { width: 40px; height: 40px; background-color: #fff; border: 2px solid #288CF0; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #063376; font-size: 14px; font-weight: 700; }
         .user-info .name { color: #063376; font-size: 14px; font-weight: 700; }
         .user-info .role { color: #71829B; font-size: 12px; }
-        .menu-label { color: #063376; font-size: 12px; font-weight: 700; opacity: 0.5; margin-bottom: 10px; }
-        .menu-list { list-style: none; display: flex; flex-direction: column; gap: 5px; flex: 1; }
-        .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; color: #063376; text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.3s; }
-        .menu-item:hover { background-color: rgba(255,255,255,0.5); }
-        .menu-item.active { background-color: #fff; color: #288CF0; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
-        .menu-item.active i { color: #288CF0; }
-        .menu-item i { font-size: 18px; width: 24px; text-align: center; }
+        
+        .dropdown-menu { display: none; position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: #fff; border-radius: 12px; box-shadow: 0 5px 15px rgba(6, 51, 118, 0.1); flex-direction: column; overflow: hidden; z-index: 100; border: 1px solid #D8E7F4; }
+        .dropdown-menu.show { display: flex; }
+        .dropdown-menu a { padding: 12px 15px; color: #063376; text-decoration: none; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .dropdown-menu a:hover { background: #F4F7FC; color: #288CF0; }
+        .dropdown-menu a.text-danger:hover { color: #E95C68; background: #FDEBED; }
+        
+        /* Menu */
+        .menu-label { color: #063376; font-size: 11px; font-weight: 700; opacity: 0.6; margin: 10px 0 8px 5px; text-transform: uppercase; }
+        .menu-list { list-style: none; display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto; }
+        .menu-item { display: flex; align-items: center; gap: 12px; padding: 11px 15px; border-radius: 12px; color: #063376; text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.25s; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; }
+        .menu-item:hover { background-color: rgba(255,255,255,0.6); }
+        .menu-item.active { background-color: #fff; color: #288CF0; font-weight: 700; box-shadow: 0 4px 10px rgba(6, 51, 118, 0.05); }
+        .menu-item i { font-size: 17px; width: 24px; text-align: center; }
 
+        /* Main Content */
         .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         .topbar { background-color: #fff; height: 60px; padding: 0 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #D8E7F4; }
         .breadcrumb { color: #71829B; font-size: 14px; display: flex; align-items: center; gap: 8px; }
-        .breadcrumb span { color: #063376; font-weight: 700; }
-        .breadcrumb a { color: #71829B; text-decoration: none; transition: 0.2s; }
+        .breadcrumb a { color: #71829B; text-decoration: none; }
         .breadcrumb a:hover { color: #288CF0; }
-        .top-actions { display: flex; align-items: center; gap: 15px; }
-        .btn-noti { width: 38px; height: 38px; background-color: #E7F3FE; color: #288CF0; border: none; border-radius: 12px; font-size: 18px; cursor: pointer; }
-
+        .breadcrumb span { color: #063376; font-weight: 700; }
+        .btn-noti { width: 38px; height: 38px; background-color: #E7F3FE; color: #288CF0; border: none; border-radius: 12px; font-size: 18px; cursor: pointer; transition: 0.2s;}
+        .btn-noti:hover { background-color: #DDF0FD; }
+        
         .content-scroll { flex: 1; overflow-y: auto; padding: 25px 30px; display: flex; flex-direction: column; gap: 20px; }
-
-        /* ================= ส่วนควบคุม Live Room ================= */
-        .room-header { background: linear-gradient(135deg, #063376 0%, #1e5bb0 100%); border-radius: 20px; padding: 25px 30px; color: #fff; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px rgba(6, 51, 118, 0.15); }
-        .room-info h1 { font-size: 24px; font-weight: 700; margin-bottom: 5px; }
-        .room-info p { font-size: 14px; opacity: 0.8; display: flex; align-items: center; gap: 8px; }
         
-        .room-code-display { display: flex; flex-direction: column; align-items: flex-end; }
-        .room-code-display span { font-size: 12px; font-weight: 600; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-        .code-box { background-color: rgba(255,255,255,0.15); border: 2px dashed rgba(255,255,255,0.4); padding: 10px 25px; border-radius: 15px; font-family: 'Inter', sans-serif; font-size: 36px; font-weight: 800; letter-spacing: 4px; cursor: pointer; transition: 0.3s; }
-        .code-box:hover { background-color: #fff; color: #063376; }
-
-        /* Control Bar */
-        .control-bar { display: flex; justify-content: space-between; align-items: center; background-color: #fff; padding: 15px 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(6, 51, 118, 0.05); }
-        .timer { font-family: 'Inter', sans-serif; font-size: 28px; font-weight: 700; color: #063376; display: flex; align-items: center; gap: 10px; }
-        .timer i { color: #F2A93B; font-size: 24px; }
+        /* Banner & Code Box */
+        .room-banner { background: #17345C; border-radius: 16px; padding: 25px 30px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+        .room-banner h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .room-banner p { color: #A0CEF8; font-size: 14px; }
         
-        .action-buttons { display: flex; gap: 15px; }
-        .btn { padding: 12px 25px; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; display: flex; align-items: center; gap: 8px; transition: 0.3s; }
-        .btn-start { background-color: #20A873; color: #fff; box-shadow: 0 4px 10px rgba(32, 168, 115, 0.3); }
-        .btn-start:hover { background-color: #1a8f61; transform: translateY(-2px); }
-        .btn-end { background-color: #FDEBED; color: #E95C68; }
-        .btn-end:hover { background-color: #E95C68; color: #fff; }
+        .code-container { background: rgba(255,255,255,0.1); border: 1px dashed rgba(255,255,255,0.3); padding: 10px 20px; border-radius: 12px; display: inline-flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.2s; }
+        .code-container:hover { background: rgba(255,255,255,0.2); border-color: #fff; }
+        .code-container span { font-family: 'Inter'; font-size: 30px; font-weight: 800; letter-spacing: 2px; }
+        .code-container i { font-size: 20px; color: #A0CEF8; }
+        
+        /* Control Panel */
+        .control-panel { background: #fff; padding: 18px 25px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(6, 51, 118, 0.03); }
+        .status-indicator { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; color: #063376; }
+        .status-dot { width: 12px; height: 12px; background-color: #F2A93B; border-radius: 50%; display: inline-block; }
+        .status-dot.active { background-color: #20A873; animation: blink 1.5s infinite; }
+        .status-dot.closed { background-color: #E95C68; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-        /* Grid Layout */
-        .live-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }
-        .card { background-color: #fff; border-radius: 18px; padding: 20px; box-shadow: 0 6px 18px rgba(6, 51, 118, 0.05); display: flex; flex-direction: column; gap: 15px; }
-        .card-title { display: flex; justify-content: space-between; align-items: flex-start; }
-        .card-title h3 { color: #063376; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-        .card-title .live-dot { width: 10px; height: 10px; background-color: #E95C68; border-radius: 50%; animation: pulse 1.5s infinite; }
-        .badge { background-color: #E7F3FE; color: #288CF0; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+        .btn { padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .btn-success { background: #20A873; color: #fff; }
+        .btn-success:hover { background: #1a8f61; }
+        .btn-danger { background: #FDEBED; color: #E95C68; }
+        .btn-danger:hover { background: #E95C68; color: #fff; }
 
-        @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(233, 92, 104, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(233, 92, 104, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(233, 92, 104, 0); }
-        }
-
-        /* Leaderboard Table */
-        .table-responsive { overflow-x: auto; }
+        /* Grids */
+        .live-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .card { background: #fff; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(6, 51, 118, 0.03); }
+        .card-title { font-size: 16px; font-weight: 700; color: #063376; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #F4F7FC; display: flex; justify-content: space-between; align-items: center;}
+        
         table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { background-color: #F4F7FC; padding: 12px; color: #71829B; font-size: 12px; font-weight: 700; white-space: nowrap; }
-        td { padding: 12px; border-bottom: 1px solid #D8E7F4; font-size: 14px; color: #17345C; font-weight: 500; vertical-align: middle; }
-        
-        .rank-circle { width: 30px; height: 30px; background-color: #F4F7FC; color: #063376; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: 700; font-size: 13px; }
-        .rank-1 { background-color: #FFF3DD; color: #F2A93B; }
-        .rank-2 { background-color: #F4F7FC; color: #71829B; }
-        .rank-3 { background-color: #FDF0E6; color: #D28E5D; }
-        
-        .student-name { font-weight: 600; color: #063376; }
-        .stat-wpm { color: #288CF0; font-weight: 700; }
-        .stat-acc { color: #20A873; font-weight: 600; font-size: 13px; }
-        
-        .progress-wrapper { width: 100%; background-color: #E7F3FE; border-radius: 10px; height: 8px; overflow: hidden; }
-        .progress-bar { height: 100%; background-color: #288CF0; border-radius: 10px; transition: width 0.3s ease; }
+        th { color: #71829B; font-size: 13px; font-weight: 600; padding-bottom: 15px; }
+        td { padding: 12px 0; border-bottom: 1px solid #F4F7FC; font-size: 14px; color: #17345C; font-weight: 500; }
+        .badge { background: #E7F3FE; color: #288CF0; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;}
 
-        /* Lobby List */
-        .lobby-list { display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px; }
-        .lobby-list::-webkit-scrollbar { width: 5px; }
-        .lobby-list::-webkit-scrollbar-thumb { background-color: #D8E7F4; border-radius: 5px; }
-        .lobby-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; background-color: #F4F7FC; border-radius: 12px; }
-        .lobby-avatar { width: 35px; height: 35px; background-color: #DDF0FD; color: #288CF0; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: 700; }
-        .lobby-info { flex: 1; }
-        .lobby-info .name { font-size: 13px; font-weight: 600; color: #063376; }
-        .lobby-info .status { font-size: 11px; color: #20A873; display: flex; align-items: center; gap: 4px; }
-
-        /* Responsive */
-        @media (max-width: 1200px) { .live-grid { grid-template-columns: 1fr; } }
-        @media (max-width: 900px) {
-            body { flex-direction: column; overflow: auto; }
-            .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; justify-content: space-between; padding: 15px 20px; border-right: none; border-bottom: 2px solid #D8E7F4; }
-            .menu-list { flex-direction: row; overflow-x: auto; white-space: nowrap; width: 100%; }
-            .room-header { flex-direction: column; text-align: center; gap: 15px; }
-            .room-code-display { align-items: center; }
-            .control-bar { flex-direction: column; gap: 15px; }
-        }
+        .members-list { display: flex; flex-direction: column; max-height: 380px; overflow-y: auto; }
+        .member-item { display: flex; align-items: center; gap: 10px; padding: 10px 4px; border-bottom: 1px dashed #F4F7FC; }
+        .member-item:last-child { border-bottom: none; }
+        .member-avatar { width: 34px; height: 34px; border-radius: 50%; background: #E7F3FE; color: #288CF0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; position: relative; }
+        .member-avatar.online::after { content: ''; position: absolute; right: -1px; bottom: -1px; width: 10px; height: 10px; border-radius: 50%; background: #20A873; border: 2px solid #fff; }
+        .member-info { flex: 1; min-width: 0; }
+        .member-name { font-size: 14px; font-weight: 600; color: #17345C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .member-meta { font-size: 12px; color: #71829B; }
+        .member-wpm { font-family: 'Inter'; font-weight: 700; color: #288CF0; font-size: 13px; }
+        .btn-outline { background: #fff; border: 1px solid #D8E7F4; color: #063376; }
+        .btn-outline:hover { border-color: #288CF0; color: #288CF0; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .empty-state { text-align: center; color: #71829B; padding: 30px 0; font-size: 13px; }
+        .results-card { margin-top: 0; }
+        @media (max-width: 1100px) { .live-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-    <!-- แถบด้านซ้าย (Sidebar) -->
     <aside class="sidebar">
-        <div class="brand">
+        <a href="{{ url_for('teacher.teacher_dashboard_page') }}" class="brand">
             <div class="brand-icon"><i class="fa-regular fa-keyboard"></i></div>
-            <div class="brand-text">
-                <h2>ห้องเรียนฝึกพิมพ์</h2>
-                <p>ระบบติดตามผลนักศึกษา</p>
-            </div>
-        </div>
-
-        <div class="user-profile">
-            <div class="avatar">ธพ</div>
+            <div class="brand-text"><h2>ห้องเรียนฝึกพิมพ์</h2><p>ระบบติดตามผลนักศึกษา</p></div>
+        </a>
+        
+        <!-- โปรไฟล์พร้อม Dropdown -->
+        <div class="user-profile" onclick="toggleProfileMenu(event)">
+            <div class="avatar">อจ</div>
             <div class="user-info">
-                <div class="name">อ.ธนภัทร ดิษฐสโร</div>
+                <div class="name">กำลังโหลด...</div>
                 <div class="role">อาจารย์ผู้สอน</div>
             </div>
+            <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
+            
+            <div class="dropdown-menu" id="profileDropdown">
+                <!-- เปลี่ยนลิงก์ให้ไปหน้า profile.html -->
+                <a href="{{ url_for('teacher.teacher_profile_page') }}"><i class="fa-solid fa-user-gear"></i> ตั้งค่าบัญชี</a>
+                <a href="/" class="text-danger" data-logout><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
+            </div>
         </div>
-
+        
         <div class="menu-label">เมนูหลัก</div>
-        <ul class="menu-list">
-            <a href="dashboard.html" class="menu-item active"><i class="fa-solid fa-border-all"></i> ภาพรวมห้องเรียน</a>
-            <a href="#" class="menu-item"><i class="fa-solid fa-users"></i> จัดการนักศึกษา</a>
-            <a href="#" class="menu-item"><i class="fa-solid fa-chart-line"></i> รายงานผลคะแนน</a>
-            <a href="#" class="menu-item"><i class="fa-solid fa-gear"></i> ตั้งค่าระบบ</a>
-        </ul>
+        <div class="menu-list">
+            <a href="{{ url_for('teacher.teacher_dashboard_page') }}" class="menu-item active">
+                <i class="fa-solid fa-border-all"></i> ภาพรวมห้องเรียน
+            </a>
+            <a href="{{ url_for('teacher.teacher_students_page') }}" class="menu-item">
+                <i class="fa-solid fa-users"></i> จัดการนักศึกษา
+            </a>
+            <a href="{{ url_for('teacher.teacher_history_page') }}" class="menu-item">
+                <i class="fa-solid fa-chart-line"></i> รายงานผลคะแนน
+            </a>
+        </div>
     </aside>
 
-    <!-- พื้นที่หลัก (Main Wrapper) -->
     <div class="main-wrapper">
         <header class="topbar">
             <div class="breadcrumb">
-                <a href="dashboard.html">อาจารย์</a> <i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i> <a href="dashboard.html">จัดการห้องเรียน</a> <i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i> <span>Live ห้อง {{ room_code }}</span>
+                อาจารย์ <i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i> 
+                <a href="{{ url_for('teacher.teacher_dashboard_page') }}">ภาพรวมห้องเรียน</a> <i class="fa-solid fa-chevron-right" style="font-size: 10px;"></i> 
+                <span>ห้อง {{ room_code }}</span>
             </div>
-            <div class="top-actions">
-                <button class="btn-noti"><i class="fa-regular fa-bell"></i></button>
-            </div>
+            <button class="btn-noti"><i class="fa-regular fa-bell"></i></button>
         </header>
 
         <main class="content-scroll">
-            
-            <!-- ส่วนหัวของห้องเรียน -->
-            <div class="room-header">
-                <div class="room-info">
-                    <h1>{{ room_data.room_name }}</h1>
-                    <p><i class="fa-solid fa-book"></i> หมวดหมู่: คำศัพท์ทั่วไป &nbsp;|&nbsp; <i class="fa-regular fa-clock"></i> เวลา: {{ room_data.duration }} นาที</p>
+            <div class="room-banner">
+                <div>
+                    <h1 id="roomName">กำลังโหลดข้อมูลห้อง...</h1>
+                    <p>
+                        <i class="fa-regular fa-clock"></i> เวลา: <span id="roomDuration">-</span> วินาที
+                        &nbsp;|&nbsp;
+                        <i class="fa-solid fa-users"></i> สมาชิก: <span id="roomMemberCount">0</span> คน
+                        &nbsp;|&nbsp;
+                        <i class="fa-regular fa-calendar"></i> สร้างเมื่อ: <span id="roomCreatedAt">-</span>
+                    </p>
                 </div>
-                <div class="room-code-display">
-                    <span>รหัสสำหรับให้นักศึกษาเข้าร่วม (Room Code)</span>
-                    <div class="code-box" id="roomCodeText" onclick="copyRoomCode()">{{ room_code }}</div>
-                </div>
-            </div>
-
-            <!-- แถบควบคุม -->
-            <div class="control-bar">
-                <div class="timer">
-                    <i class="fa-solid fa-stopwatch"></i> <span id="timeDisplay">03:00</span>
-                </div>
-                <div class="action-buttons">
-                    <button class="btn btn-start" id="startBtn" onclick="startTest()">
-                        <i class="fa-solid fa-play"></i> เริ่มการทดสอบ
-                    </button>
-                    <button class="btn btn-end" id="endBtn" onclick="endTest()">
-                        <i class="fa-solid fa-power-off"></i> จบการแข่งขัน
-                    </button>
+                <div style="text-align: right;">
+                    <div style="font-size: 12px; margin-bottom: 5px; color: #A0CEF8;">รหัสสำหรับให้นักศึกษาเข้าร่วม (คลิกเพื่อคัดลอก)</div>
+                    <div class="code-container" onclick="copyRoomCode()" id="codeContainer" title="คลิกเพื่อคัดลอก">
+                        <span id="roomCodeText">{{ room_code }}</span>
+                        <i class="fa-regular fa-copy" id="copyIcon"></i>
+                    </div>
                 </div>
             </div>
 
-            <!-- Dashboard Grid -->
+            <!-- แผงควบคุมและสถานะห้อง -->
+            <div class="control-panel">
+                <div class="status-indicator">
+                    <span class="status-dot" id="statusDot"></span> 
+                    <span id="statusText">สถานะ: กำลังโหลด...</span>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-success" id="btnOpenRoom" onclick="setRoomStatus('open')" style="display:none;">
+                        <i class="fa-solid fa-play"></i> เปิดห้องทดสอบ
+                    </button>
+                    <button class="btn btn-danger" id="btnCloseRoom" onclick="setRoomStatus('closed')" style="display:none;">
+                        <i class="fa-solid fa-power-off"></i> ปิดห้องและบันทึกผล
+                    </button>
+                </div>
+            </div>
+
             <div class="live-grid">
-                
-                <!-- ซ้าย: Live Leaderboard -->
+                <!-- Leaderboard -->
                 <div class="card">
                     <div class="card-title">
-                        <h3><div class="live-dot" id="liveDot" style="display: none;"></div> Live Leaderboard</h3>
-                        <div class="badge" id="playerCountBadge">ผู้เข้าร่วม 0 คน</div>
+                        <div><i class="fa-solid fa-trophy" style="color: #F2A93B;"></i> Live Leaderboard</div>
+                        <span class="badge" id="participantCountBadge">กำลังพิมพ์ 0 คน</span>
                     </div>
-
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th width="10%">อันดับ</th>
-                                    <th width="35%">ชื่อนักศึกษา</th>
-                                    <th width="15%">WPM</th>
-                                    <th width="15%">แม่นยำ</th>
-                                    <th width="25%">ความคืบหน้า</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leaderboardBody">
-                                <!-- ข้อมูลจำลอง (Mock Data) จะถูกแทนที่ด้วย Socket.IO -->
-                                <tr>
-                                    <td colspan="5" style="text-align: center; color: #71829B; padding: 30px;">
-                                        กำลังรอนักศึกษาเข้าร่วมห้อง...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>อันดับ</th><th>ชื่อนักศึกษา</th><th>WPM</th><th>แม่นยำ</th><th>สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardBody">
+                            <tr><td colspan="5" class="empty-state">ยังไม่มีนักเรียนเริ่มทดสอบ</td></tr>
+                        </tbody>
+                    </table>
                 </div>
 
-                <!-- ขวา: Lobby (รายชื่อนักเรียนที่อยู่ในห้อง) -->
+                <!-- สมาชิกในห้อง (จากฐานข้อมูล) -->
                 <div class="card">
                     <div class="card-title">
-                        <h3><i class="fa-solid fa-person-shelter"></i> ห้องพักคอย (Lobby)</h3>
+                        <div><i class="fa-solid fa-user-group" style="color: #288CF0;"></i> สมาชิกในห้อง</div>
+                        <span class="badge" id="memberBadge">0 คน</span>
                     </div>
-                    
-                    <div class="lobby-list" id="lobbyList">
-                        <!-- ข้อมูลจำลองนักศึกษาที่กำลังรอ -->
-                        <!-- จะถูกเพิ่มด้วย JS เมื่อมี Event student_joined -->
+                    <div class="members-list" id="membersList">
+                        <div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลด...</div>
                     </div>
                 </div>
+            </div>
 
+            <!-- ผลคะแนนที่บันทึกในฐานข้อมูล -->
+            <div class="card results-card">
+                <div class="card-title">
+                    <div><i class="fa-solid fa-clipboard-list" style="color: #20A873;"></i> ผลคะแนนที่บันทึกแล้ว</div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-outline" onclick="loadRoom()"><i class="fa-solid fa-rotate"></i> รีเฟรช</button>
+                        <button class="btn btn-outline" onclick="exportResultsCSV()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                    </div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>วันที่ - เวลา</th><th>รหัสนักศึกษา</th><th>ชื่อนักศึกษา</th><th>WPM</th><th>แม่นยำ</th><th>ผิด</th><th>คะแนน</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                            <tr><td colspan="7" class="empty-state">กำลังโหลด...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </main>
     </div>
 
-    <!-- ========================================== -->
-    <!-- [FRONTEND <-> BACKEND]: Socket.IO Scripts  -->
-    <!-- ========================================== -->
+    <script src="{{ url_for('static', filename='js/teacher_common.js') }}"></script>
     <script>
-        // 1. จำลองการเชื่อมต่อ Socket (ในของจริงให้ใส่ URL ของ Backend Render.com)
-        // const socket = io('https://typeclass-backend.onrender.com'); 
-        
-        let isPlaying = false;
-        let roomCode = '{{ room_code }}';
+        const roomCode = "{{ room_code }}";
+        let roomInfo = null;
+        let roomMembers = [];
+        let roomResults = [];
+        let livePlayers = [];
 
-        // ฟังก์ชันจำลองเมื่อมีนักเรียนเข้าห้องมา
-        function simulateStudentJoin(name, initials) {
-            const lobbyList = document.getElementById('lobbyList');
-            const playerCountBadge = document.getElementById('playerCountBadge');
-            
-            const item = document.createElement('div');
-            item.className = 'lobby-item';
-            item.innerHTML = `
-                <div class="lobby-avatar">${initials}</div>
-                <div class="lobby-info">
-                    <div class="name">${name}</div>
-                    <div class="status"><i class="fa-solid fa-circle-check"></i> พร้อมแล้ว</div>
-                </div>
-            `;
-            lobbyList.appendChild(item);
-            
-            // อัปเดตตัวเลข
-            const count = lobbyList.children.length;
-            playerCountBadge.innerText = `ผู้เข้าร่วม ${count} คน`;
-            
-            // ลบข้อความ "กำลังรอ..." ออกจากกระดาน Leaderboard
-            if(count === 1) document.getElementById('leaderboardBody').innerHTML = '';
+        // ฟังก์ชันเปิด/ปิด เมนู Dropdown แบบคลิก
+        function toggleProfileMenu(event) {
+            event.stopPropagation();
+            document.getElementById('profileDropdown').classList.toggle('show');
         }
 
-        // =======================
-        // ปุ่มควบคุม (Action)
-        // =======================
-        function startTest() {
-            if(document.getElementById('lobbyList').children.length === 0) {
-                alert('ยังไม่มีนักศึกษาเข้าร่วมห้อง!');
+        // กดพื้นที่ว่างนอกเมนู เพื่อปิด Dropdown อัตโนมัติ
+        window.onclick = function(event) {
+            if (!event.target.closest('.user-profile')) {
+                const dropdown = document.getElementById('profileDropdown');
+                if (dropdown && dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            }
+        }
+
+        // ฟังก์ชันคัดลอกรหัสห้อง
+        function copyRoomCode() {
+            navigator.clipboard.writeText(roomCode).then(() => {
+                const textElem = document.getElementById('roomCodeText');
+                const iconElem = document.getElementById('copyIcon');
+                const container = document.getElementById('codeContainer');
+                
+                textElem.innerText = "COPIED!";
+                iconElem.className = "fa-solid fa-check";
+                container.style.backgroundColor = "rgba(255,255,255,0.3)";
+                
+                setTimeout(() => {
+                    textElem.innerText = roomCode;
+                    iconElem.className = "fa-regular fa-copy";
+                    container.style.backgroundColor = "rgba(255,255,255,0.1)";
+                }, 1500);
+            });
+        }
+
+        function renderStatus(status) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const btnOpen = document.getElementById('btnOpenRoom');
+            const btnClose = document.getElementById('btnCloseRoom');
+
+            if (status === 'open') {
+                statusDot.className = "status-dot active";
+                statusText.innerText = "สถานะ: เปิดรับนักศึกษาและกำลังทดสอบ (Live)";
+                statusText.style.color = "#20A873";
+                btnOpen.style.display = 'none';
+                btnClose.style.display = 'inline-flex';
+            } else {
+                statusDot.className = "status-dot closed";
+                statusText.innerText = "สถานะ: ปิดห้องอยู่ (นักศึกษายังไม่สามารถเริ่มทดสอบได้)";
+                statusText.style.color = "#E95C68";
+                btnOpen.style.display = 'inline-flex';
+                btnClose.style.display = 'none';
+            }
+        }
+
+        // ฟังก์ชันเปิด/ปิดห้อง (บันทึกสถานะลง U.CLASSROOMS)
+        async function setRoomStatus(status) {
+            if (status === 'closed') {
+                const confirmed = await TC.confirm({
+                    title: 'ปิดห้องทดสอบ?',
+                    message: 'นักศึกษาจะไม่สามารถเริ่มทดสอบในห้องนี้ได้จนกว่าจะเปิดห้องอีกครั้ง\nผลคะแนนที่ส่งแล้วจะถูกเก็บไว้ในระบบ',
+                    confirmText: 'ปิดห้อง',
+                    danger: true,
+                    icon: 'fa-power-off'
+                });
+                if (!confirmed) return;
+            }
+            const btn = document.getElementById(status === 'open' ? 'btnOpenRoom' : 'btnCloseRoom');
+            btn.disabled = true;
+            const { ok, data } = await TC.api(`/teacher/rooms/${encodeURIComponent(roomCode)}/status`, {
+                method: 'PATCH',
+                body: { status }
+            });
+            btn.disabled = false;
+            if (!ok) {
+                TC.toast(data.error || 'เปลี่ยนสถานะห้องไม่สำเร็จ', 'error');
                 return;
             }
-            
-            isPlaying = true;
-            document.getElementById('liveDot').style.display = 'block';
-            document.getElementById('startBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังแข่งขัน...';
-            document.getElementById('startBtn').style.backgroundColor = '#F2A93B'; // เปลี่ยนเป็นสีเหลือง
-            
-            // [BACKEND]: Emit สั่งให้นักเรียนเริ่มพิมพ์
-            // socket.emit('start_test', { room: roomCode });
-            
-            alert('ส่งสัญญาณให้นักศึกษาเริ่มพิมพ์แล้ว!');
-            
-            // จำลองการเอาชื่อจาก Lobby ไปใส่ใน Leaderboard
-            mockRenderLeaderboard();
+            if (roomInfo) roomInfo.status = status;
+            renderStatus(status);
+            TC.toast(status === 'open' ? 'เปิดห้องทดสอบแล้ว' : 'ปิดห้องทดสอบแล้ว', 'success');
         }
 
-        function endTest() {
-            if(confirm('คุณต้องการจบการแข่งขัน และบันทึกคะแนนใช่หรือไม่?')) {
-                isPlaying = false;
-                document.getElementById('liveDot').style.display = 'none';
-                
-                // [BACKEND]: Emit สั่งจบเกม
-                // socket.emit('end_test', { room: roomCode });
-                
-                alert('การแข่งขันสิ้นสุด ระบบกำลังบันทึกคะแนนลงฐานข้อมูล');
-                window.location.href = 'dashboard.html';
+        function isOnline(member) {
+            return livePlayers.some(p => p.username === member.username || p.username === member.full_name);
+        }
+
+        function renderMembers() {
+            const list = document.getElementById('membersList');
+            document.getElementById('memberBadge').innerText = `${roomMembers.length} คน`;
+            document.getElementById('roomMemberCount').innerText = roomMembers.length;
+            if (roomMembers.length === 0) {
+                list.innerHTML = `<div class="empty-state"><i class="fa-solid fa-user-plus" style="font-size: 24px; color: #D8E7F4; margin-bottom: 10px; display: block;"></i>ยังไม่มีนักศึกษาเข้าร่วม<br>แชร์รหัส <b>${TC.escape(roomCode)}</b> ให้นักศึกษา</div>`;
+                return;
             }
+            list.innerHTML = roomMembers.map(m => `
+                <div class="member-item">
+                    <div class="member-avatar ${isOnline(m) ? 'online' : ''}">${TC.escape(TC.initials(m.full_name))}</div>
+                    <div class="member-info">
+                        <div class="member-name">${TC.escape(m.full_name)}</div>
+                        <div class="member-meta">${TC.escape(m.student_code)} · ทดสอบ ${m.attempts} ครั้ง</div>
+                    </div>
+                    <div class="member-wpm">${m.attempts ? `${m.best_wpm} WPM` : '-'}</div>
+                </div>
+            `).join('');
         }
 
-        function copyRoomCode() {
-            navigator.clipboard.writeText(roomCode);
-            const box = document.getElementById('roomCodeText');
-            const originalText = box.innerText;
-            box.innerText = 'คัดลอกแล้ว!';
-            setTimeout(() => box.innerText = originalText, 1500);
+        function renderResults() {
+            const tbody = document.getElementById('resultsBody');
+            if (roomResults.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">ยังไม่มีผลคะแนนในห้องนี้</td></tr>';
+                return;
+            }
+            tbody.innerHTML = roomResults.map(r => `
+                <tr>
+                    <td>${TC.escape(r.submitted_at || '-')}</td>
+                    <td>${TC.escape(r.student_code)}</td>
+                    <td style="font-weight:600;">${TC.escape(r.full_name)}</td>
+                    <td style="color:#288CF0; font-weight:700;">${r.wpm} WPM</td>
+                    <td>${r.accuracy}%</td>
+                    <td>${r.error_count}</td>
+                    <td>${r.score}</td>
+                </tr>
+            `).join('');
         }
 
-        // =======================
-        // ฟังก์ชันจำลอง Leaderboard สำหรับโชว์อาจารย์
-        // =======================
-        function mockRenderLeaderboard() {
-            const tbody = document.getElementById('leaderboardBody');
-            tbody.innerHTML = `
-                <tr>
-                    <td><div class="rank-circle rank-1">1</div></td>
-                    <td class="student-name">กัญญารัตน์ ศรีสุข</td>
-                    <td class="stat-wpm">82 WPM</td>
-                    <td class="stat-acc">98.2%</td>
-                    <td><div class="progress-wrapper"><div class="progress-bar" style="width: 75%;"></div></div></td>
-                </tr>
-                <tr>
-                    <td><div class="rank-circle rank-2">2</div></td>
-                    <td class="student-name">ธนกฤต วงศ์สวัสดิ์</td>
-                    <td class="stat-wpm">75 WPM</td>
-                    <td class="stat-acc">95.0%</td>
-                    <td><div class="progress-wrapper"><div class="progress-bar" style="width: 60%;"></div></div></td>
-                </tr>
-                <tr>
-                    <td><div class="rank-circle rank-3">3</div></td>
-                    <td class="student-name">สมชาย ใจดี</td>
-                    <td class="stat-wpm">60 WPM</td>
-                    <td class="stat-acc">90.1%</td>
-                    <td><div class="progress-wrapper"><div class="progress-bar" style="width: 45%;"></div></div></td>
-                </tr>
-            `;
+        async function loadRoom() {
+            const { ok, status, data } = await TC.api(`/teacher/api/rooms/${encodeURIComponent(roomCode)}`);
+            if (!ok) {
+                if (status === 404 || status === 403) {
+                    TC.toast(data.error || 'ไม่พบห้องเรียนนี้', 'error');
+                    setTimeout(() => window.location.href = "{{ url_for('teacher.teacher_dashboard_page') }}", 1500);
+                } else {
+                    TC.toast(data.error || 'โหลดข้อมูลห้องไม่สำเร็จ', 'error');
+                }
+                return;
+            }
+            roomInfo = data.room;
+            roomMembers = data.members || [];
+            roomResults = data.results || [];
+
+            document.title = `${roomInfo.room_name} - ควบคุมห้องสอบ`;
+            document.getElementById('roomName').innerText = roomInfo.room_name;
+            document.getElementById('roomDuration').innerText = roomInfo.duration;
+            document.getElementById('roomCreatedAt').innerText = roomInfo.created_at || '-';
+            renderStatus(roomInfo.status);
+            renderMembers();
+            renderResults();
         }
 
-        // จำลองสถานการณ์คนเข้าห้องเมื่อเปิดหน้าเว็บมาได้ 1 วินาที
-        window.onload = () => {
-            setTimeout(() => simulateStudentJoin('กัญญารัตน์ ศรีสุข', 'กศ'), 1000);
-            setTimeout(() => simulateStudentJoin('ธนกฤต วงศ์สวัสดิ์', 'ธว'), 2500);
-            setTimeout(() => simulateStudentJoin('สมชาย ใจดี', 'สจ'), 4000);
-        };
+        function exportResultsCSV() {
+            if (roomResults.length === 0) {
+                TC.toast('ยังไม่มีผลคะแนนให้ส่งออก', 'info');
+                return;
+            }
+            const rows = [['Submitted At', 'Student ID', 'Name', 'WPM', 'Accuracy (%)', 'Errors', 'Time (s)', 'Score']];
+            roomResults.forEach(r => rows.push([r.submitted_at, r.student_code, r.full_name, r.wpm, r.accuracy, r.error_count, r.time_spent, r.score]));
+            TC.downloadCSV(`Room_${roomCode}_Results.csv`, rows);
+        }
 
-        // =======================
-        // โครงสร้าง Socket.IO (สำหรับนำไปต่อกับ Backend)
-        // =======================
-        /*
-        socket.on('connect', () => {
-            socket.emit('teacher_join_room', { room: roomCode, token: localStorage.getItem('jwt_token') });
+        if (TC.guardTeacher()) {
+            TC.renderSidebarUser();
+            loadRoom();
+            // รีเฟรชผลคะแนนจากฐานข้อมูลอัตโนมัติทุก 20 วินาที
+            setInterval(() => { if (!document.hidden) loadRoom(); }, 20000);
+        }
+
+        // เชื่อมต่อ WebSocket เพื่ออัปเดต Live Leaderboard แบบ Real-time
+        const socket = io();
+        socket.on("connect", () => {
+            socket.emit("teacher_join_room", { room_code: roomCode });
         });
 
-        // เมื่อนักเรียนเข้ามาใหม่ (อัปเดต Lobby)
-        socket.on('student_joined', (data) => {
-            simulateStudentJoin(data.name, data.name.substring(0, 2));
-        });
+        socket.on("room_leaderboard_update", (players) => {
+            livePlayers = players || [];
+            const badge = document.getElementById("participantCountBadge");
+            const tbody = document.getElementById("leaderboardBody");
 
-        // รับข้อมูลอัปเดต WPM สดๆ (อัปเดต Leaderboard)
-        socket.on('update_leaderboard', (dataArray) => {
-            // โค้ดสำหรับวนลูปสร้าง <tr> ตามข้อมูล WPM ที่เรียงลำดับแล้ว
+            badge.innerText = `กำลังพิมพ์ ${livePlayers.length} คน`;
+            renderMembers();
+
+            if (livePlayers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">ยังไม่มีนักเรียนเริ่มทดสอบ</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = livePlayers.map((p, idx) => `
+                <tr>
+                    <td>#${idx + 1}</td>
+                    <td style="font-weight: 700;">${TC.escape(p.username)}</td>
+                    <td style="color: #288CF0; font-weight: 700;">${p.wpm} WPM</td>
+                    <td>${p.accuracy}%</td>
+                    <td><span class="badge" style="background:#E4F7F0; color:#20A873;">กำลังพิมพ์</span></td>
+                </tr>
+            `).join("");
         });
-        */
     </script>
 </body>
 </html>

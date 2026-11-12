@@ -2,266 +2,521 @@
 <html lang="th">
 
 <head>
+    <style id="auth-guard-style">html { display: none !important; }</style>
+    <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
+    <script>requireAuth('student');</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern_modal.css') }}">
+    <script src="{{ url_for('static', filename='js/modern_modal.js') }}"></script>
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>การแข่งขันพิมพ์ - ระบบห้องเรียนฝึกพิมพ์</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: "Segoe UI", Tahoma, sans-serif; background: #f7fbff; color: #4f6172; }
-        .typing-page { min-height: 100vh; display: flex; background: radial-gradient(circle at 12% 88%, rgba(126, 191, 238, 0.12) 0 75px, transparent 76px), radial-gradient(circle at 92% 90%, rgba(126, 191, 238, 0.12) 0 90px, transparent 91px), #f8fcff; }
+        body { font-family: 'Prompt', 'Inter', sans-serif; background: #f7fbff; color: #4f6172; display: flex; min-height: 100vh; overflow: hidden;}
         
-        /* SIDEBAR */
-        .sidebar { width: 250px; min-height: 100vh; background: linear-gradient(180deg, #cfeeff 0%, #bce4f8 100%); padding: 28px 18px; flex-shrink: 0; display: flex; flex-direction: column; }
-        .profile { display: flex; align-items: center; gap: 12px; padding: 8px 12px 28px; }
-        .profile-avatar { width: 52px; height: 52px; border-radius: 50%; background: #f6a8bf; display: flex; align-items: center; justify-content: center; font-size: 27px; box-shadow: 0 4px 10px rgba(90, 130, 160, 0.12); }
-        .profile-info strong { display: block; color: #3f5c72; font-size: 14px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;}
-        .profile-info span { color: #6f899d; font-size: 12px; }
-        .menu { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-        .menu-item { display: flex; align-items: center; gap: 14px; padding: 15px 17px; border-radius: 12px; color: #4d6a7e; font-size: 15px; text-decoration: none; transition: 0.2s; }
-        .menu-item:hover { background: rgba(255, 255, 255, 0.55); }
-        .menu-item.active { background: #ffffff; color: #4d78a3; font-weight: 600; box-shadow: 0 4px 12px rgba(70, 130, 170, 0.08); }
-        .menu-icon { width: 24px; text-align: center; font-size: 19px; }
-        .logout { margin-top: auto; }
-
-        /* MAIN CONTENT */
-        .main-content { flex: 1; min-width: 0; padding: 30px 22px 40px; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-        .back-button { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: 1px solid #b7cddd; border-radius: 24px; background: #ffffff; color: #5c7285; font-size: 14px; text-decoration: none; cursor: pointer; transition: 0.2s; }
-        .back-button:hover { background: #f2f8fc; }
-        .room-badge { padding: 10px 22px; background: #ffffff; border: 1px solid #b7cddd; border-radius: 24px; color: #506d82; font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        /* ================= SIDEBAR ================= */
+        .sidebar { width: 260px; background-color: #fff; padding: 25px 20px; display: flex; flex-direction: column; z-index: 10; border-right: 1px solid #D8E7F4; flex-shrink: 0;}
+        .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; text-decoration: none;}
+        .brand-icon { width: 40px; height: 40px; background-color: #288CF0; border-radius: 12px; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 20px; }
+        .brand-text h2 { color: #17345C; font-size: 16px; font-weight: 700; }
+        .brand-text p { color: #71829B; font-size: 11px; }
         
-        .timer-section { text-align: center; margin: 4px 0 22px; }
-        .timer { display: flex; justify-content: center; align-items: center; gap: 10px; color: #5c83c4; font-size: 40px; font-weight: 700; letter-spacing: 1px; }
-        .timer-icon { font-size: 39px; }
-        .timer-label { margin-top: 1px; color: #8da1b2; font-size: 13px; }
+        /* Profile Dropdown */
+        .user-profile { background-color: #F4F7FC; padding: 12px; border-radius: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 30px; position: relative; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
+        .user-profile:hover { border-color: #288CF0; }
+        .avatar { width: 40px; height: 40px; background-color: #DDF0FD; border: 2px solid #288CF0; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #288CF0; font-size: 18px; flex-shrink: 0;}
+        .user-info { flex: 1; overflow: hidden; }
+        .user-info .name { color: #17345C; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-info .role { color: #20A873; font-size: 12px; font-weight: 600; }
+        
+        .dropdown-menu { display: none; position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: #fff; border-radius: 12px; box-shadow: 0 5px 15px rgba(23, 52, 92, 0.1); flex-direction: column; overflow: hidden; z-index: 100; border: 1px solid #D8E7F4; }
+        .dropdown-menu.show { display: flex; }
+        .dropdown-menu a { padding: 12px 15px; color: #17345C; text-decoration: none; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .dropdown-menu a:hover { background: #F4F7FC; color: #288CF0; }
+        .dropdown-menu a.text-danger:hover { color: #E95C68; background: #FDEBED; }
 
-        /* TYPING CARD */
-        .typing-card { position: relative; background: #ffffff; border: 1px solid #e4edf3; border-radius: 20px; padding: 27px 28px; box-shadow: 0 8px 25px rgba(77, 126, 160, 0.08); }
-        .typing-title { display: flex; align-items: center; gap: 10px; color: #547697; font-size: 17px; font-weight: 600; margin-bottom: 17px; }
-        .typing-title-icon { width: 35px; height: 35px; border-radius: 10px; background: #e7f5ff; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .menu-list { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+        .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; color: #71829B; text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.2s; }
+        .menu-item:hover { background-color: #F4F7FC; color: #17345C; }
+        .menu-item.active { background-color: #288CF0; color: #fff; font-weight: 700; box-shadow: 0 4px 10px rgba(40, 140, 240, 0.2); }
+        .menu-item i { font-size: 18px; width: 24px; text-align: center; }
 
+        /* ================= MAIN CONTENT ================= */
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: radial-gradient(circle at 12% 88%, rgba(126, 191, 238, 0.08) 0 75px, transparent 76px), radial-gradient(circle at 92% 90%, rgba(126, 191, 238, 0.08) 0 90px, transparent 91px), #f8fcff;}
+        .topbar { padding: 25px 30px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .btn-outline { background: #fff; border: 1px solid #D8E7F4; color: #17345C; padding: 10px 20px; border-radius: 20px; text-decoration: none; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; cursor: pointer;}
+        .btn-outline:hover { border-color: #288CF0; color: #288CF0; background: #F4F7FC;}
+        .btn-primary { background: #288CF0; color: #fff; padding: 10px 20px; border-radius: 20px; text-decoration: none; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; border: none; cursor: pointer;}
+        .btn-primary:hover { background: #1e70c4; }
+
+        .room-badge { background: #E7F3FE; color: #288CF0; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; display: none;} /* ซ่อนไว้ก่อน จะโชว์ตอนมีห้อง */
+
+        .content-area { flex: 1; overflow-y: auto; padding: 0 30px 30px 30px; display: flex; gap: 25px; align-items: flex-start; justify-content: center; }
+        
+        /* ================= TYPING SECTION ================= */
+        .typing-section { flex: 1; max-width: 900px; display: flex; flex-direction: column; gap: 10px; }
+        
+        .timer-display { text-align: center; font-size: 42px; font-weight: 800; color: #17345C; font-family: 'Inter'; display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 5px;}
+        .timer-display i { color: #288CF0; font-size: 36px; }
+
+        .typing-card { background: #fff; border-radius: 20px; padding: 35px; box-shadow: 0 10px 30px rgba(6, 51, 118, 0.05); position: relative; border: 1px solid #e4edf3;}
+        .typing-header { display: flex; align-items: center; gap: 10px; color: #71829B; font-size: 14px; font-weight: 600; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #D8E7F4; }
+        
         .text-box { 
             position: relative; 
-            background: #f8fbfd; 
-            border: 1px solid #e3edf3; 
-            border-radius: 14px; 
-            padding: 20px 25px; 
-            font-size: 26px;        
-            height: 145px;          
-            overflow: hidden;       
+            font-family: 'Inter', monospace; 
+            font-size: 26px; 
+            color: #A0CEF8; 
+            line-height: 1.7; 
+            height: 150px; 
+            overflow: hidden; 
             scroll-behavior: smooth; 
             text-align: left;
             cursor: text;
+            user-select: none;
         }
         .text-box::-webkit-scrollbar { display: none; }
         
-        .word {
-            display: inline-block;
-            margin-right: 12px;
-            margin-bottom: 12px;
-            line-height: 1.3;
-        }        
+        .word { display: inline-block; margin-right: 12px; margin-bottom: 8px; }        
+        .char { transition: color 0.1s, background-color 0.1s; border-radius: 4px; padding: 0 1px; font-weight: 500;}
+        .char.correct { color: #20A873; font-weight: 600; } 
+        .char.incorrect { color: #E95C68; background-color: #FDEBED; } 
+        .char.active { color: #288CF0; border-bottom: 3px solid #288CF0; animation: blink 1s infinite; font-weight: 600; }
+        .char.space-char.active { background-color: rgba(40, 140, 240, 0.15); border-bottom: 3px solid #288CF0; }
 
-        .char { color: #899bb0; transition: color 0.1s; border-radius: 3px; }
-        .char.correct { color: #2e7d32; }
-        .char.incorrect { color: #c62828; background: #ffebee; }
-        .char.active { color: #3f5c72; border-bottom: 3px solid #579be8; font-weight: bold; }
+        @keyframes blink { 50% { border-color: transparent; background-color: transparent;} }
 
-        /* RIGHT PANEL */
-        .right-panel { width: 285px; min-height: 100vh; background: linear-gradient(180deg, #c9e9fa 0%, #b8e0f5 100%); padding: 30px 18px; flex-shrink: 0; }
-        .side-card { background: rgba(255, 255, 255, 0.94); border-radius: 18px; padding: 18px 17px; margin-bottom: 16px; box-shadow: 0 6px 18px rgba(75, 127, 160, 0.07); }
-        .side-card-title { display: flex; align-items: center; gap: 10px; color: #55718a; font-size: 15px; font-weight: 600; margin-bottom: 17px; }
-        .side-title-icon { width: 34px; height: 34px; border-radius: 50%; background: #dfeeff; display: flex; align-items: center; justify-content: center; font-size: 17px; }
-        .participant-list { display: flex; flex-direction: column; gap: 10px; }
-        .participant { display: flex; align-items: center; gap: 10px; color: #617789; font-size: 12px; }
-        .participant-avatar { width: 31px; height: 31px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-        .participant-avatar.pink { background: #f4c5d2; } .participant-avatar.yellow { background: #f4e39c; } .participant-avatar.blue { background: #b8d9ef; }
-        .participant-count { text-align: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid #edf2f5; color: #9aaab6; font-size: 11px; }
+        #typingInput { position: absolute; top: -9999px; left: -9999px; opacity: 0; }
 
-        .score-card { min-height: 235px; }
-        .score-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .score-title-row .side-card-title { margin-bottom: 0; }
-        .score-label { padding: 5px 9px; border-radius: 12px; background: #edf6fc; color: #87a0b1; font-size: 10px; }
-        .score-empty { min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #93a5b2; }
-        .score-empty .trophy { font-size: 52px; margin-bottom: 8px; opacity: 0.7; }
-        .score-empty strong { color: #71899b; font-size: 13px; margin-bottom: 7px; }
-        .score-empty p { color: #a0afb9; font-size: 11px; line-height: 1.7; }
+        .btn-restart { display: block; margin: 30px auto 0 auto; background: none; border: none; color: #71829B; font-size: 26px; cursor: pointer; transition: 0.2s; padding: 10px; border-radius: 50%; }
+        .btn-restart:hover { color: #288CF0; background: #F4F7FC; transform: rotate(180deg); }
 
-        @media (max-width: 1100px) { .sidebar { width: 210px; } .right-panel { width: 250px; } .main-content { padding-left: 18px; padding-right: 18px; } }
-        @media (max-width: 850px) {
-            .typing-page { flex-wrap: wrap; } .sidebar { width: 100%; min-height: auto; } .menu { flex-direction: row; flex-wrap: wrap; }
-            .logout { margin-top: 0; } .main-content { width: 100%; } .right-panel { width: 100%; min-height: auto; }
-        }
+        /* ================= RIGHT PANELS ================= */
+        .side-panels { width: 300px; display: flex; flex-direction: column; gap: 20px; flex-shrink: 0;}
         
-        .typing-area-wrapper, .status-row {
-            position: absolute;
-            opacity: 0;
-            z-index: -10;
-            pointer-events: none;
-        }
+        .side-card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(6, 51, 118, 0.03); border: 1px solid #e4edf3;}
+        
+        /* Participant Box ซ่อนไว้ก่อน จะแสดงเมื่ออยู่โหมดห้องสอบ */
+        #participantCard { display: none; }
 
-        .restart-btn {
-            display: block;
-            margin: 30px auto 10px;
-            background: none;
-            border: none;
-            font-size: 28px;
-            color: #899bb0;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .restart-btn:hover {
-            color: #579be8;
-            transform: rotate(180deg);
+        .side-title { font-size: 15px; font-weight: 700; color: #17345C; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+        .side-title i { color: #288CF0; }
+        
+        .player-list { display: flex; flex-direction: column; gap: 10px; }
+        .player-item { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px dashed #F4F7FC; }
+        .player-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .player-avatar { width: 32px; height: 32px; background: #E7F3FE; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 14px; color: #288CF0; flex-shrink: 0;}
+        .player-name { font-size: 13px; font-weight: 600; color: #17345C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;}
+        .player-me { color: #71829B; font-size: 11px; }
+        
+        .live-stat-box { text-align: center; padding: 15px 0; }
+        .stat-value { font-size: 32px; font-weight: 800; color: #288CF0; font-family: 'Inter'; line-height: 1; }
+        .stat-label { font-size: 12px; color: #71829B; font-weight: 600; margin-top: 5px; }
+        
+        /* ================= JOIN ROOM MODAL ================= */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(23, 52, 92, 0.5); display: none; justify-content: center; align-items: center; z-index: 200; }
+        .modal-overlay.show { display: flex; }
+        .modal-card { background: #fff; width: 100%; max-width: 450px; border-radius: 24px; padding: 40px; box-shadow: 0 15px 40px rgba(0,0,0,0.15); display: flex; flex-direction: column; align-items: center; text-align: center;}
+        
+        .modal-icon { width: 60px; height: 60px; background: #E7F3FE; border-radius: 16px; display: flex; justify-content: center; align-items: center; font-size: 28px; color: #288CF0; margin-bottom: 20px;}
+        .modal-card h3 { color: #17345C; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+        .modal-card p { color: #71829B; font-size: 14px; margin-bottom: 30px; }
+
+        .form-group { display: flex; flex-direction: column; gap: 8px; width: 100%; text-align: left; margin-bottom: 20px;}
+        .form-label { color: #17345C; font-size: 13px; font-weight: 700; }
+        .input-with-icon { position: relative; }
+        .input-with-icon i { position: absolute; left: 15px; top: 14px; color: #A0CEF8; }
+        .form-input { padding: 12px 15px 12px 45px; border-radius: 12px; border: 1px solid #D8E7F4; font-size: 15px; width: 100%; outline: none; font-family: 'Prompt'; background: #F8FBFD; transition: 0.2s;}
+        .form-input:focus { border-color: #288CF0; background: #fff; box-shadow: 0 0 0 3px rgba(40,140,240,0.1);}
+        
+        .btn-join-submit { width: 100%; background: #288CF0; color: #fff; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; margin-top: 10px;}
+        .btn-join-submit:hover { background: #1e70c4; transform: translateY(-2px);}
+        .btn-close-modal { margin-top: 15px; background: none; border: none; color: #71829B; font-size: 14px; font-weight: 600; cursor: pointer;}
+        .btn-close-modal:hover { color: #E95C68; }
+
+        @media (max-width: 1000px) {
+            .content-area { flex-direction: column; align-items: stretch; }
+            .side-panels { width: 100%; flex-direction: row;}
+            .side-card { flex: 1; }
         }
     </style>
 </head>
 
 <body>
+    <aside class="sidebar">
+        <a href="#" class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-keyboard"></i></div>
+            <div class="brand-text"><h2>ห้องเรียนฝึกพิมพ์</h2><p>โหมดนักศึกษา</p></div>
+        </a>
 
-    <div class="typing-page">
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <div class="profile">
-                <div class="profile-avatar">👩🏻</div>
-                <div class="profile-info">
-                    <!-- เพิ่ม ID ให้แสดงชื่อจากระบบ -->
-                    <strong id="studentNameDisplay">กำลังโหลดชื่อ...</strong>
-                    <span>นักเรียน</span>
-                </div>
+        <div class="user-profile" onclick="toggleProfileMenu(event)">
+            <div class="avatar"><i class="fa-regular fa-face-smile"></i></div>
+            <div class="user-info">
+                <div class="name" id="studentNameDisplay">นักเรียนนิรนาม</div>
+                <div class="role"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> กำลังออนไลน์</div>
             </div>
-
-            <nav class="menu">
-                <a href="#" class="menu-item active">
-                    <span class="menu-icon">🏠</span>
-                    <span>ห้องเรียน</span>
-                </a>
-                <a href="#" class="menu-item">
-                    <span class="menu-icon">📊</span>
-                    <span>พัฒนาการ</span>
-                </a>
-                <a href="#" class="menu-item">
-                    <span class="menu-icon">📝</span>
-                    <span>ประวัติการพิมพ์</span>
-                </a>
-                <a href="#" class="menu-item logout">
-                    <span class="menu-icon">🚪</span>
-                    <span>ออกจากระบบ</span>
-                </a>
-            </nav>
-        </aside>
-
-        <!-- MAIN CONTENT -->
-        <main class="main-content">
-            <div class="top-bar">
-                <!-- กดกลับไปหน้ากรอกรหัส -->
-                <a href="javascript:history.back()" class="back-button">
-                    <span>←</span>
-                    <span>เปลี่ยนห้อง</span>
-                </a>
-                <!-- เพิ่ม ID ให้แสดงรหัสห้องจากระบบ -->
-                <div class="room-badge" id="roomBadgeDisplay">ห้อง -</div>
+            <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
+            
+            <div class="dropdown-menu" id="profileDropdown">
+                <a href="{{ url_for('api.student_profile_page') }}"><i class="fa-solid fa-user-gear"></i> ดูโปรไฟล์ส่วนตัว</a>
+                <a href="{{ url_for('api.login') }}" class="text-danger" onclick="event.stopPropagation(); localStorage.clear();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
             </div>
+        </div>
 
-            <!-- TIMER -->
-            <section class="timer-section">
-                <div class="timer">
-                    <span class="timer-icon">⏱</span>
+        <div class="menu-list">
+            <a href="{{ url_for('api.typing') }}" class="menu-item active">
+                <i class="fa-solid fa-keyboard"></i> ห้องฝึกพิมพ์
+            </a>
+            <a href="{{ url_for('api.student_classrooms_page') }}" class="menu-item">
+                <i class="fa-solid fa-door-open"></i> ห้องเรียนของฉัน
+            </a>
+            <a href="{{ url_for('api.typing_history') }}" class="menu-item">
+                <i class="fa-solid fa-chart-simple"></i> ประวัติการพิมพ์
+            </a>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <!-- ปุ่มเปลี่ยนพฤติกรรมตามโหมด -->
+            <button id="btnToggleRoom" class="btn-primary" onclick="openJoinModal()">
+                <i class="fa-solid fa-person-shelter"></i> เข้าสู่ห้องเรียน
+            </button>
+            
+            <div class="room-badge" id="roomBadgeDisplay">
+                <i class="fa-solid fa-door-open"></i> ห้อง: <span>ไม่ระบุ</span>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="typing-section">
+                <div class="timer-display">
+                    <i class="fa-solid fa-stopwatch"></i>
                     <span id="timer">01:00</span>
                 </div>
-                <div class="timer-label" id="timerLabel">เริ่มพิมพ์เพื่อเริ่มจับเวลา</div>
-            </section>
-
-            <!-- TYPING CARD -->
-            <section class="typing-card">
-                <div class="typing-title">
-                    <div class="typing-title-icon">⌨️</div>
-                    <span>พิมพ์ข้อความต่อไปนี้</span>
+                <div id="timerLabel" style="text-align: center; color: #71829B; font-size: 14px; margin-bottom: 10px;">
+                    พิมพ์ตัวอักษรแรกเพื่อเริ่มจับเวลา
                 </div>
 
-                <!-- โจทย์ (แสดงสีไฮไลต์) -->
-                <div class="text-box" id="textDisplay" onclick="document.getElementById('typingInput').focus()">
-                    <!-- ข้อความโจทย์จะถูกสร้างด้วย JS -->
+                <div class="typing-card">
+                    <div class="typing-header">
+                        <i class="fa-regular fa-keyboard"></i> <span id="typingModeText">โหมดฝึกซ้อมส่วนตัว</span>
+                    </div>
+                    
+                    <div class="text-box" id="textDisplay" onclick="document.getElementById('typingInput').focus()">
+                        <span style="color: #71829B; font-size: 16px;">กำลังโหลดข้อความ...</span>
+                    </div>
+                    
+                    <input type="text" id="typingInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    
+                    <button class="btn-restart" onclick="restartTyping()" title="เริ่มใหม่ (Restart)">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
                 </div>
+            </div>
 
-                <!-- ช่องกรอกข้อความ (ถูกซ่อนด้วย CSS) -->
-                <div class="typing-area-wrapper">
-                    <textarea id="typingInput" class="typing-area"></textarea>
-                    <div class="character-count"><span id="characterCount">0</span> / <span id="totalCharCount">0</span></div>
-                </div>
-
-                <!-- 🌟 ปุ่มสุ่มคำใหม่ (Restart) 🌟 -->
-                <button class="restart-btn" onclick="restartTyping()" title="เริ่มใหม่ (Restart)">↻</button>
-            </section>
-        </main>
-
-        <!-- RIGHT PANEL -->
-        <aside class="right-panel">
-            <section class="side-card">
-                <div class="side-card-title">
-                    <span class="side-title-icon">👥</span>
-                    <span>ผู้เข้าร่วม</span>
-                </div>
-
-                <div class="participant-list">
-                    <!-- รายชื่อจำลอง รอผูกกับ Socket -->
-                    <div class="participant">
-                        <div class="participant-avatar pink">👩🏻</div>
-                        <span id="lobbySelfName">คุณ (Me)</span>
+            <div class="side-panels">
+                <!-- Participant ซ่อนในโหมดฝึกซ้อม -->
+                <div class="side-card" id="participantCard">
+                    <div class="side-title">
+                        <div><i class="fa-solid fa-user-group"></i> ผู้เข้าร่วม</div>
+                    </div>
+                    <div class="player-list">
+                        <div class="player-item">
+                            <div class="player-avatar"><i class="fa-regular fa-face-smile"></i></div>
+                            <div>
+                                <div class="player-name" id="lobbySelfName">นักเรียนนิรนาม</div> 
+                                <div class="player-me">(คุณ)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: center; font-size: 11px; color: #71829B; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #D8E7F4;">
+                        ผู้เข้าร่วม 1 คน
                     </div>
                 </div>
 
-                <div class="participant-count">ผู้เข้าร่วม 1 คน</div>
-            </section>
-
-            <section class="side-card score-card">
-                <div class="score-title-row">
-                    <div class="side-card-title">
-                        <span class="side-title-icon">🏆</span>
-                        <span>อันดับคะแนน</span>
+                <div class="side-card">
+                    <div class="side-title">
+                        <div><i class="fa-solid fa-bolt" style="color: #F2A93B;"></i> สถิติของคุณ</div>
+                        <span style="font-size: 10px; background: #F4F7FC; padding: 4px 8px; border-radius: 8px; color: #71829B;">Live</span>
                     </div>
-                    <span class="score-label">ล่าสุด</span>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                        <div class="live-stat-box">
+                            <div class="stat-value" id="liveWpm">0</div>
+                            <div class="stat-label">WPM</div>
+                        </div>
+                        <div class="live-stat-box">
+                            <div class="stat-value" id="liveAcc" style="color: #20A873;">100<span style="font-size: 16px;">%</span></div>
+                            <div class="stat-label">ความแม่นยำ</div>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="score-empty">
-                    <div class="trophy">🏆</div>
-                    <strong>ยังไม่มีคะแนน</strong>
-                    <p>คะแนนจะแสดงหลังจาก<br>ทำการแข่งขันเสร็จสิ้น</p>
-                </div>
-            </section>
-        </aside>
+            </div>
+        </div>
     </div>
 
-    <!-- JAVASCRIPT -->
+    <!-- ================= JOIN ROOM MODAL ================= -->
+    <div class="modal-overlay" id="joinModal">
+        <div class="modal-card">
+            <div class="modal-icon"><i class="fa-solid fa-keyboard"></i></div>
+            <h3>เข้าสู่ห้องเรียน</h3>
+            <p>กรอกรหัสห้องที่ได้รับจากอาจารย์เพื่อเข้าร่วมทดสอบ</p>
+            
+            <div class="form-group">
+                <label class="form-label">รหัสห้องเรียน (Room Code)</label>
+                <div class="input-with-icon">
+                    <i class="fa-solid fa-door-open"></i>
+                    <input type="text" id="inputRoomCode" class="form-input" placeholder="เช่น TYP-ABCD">
+                </div>
+            </div>
+            
+            <button class="btn-join-submit" onclick="submitJoinRoom()">เข้าร่วมห้องเรียน <i class="fa-solid fa-arrow-right"></i></button>
+            <button class="btn-close-modal" onclick="closeJoinModal()">กลับไปพิมพ์ต่อ</button>
+        </div>
+    </div>
+
     <script>
-        // -----------------------------------------------------------------
-        // 1. ดึงข้อมูล "รหัสห้อง" และ "ชื่อ" จาก URL (ที่มาจากหน้า join.html)
-        // -----------------------------------------------------------------
-        const urlParams = new URLSearchParams(window.location.search);
-        const roomCode = urlParams.get('room_code') || 'ไม่ระบุห้อง';
-        const studentName = urlParams.get('student_name') || 'นักเรียนนิรนาม';
+        function toggleProfileMenu(event) {
+            event.stopPropagation();
+            document.getElementById('profileDropdown').classList.toggle('show');
+        }
+        window.onclick = function(event) {
+            if (!event.target.closest('.user-profile')) {
+                const dropdown = document.getElementById('profileDropdown');
+                if (dropdown && dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            }
+        }
 
-        // นำข้อมูลไปอัปเดตบนหน้าจอทันที
+        // ================= ควบคุม Modal เข้าห้องเรียน =================
+        function openJoinModal() {
+            document.getElementById('joinModal').classList.add('show');
+            document.getElementById('inputRoomCode').focus();
+        }
+        function closeJoinModal() {
+            document.getElementById('joinModal').classList.remove('show');
+        }
+
+        let isExamMode = false;
+        let currentRoom = '';
+        const authToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        let studentName = storedUser.full_name || storedUser.username || localStorage.getItem('username') || 'นักเรียน';
         document.getElementById('studentNameDisplay').innerText = studentName;
-        document.getElementById('lobbySelfName').innerText = studentName + ' (Me)';
-        document.getElementById('roomBadgeDisplay').innerText = 'ห้อง ' + roomCode;
+        document.getElementById('lobbySelfName').innerText = studentName;
+        if (storedUser.profile_image_url) {
+            const sbAv = document.querySelector('.user-profile .avatar');
+            if (sbAv) sbAv.innerHTML = `<img src="${storedUser.profile_image_url}" alt="Profile" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.remove();">`;
+        }
 
-        // -----------------------------------------------------------------
-        // 2. ระบบพิมพ์และการเชื่อมต่อ
-        // -----------------------------------------------------------------
-        const socket = io();
+        async function submitJoinRoom() {
+            const code = document.getElementById('inputRoomCode').value.trim();
+            if(!code) {
+                showModernPopup({
+                    type: 'warning',
+                    title: 'กรุณากรอกข้อมูล',
+                    message: 'กรุณากรอกรหัสห้อง'
+                });
+                return;
+            }
+
+            const roomCodeUpper = code.toUpperCase();
+
+            // บันทึกการเข้าร่วมห้องเรียนลง Oracle Database (U.CLASSROOM_MEMBERS) หากมี Token
+            if (authToken) {
+                try {
+                    const joinRes = await fetch('/api/student/classrooms/join', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify({ room_code: roomCodeUpper })
+                    });
+                    if (joinRes.status === 404) {
+                        const errData = await joinRes.json();
+                        showModernPopup({
+                            type: 'error',
+                            title: 'ไม่พบห้องเรียน',
+                            message: errData.error || `ไม่พบห้องเรียนรหัส ${roomCodeUpper}`
+                        });
+                        return;
+                    }
+                    if (joinRes.status === 403) {
+                        const errData = await joinRes.json();
+                        showModernPopup({
+                            type: 'warning',
+                            title: 'ห้องเรียนปิดแล้ว',
+                            message: errData.error || `ห้องเรียน ${roomCodeUpper} ปิดการทดสอบแล้ว คุณไม่สามารถเข้าสอบได้`,
+                            buttonText: 'กลับสู่หน้ารวมห้อง',
+                            onConfirm: () => {
+                                window.location.href = '/classroom';
+                            }
+                        });
+                        return;
+                    }
+                } catch (e) {
+                    console.warn("Join classroom API warning:", e);
+                }
+            }
+
+            currentRoom = roomCodeUpper;
+            isExamMode = true;
+            
+            // อัปเดต UI ให้เปลี่ยนเป็นโหมดสอบ
+            document.getElementById('participantCard').style.display = 'block';
+            document.getElementById('roomBadgeDisplay').style.display = 'inline-flex';
+            document.getElementById('roomBadgeDisplay').querySelector('span').innerText = currentRoom;
+            
+            document.getElementById('btnToggleRoom').innerHTML = '<i class="fa-solid fa-arrow-left"></i> ออกจากห้องสอบ';
+            document.getElementById('btnToggleRoom').className = 'btn-outline';
+            document.getElementById('btnToggleRoom').onclick = exitRoom;
+
+            document.getElementById('typingModeText').innerText = `กำลังทำข้อสอบ ห้อง: ${currentRoom}`;
+            
+            closeJoinModal();
+            
+            // 🚨 แจ้ง Server เพื่อเข้าห้องสอบและรับคำชุดใหม่
+            if (socket.connected) {
+                socket.emit("student_join", { room_code: currentRoom, student_name: studentName });
+                restartTyping(); // รีเซ็ตเพื่อขอคำชุดข้อสอบ
+            }
+        }
+
+        async function exitRoom() {
+            const confirmed = await showModernConfirm({
+                type: 'warning',
+                title: 'ออกจากห้องสอบ',
+                message: 'ต้องการออกจากห้องสอบและกลับสู่โหมดฝึกซ้อมหรือไม่?',
+                confirmText: 'ออกจากห้อง',
+                cancelText: 'อยู่ต่อ'
+            });
+            if (confirmed) {
+                isExamMode = false;
+                currentRoom = '';
+                
+                document.getElementById('participantCard').style.display = 'none';
+                document.getElementById('roomBadgeDisplay').style.display = 'none';
+                
+                document.getElementById('btnToggleRoom').innerHTML = '<i class="fa-solid fa-person-shelter"></i> เข้าสู่ห้องเรียน';
+                document.getElementById('btnToggleRoom').className = 'btn-primary';
+                document.getElementById('btnToggleRoom').onclick = openJoinModal;
+                
+                document.getElementById('typingModeText').innerText = 'โหมดฝึกซ้อมส่วนตัว';
+                
+                restartTyping(); // รีเซ็ตเพื่อขอคำชุดฝึกซ้อม
+            }
+        }
+
+        // ================= ระบบพิมพ์ =================
+        const socket = io({
+            auth: { token: localStorage.getItem('token') }
+        });
+
+        // 🚨 จัดการเมื่อห้องเรียนถูกปิดหรือลบแบบ Real-time โดยอาจารย์
+        let isKickingOut = false;
+        function handleRoomClosedNotification(data) {
+            if (isKickingOut) return;
+            const targetRoom = ((data && data.room_code) || currentRoom || "").trim().toUpperCase();
+
+            // ตรวจสอบว่ากำลังทำข้อสอบอยู่ในห้องนั้นจริงหรือไม่
+            if (!isExamMode || (currentRoom && currentRoom.toUpperCase() !== targetRoom)) {
+                return;
+            }
+
+            isKickingOut = true;
+
+            // 1. หยุดตัวจับเวลาทันที ไม่ให้จับเวลาต่อ
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            timerStarted = false;
+
+            // 2. ล็อกช่องพิมพ์ทันที และลบ focus เพื่อไม่ให้พิมพ์ตัวอักษรใดๆ ได้อีก
+            if (typingInput) {
+                typingInput.disabled = true;
+                typingInput.blur();
+                typingInput.value = "";
+            }
+
+            // 3. แจ้ง WebSocket Server ว่าออกจากห้อง
+            if (socket && socket.connected && currentRoom) {
+                socket.emit("leave_classroom", { room_code: currentRoom });
+            }
+
+            // 4. รีเซ็ตสถานะโหมดสอบ
+            const closedRoomCode = currentRoom;
+            isExamMode = false;
+            currentRoom = "";
+
+            // 5. ปรับเปลี่ยน UI ซ่อนการ์ดห้องสอบ
+            const participantCard = document.getElementById('participantCard');
+            if (participantCard) participantCard.style.display = 'none';
+
+            const roomBadgeDisplay = document.getElementById('roomBadgeDisplay');
+            if (roomBadgeDisplay) roomBadgeDisplay.style.display = 'none';
+
+            const btnToggleRoom = document.getElementById('btnToggleRoom');
+            if (btnToggleRoom) {
+                btnToggleRoom.innerHTML = '<i class="fa-solid fa-person-shelter"></i> เข้าสู่ห้องเรียน';
+                btnToggleRoom.className = 'btn-primary';
+                btnToggleRoom.onclick = openJoinModal;
+            }
+
+            const modeText = document.getElementById('typingModeText');
+            if (modeText) modeText.innerText = 'โหมดฝึกซ้อมส่วนตัว';
+
+            // 6. เปลี่ยนข้อความในจอแสดงผล
+            if (textDisplay) {
+                textDisplay.innerHTML = `
+                    <div style="color: #E95C68; font-weight: 600; padding: 30px; text-align: center;">
+                        <i class="fa-solid fa-lock" style="font-size: 32px; margin-bottom: 12px; display: block; color: #E95C68;"></i>
+                        <span style="font-size: 18px; display: block; margin-bottom: 6px;">ห้องเรียนปิดแล้ว</span>
+                        <span style="font-size: 14px; color: #71829B; font-weight: 400;">อาจารย์ได้ปิดการทดสอบแล้ว คุณถูกนำออกจากห้องสอบ</span>
+                    </div>
+                `;
+            }
+
+            // 7. แสดง Modern Modal แจ้งเตือนเด้งออกทันที
+            const reason = (data && data.message) || `อาจารย์ได้ปิดห้องทดสอบ (${closedRoomCode}) แล้ว`;
+            showModernPopup({
+                type: 'error',
+                title: 'ห้องเรียนปิดแล้ว',
+                message: `${reason}\nระบบได้นำคุณออกจากห้องสอบเรียบร้อยแล้ว`,
+                buttonText: 'กลับสู่หน้ารวมห้องเรียน',
+                onConfirm: () => {
+                    window.location.href = '/classroom';
+                }
+            });
+
+            // ป้องกันค้าง: หากผู้ใช้ไม่ได้กดปุ่ม ให้พาไปหน้า /classroom อัตโนมัติใน 5 วินาที
+            setTimeout(() => {
+                window.location.href = '/classroom';
+            }, 5000);
+        }
+
+        socket.on("room_status_changed", (data) => {
+            if (data && data.status === "closed") {
+                handleRoomClosedNotification(data);
+            }
+        });
+
+        socket.on("room_closed", (data) => {
+            handleRoomClosedNotification(data);
+        });
 
         let targetText = "apple banana computer desk window school friend family house book water plane train car chair table phone sun moon star happy sad";
-
         const textDisplay = document.getElementById("textDisplay");
         const typingInput = document.getElementById("typingInput");
         const timerElement = document.getElementById("timer");
         const timerLabel = document.getElementById("timerLabel");
-        const characterCount = document.getElementById("characterCount");
-        const totalCharCount = document.getElementById("totalCharCount");
 
-        // ตัวแปรจับเวลา (เดี๋ยวเราจะปรับให้รับค่า 15, 30, 60 จาก Backend ในอนาคต)
         let defaultTime = 60; 
         let timeLeft = defaultTime;
         let timerStarted = false;
@@ -270,21 +525,24 @@
         let currentLiveWpm = 0;
         let currentLiveAccuracy = 100.0;
         let finalTimeSpent = 0;
+        let charElements = []; 
 
-        // รับสัญญาณเชื่อมต่อสำเร็จ แจ้ง Backend ว่าใครเข้าห้องไหน
         socket.on("connect", () => {
-            console.log("Connected! Joining room:", roomCode);
-            // แจ้งเตือน Backend ให้อัปเดต Lobby ของอาจารย์
-            socket.emit("student_join", { room_code: roomCode, student_name: studentName });
-            // ขอคำศัพท์
+            console.log("Connected to server");
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomFromUrl = urlParams.get("room_code");
+            if (roomFromUrl && !isExamMode) {
+                document.getElementById("inputRoomCode").value = roomFromUrl;
+                submitJoinRoom();
+                return;
+            }
+            // เปิดหน้ามาปุ๊บ ขอคำฝึกซ้อมเลย
             socket.emit("start_typing");
         });
 
-        // รับคำศัพท์สุ่มจาก Backend
         socket.on("typing_started", (data) => {
             if (data.status === "success" && data.text_data) {
                 targetText = data.text_data;
-                // ถ้าระบบส่งเวลามาด้วย ให้อัปเดตเวลาตามที่อาจารย์ตั้งค่า
                 if(data.duration) {
                     defaultTime = parseInt(data.duration);
                     timeLeft = defaultTime;
@@ -294,20 +552,11 @@
             }
         });
 
-        // ผลตอบกลับหลังจากส่งคะแนน
-        socket.on("submission_response", (res) => {
-            const scoreToPass = res.score || 0; 
-            window.location.href = `/typing-result?wpm=${currentLiveWpm}&acc=${currentLiveAccuracy}&score=${scoreToPass}&time=${finalTimeSpent}`;
-        });
-
-        let charElements = []; 
-
         function initText() {
             textDisplay.innerHTML = "";
             charElements = []; 
 
             const words = targetText.split(" ");
-            
             words.forEach((word, wordIndex) => {
                 const wordSpan = document.createElement("span");
                 wordSpan.className = "word";
@@ -317,7 +566,7 @@
                     charSpan.className = "char";
                     charSpan.textContent = word[i];
                     wordSpan.appendChild(charSpan);
-                    charElements.push(charSpan);
+                    charElements.push(charSpan); 
                 }
 
                 if (wordIndex < words.length - 1) {
@@ -331,7 +580,6 @@
                 textDisplay.appendChild(wordSpan);
             });
 
-            totalCharCount.textContent = charElements.length;
             typingInput.maxLength = charElements.length;
             typingInput.value = "";
             lastLength = 0;
@@ -340,6 +588,9 @@
             if (charElements.length > 0) {
                 charElements[0].classList.add("active");
             }
+            
+            typingInput.disabled = false;
+            typingInput.focus();
         }
 
         function updateTimerDisplay(secondsLeft) {
@@ -348,6 +599,106 @@
             timerElement.textContent = String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
         }
 
+        // ================= ระบบตรวจจับและป้องกันบอท (Anti-Bot & Anti-Cheat Engine) =================
+        const AntiBot = {
+            keystrokeTimes: [],
+            maxHistory: 30,
+            isTriggered: false,
+            flagReason: "",
+
+            reset() {
+                this.keystrokeTimes = [];
+                this.isTriggered = false;
+                this.flagReason = "";
+            },
+
+            recordKeystroke(e, currentLen, prevLen) {
+                if (this.isTriggered) return false;
+
+                // 1. ตรวจสอบ isTrusted (สคริปต์ที่สั่ง dispatchEvent เองจะมี e.isTrusted === false)
+                if (e && e.isTrusted === false) {
+                    this.trigger("ตรวจพบการจำลองการกดแป้นพิมพ์ผ่านสคริปต์ภายนอก (Untrusted DOM Event)");
+                    return false;
+                }
+
+                // 2. ตรวจสอบการแทรกข้อความหลายตัวพร้อมกัน (Bulk Input Insertion / Fast Paste)
+                if (currentLen - prevLen > 1) {
+                    this.trigger("ตรวจพบการแทรกตัวอักษรหลายตัวพร้อมกันผิดปกติ (Bulk Text Insertion)");
+                    return false;
+                }
+
+                // 3. วิเคราะห์ความสม่ำเสมอของจังหวะพิมพ์ (Keystroke Dynamics / IKI Analysis)
+                const now = performance.now();
+                this.keystrokeTimes.push(now);
+                if (this.keystrokeTimes.length > this.maxHistory) {
+                    this.keystrokeTimes.shift();
+                }
+
+                if (this.keystrokeTimes.length >= 15) {
+                    const intervals = [];
+                    for (let i = 1; i < this.keystrokeTimes.length; i++) {
+                        intervals.push(this.keystrokeTimes[i] - this.keystrokeTimes[i - 1]);
+                    }
+
+                    const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+                    const variance = intervals.reduce((sum, val) => sum + Math.pow(val - avgInterval, 2), 0) / intervals.length;
+                    const stdDev = Math.sqrt(variance);
+
+                    // มนุษย์ทั่วไปจะมี stdDev ของ IKI มากกว่า 15-30ms เสมอ
+                    // บอทที่วนลูปหน่วงเวลาคงที่จะมีค่า stdDev ต่ำผิดธรรมชาติ (< 3.5ms)
+                    if (stdDev < 3.5 && intervals.length >= 15) {
+                        this.trigger(`ตรวจพบจังหวะการกดแป้นพิมพ์สม่ำเสมอผิดธรรมชาติของมนุษย์ (Bot Uniformity: σ=${stdDev.toFixed(2)}ms)`);
+                        return false;
+                    }
+
+                    // ความเร็วพิมพ์เฉลี่ยสูงเกิน 30ms ต่อตัวอักษร (> 400 WPM)
+                    if (avgInterval < 30.0) {
+                        this.trigger(`ตรวจพบความเร็วในการเคาะแป้นสูงเกินขีดจำกัดมนุษย์ (${Math.round(60000 / avgInterval / 5)} WPM)`);
+                        return false;
+                    }
+                }
+
+                return true;
+            },
+
+            trigger(reason) {
+                if (this.isTriggered) return;
+                this.isTriggered = true;
+                this.flagReason = reason;
+
+                // หยุดตัวจับเวลาและล็อกช่องพิมพ์ทันที
+                clearInterval(timerInterval);
+                timerStarted = false;
+                typingInput.disabled = true;
+                typingInput.blur();
+                typingInput.value = "";
+
+                // ล้างการแสดงผล
+                textDisplay.innerHTML = `
+                    <div style="color: #E95C68; font-weight: 600; padding: 30px; text-align: center;">
+                        <i class="fa-solid fa-shield-halved" style="font-size: 38px; margin-bottom: 12px; display: block; color: #E95C68;"></i>
+                        <span style="font-size: 20px; display: block; margin-bottom: 6px;">ระงับการทดสอบ (Anti-Bot)</span>
+                        <span style="font-size: 14px; color: #71829B; font-weight: 400;">${reason}</span>
+                    </div>
+                `;
+
+                // แจ้งเตือนผ่าน Modern Modal
+                showModernPopup({
+                    type: 'error',
+                    title: 'ตรวจพบพฤติกรรมบอท (Anti-Bot)',
+                    message: `${reason}\n\nระบบระงับการทดสอบนี้เพื่อความโปร่งใสและยุติธรรมในการประเมินผล`,
+                    buttonText: isExamMode ? 'กลับสู่หน้ารวมห้องเรียน' : 'เริ่มฝึกใหม่',
+                    onConfirm: () => {
+                        if (isExamMode) {
+                            window.location.href = '/classroom';
+                        } else {
+                            window.location.reload();
+                        }
+                    }
+                });
+            }
+        };
+
         function startTimer() {
             timerStarted = true;
             timerLabel.textContent = "เวลาที่เหลือ";
@@ -355,43 +706,83 @@
             timerInterval = setInterval(function () {
                 timeLeft--;
                 updateTimerDisplay(timeLeft);
-
-                if (timeLeft <= 0) {
-                    endTyping();
-                }
+                if (timeLeft <= 0) endTyping();
             }, 1000);
         }
 
-        function endTyping() {
+        async function endTyping() {
             clearInterval(timerInterval);
             typingInput.disabled = true;
-            finalTimeSpent = defaultTime - timeLeft; 
+            finalTimeSpent = defaultTime - timeLeft;
+            const timeToSend = finalTimeSpent > 0 ? finalTimeSpent : 1;
 
             let errorCount = 0;
             const userVal = typingInput.value;
             for (let i = 0; i < userVal.length; i++) {
                 if (userVal[i] !== charElements[i]?.textContent) errorCount++;
             }
-            
-            socket.emit("submit_score", {
+
+            let finalScore = Math.round(currentLiveWpm * (currentLiveAccuracy / 100) * 10);
+
+            // บันทึกผลคะแนนลงฐานข้อมูล Oracle (U.SUBMISSION_RESULTS)
+            if (authToken) {
+                try {
+                    const res = await fetch('/api/student/submissions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify({
+                            wpm: currentLiveWpm,
+                            accuracy: currentLiveAccuracy,
+                            time_spent: timeToSend,
+                            error_count: errorCount,
+                            room_code: currentRoom,
+                            bot_flagged: AntiBot.isTriggered,
+                            bot_reason: AntiBot.flagReason
+                        })
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.result) {
+                        finalScore = data.result.score;
+                    }
+                } catch (e) {
+                    console.error("Save submission error:", e);
+                }
+            } else {
+                socket.emit("submit_score", {
+                    wpm: currentLiveWpm,
+                    accuracy: currentLiveAccuracy,
+                    time_spent: timeToSend,
+                    error_count: errorCount,
+                    room_code: currentRoom,
+                    bot_flagged: AntiBot.isTriggered,
+                    bot_reason: AntiBot.flagReason
+                });
+            }
+
+            const params = new URLSearchParams({
                 wpm: currentLiveWpm,
-                accuracy: currentLiveAccuracy,
-                time_spent: finalTimeSpent > 0 ? finalTimeSpent : 1,
-                error_count: errorCount
+                acc: currentLiveAccuracy,
+                score: finalScore,
+                time: timeToSend,
+                errors: errorCount,
+                room_code: currentRoom,
+                student_name: studentName
             });
-            
-            // กรณีไม่มี Database ให้ Redirect จำลองไปเลย
-            setTimeout(() => {
-                window.location.href = `/typing-result?wpm=${currentLiveWpm}&acc=${currentLiveAccuracy}&score=150&time=${finalTimeSpent}`;
-            }, 1000);
+            window.location.href = `/result?${params.toString()}`;
         }
 
-        typingInput.addEventListener("input", function () {
+        typingInput.addEventListener("input", function (e) {
             const userVal = this.value;
 
-            if (!timerStarted && userVal.length > 0) {
-                startTimer();
+            // ตรวจสอบ Anti-Bot ผ่าน Keystroke Dynamics และความถูกต้องของ Event
+            if (!AntiBot.recordKeystroke(e, userVal.length, lastLength)) {
+                return;
             }
+
+            if (!timerStarted && userVal.length > 0) startTimer();
 
             if (userVal.length > lastLength) {
                 const currentIndex = userVal.length - 1;
@@ -400,11 +791,8 @@
             }
             lastLength = userVal.length;
 
-            characterCount.textContent = userVal.length;
-
             charElements.forEach((span, idx) => {
                 span.classList.remove("correct", "incorrect", "active");
-
                 if (idx < userVal.length) {
                     if (userVal[idx] === targetText[idx]) {
                         span.classList.add("correct");
@@ -416,49 +804,59 @@
                 }
             });
 
-            // Monkeytype Auto-scroll Logic
             if (userVal.length < charElements.length) {
                 const activeChar = charElements[userVal.length];
                 const activeWord = activeChar.parentElement; 
-                const targetScroll = activeWord.offsetTop - 55; 
+                const targetScroll = activeWord.offsetTop - 30; 
                 
-                if (targetScroll > 0) {
-                    textDisplay.scrollTop = targetScroll; 
-                } else {
-                    textDisplay.scrollTop = 0;
-                }
+                if (targetScroll > 0) textDisplay.scrollTop = targetScroll; 
+                else textDisplay.scrollTop = 0;
             }
 
-            if (userVal.length >= charElements.length) {
-                endTyping();
-            }
+            if (userVal.length >= charElements.length) endTyping();
         });
 
-        window.addEventListener("load", function () {
-            initText();
-            typingInput.focus();
+        socket.on('live_stats', (stats) => {
+            currentLiveWpm = stats.wpm;
+            currentLiveAccuracy = stats.accuracy;
+            
+            document.getElementById('liveWpm').innerText = currentLiveWpm;
+            document.getElementById('liveAcc').innerHTML = `${currentLiveAccuracy}<span style="font-size: 16px;">%</span>`;
         });
 
         function restartTyping() {
+            AntiBot.reset();
             clearInterval(timerInterval);
             timerStarted = false;
             timeLeft = defaultTime;
             lastLength = 0; 
+            currentLiveWpm = 0;
+            currentLiveAccuracy = 100;
+            
+            document.getElementById('liveWpm').innerText = 0;
+            document.getElementById('liveAcc').innerHTML = '100<span style="font-size: 16px;">%</span>';
             
             updateTimerDisplay(timeLeft);
-            timerLabel.textContent = "เริ่มพิมพ์เพื่อเริ่มจับเวลา";
+            timerLabel.textContent = "พิมพ์ตัวอักษรแรกเพื่อเริ่มจับเวลา";
 
-            typingInput.disabled = false;
-            typingInput.value = "";
-            
-            charElements.forEach(span => span.classList.remove("correct", "incorrect", "active"));
-            if (charElements.length > 0) charElements[0].classList.add("active");
-            textDisplay.scrollTop = 0;
-
+            textDisplay.innerHTML = `<span style="color: #71829B; font-size: 16px;">กำลังดึงข้อความใหม่...</span>`;
             socket.emit("start_typing"); 
-            typingInput.focus();
         }
+
+        typingInput.addEventListener("paste", e => {
+            e.preventDefault();
+            AntiBot.trigger("ไม่อนุญาตให้วางข้อความลงในช่องพิมพ์ (Paste Blocked)");
+        });
+        typingInput.addEventListener("drop", e => {
+            e.preventDefault();
+            AntiBot.trigger("ไม่อนุญาตให้ลากวางข้อความลงในช่องพิมพ์ (Drop Blocked)");
+        });
+        typingInput.addEventListener("contextmenu", e => {
+            e.preventDefault();
+        });
+        textDisplay.addEventListener("click", () => {
+            if(!typingInput.disabled) typingInput.focus();
+        });
     </script>
 </body>
-
 </html>

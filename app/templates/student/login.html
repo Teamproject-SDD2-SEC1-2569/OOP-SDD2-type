@@ -4,48 +4,525 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบห้องเรียนฝึกพิมพ์</title>
+    <title>ระบบห้องเรียนฝึกพิมพ์ - เข้าสู่ระบบ</title>
+    <style id="auth-guard-style">html { display: none !important; }</style>
+    <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
+    <script>redirectIfAuthenticated();</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern_modal.css') }}">
+    <script src="{{ url_for('static', filename='js/modern_modal.js') }}"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial, "Tahoma", sans-serif; background: #f4f8fc; color: #3d4652; }
-        .page { min-height: 100vh; display: flex; }
-        .left-section { width: 55%; min-height: 100vh; background: linear-gradient(135deg, #ffffff 0%, #f1f8ff 100%); display: flex; flex-direction: column; align-items: center; padding-top: 90px; position: relative; overflow: hidden; }
-        .brand { text-align: center; z-index: 2; }
-        .brand h1 { font-size: 38px; color: #34445a; margin-bottom: 12px; }
-        .brand p { font-size: 20px; color: #718096; }
-        .illustration { position: relative; width: 500px; height: 430px; margin-top: 45px; background: #e8f4ff; border-radius: 40% 40% 0 0; display: flex; align-items: center; justify-content: center; }
-        .student { font-size: 210px; position: absolute; left: 100px; bottom: 75px; }
-        .laptop { font-size: 130px; position: absolute; right: 55px; bottom: 40px; }
-        .plant { font-size: 70px; position: absolute; left: 20px; bottom: 25px; }
-        .right-section { width: 45%; min-height: 100vh; display: flex; justify-content: center; align-items: center; background: #f7f9fc; }
-        .login-card { width: 520px; max-width: calc(100% - 40px); background: white; border-radius: 24px; padding: 45px 48px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08); }
-        .login-card h2 { text-align: center; font-size: 28px; color: #536579; margin-bottom: 30px; }
-        .role-buttons { display: flex; gap: 15px; margin-bottom: 22px; }
-        .role { flex: 1; padding: 15px; border-radius: 14px; border: 1px solid #d8dee8; background: white; color: #687587; font-size: 17px; cursor: pointer; }
-        .role.active { background: #5b9fe8; border-color: #5b9fe8; color: white; }
-        .input-box { height: 58px; border: 1px solid #d9dfe8; border-radius: 14px; display: flex; align-items: center; padding: 0 16px; margin-bottom: 15px; background: white; }
-        .input-box span { font-size: 20px; margin-right: 12px; }
-        .input-box input { flex: 1; min-width: 0; border: none; outline: none; font-size: 16px; color: #444; background: transparent; }
-        .input-box input::placeholder { color: #9aa4b2; }
-        .eye { cursor: pointer; margin-right: 0 !important; }
-        .login-button { width: 100%; height: 58px; border: none; border-radius: 14px; background: #579be8; color: white; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .login-button:hover { background: #438bdc; }
-        .or { text-align: center; color: #9aa3af; margin: 25px 0; font-size: 16px; }
-        .google-button { width: 100%; height: 55px; border-radius: 14px; border: 1px solid #d9dfe8; background: white; color: #687587; font-size: 16px; cursor: pointer; }
-        .google { color: #4285f4; font-size: 22px; font-weight: bold; margin-right: 10px; }
-        .register { text-align: center; margin-top: 25px; color: #8a94a3; font-size: 15px; }
-        .register a { color: #4d96e6; text-decoration: none; font-weight: bold; }
+        :root {
+            --primary: #288CF0;
+            --primary-hover: #1D79DC;
+            --bg-main: #F5F8FC;
+            --card-bg: #FFFFFF;
+            --text-dark: #1E293B;
+            --text-muted: #71829B;
+            --border-light: #E7EEF6;
+            --input-bg: #F8FAFC;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Prompt', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page {
+            width: 90%;
+            max-width: 900px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(40, 140, 240, 0.05);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+            margin: 20px;
+        }
+
+        .left-section {
+            width: 100%;
+            min-height: 100%;
+            background: #F9FBFD;
+            border-right: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 30px;
+        }
+
+        .brand h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .brand p {
+            font-size: 14px;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .illustration {
+            width: 100%;
+            max-width: 290px;
+            height: 230px;
+            margin-top: 25px;
+            background: linear-gradient(145deg, #e0f2fe 0%, #dbeafe 50%, #eff6ff 100%);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.9), 0 12px 28px rgba(37, 99, 235, 0.12);
+            overflow: hidden;
+        }
+
+        .illustration-3d-wrapper {
+            position: relative;
+            width: 220px;
+            height: 170px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 800px;
+        }
+
+        .glow-badge {
+            position: absolute;
+            top: 0px;
+            left: 15px;
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: #ffffff;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+            z-index: 4;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-7px) rotate(-3deg); }
+        }
+
+        .laptop-3d {
+            width: 150px;
+            transform: rotateX(12deg) rotateY(-10deg) rotateZ(2deg);
+            transform-style: preserve-3d;
+            z-index: 2;
+            transition: transform 0.3s ease;
+        }
+
+        .illustration:hover .laptop-3d {
+            transform: rotateX(8deg) rotateY(-5deg) rotateZ(0deg) scale(1.03);
+        }
+
+        .laptop-screen {
+            width: 100%;
+            height: 100px;
+            background: #1e293b;
+            border: 4px solid #ffffff;
+            border-radius: 12px 12px 2px 2px;
+            padding: 8px;
+            box-shadow: 0 12px 25px rgba(30, 58, 138, 0.25);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .screen-top-bar {
+            display: flex;
+            gap: 4px;
+        }
+
+        .dot { width: 6px; height: 6px; border-radius: 50%; }
+        .d-red { background: #ef4444; }
+        .d-yellow { background: #f59e0b; }
+        .d-green { background: #10b981; }
+
+        .screen-body {
+            flex: 1;
+            background: #0f172a;
+            border-radius: 6px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .code-line {
+            height: 5px;
+            border-radius: 3px;
+        }
+
+        .cl-blue { width: 75%; background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .cl-purple { width: 50%; background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+        .cl-cyan { width: 85%; background: linear-gradient(90deg, #06b6d4, #22d3ee); }
+
+        .code-block {
+            position: absolute;
+            right: 6px;
+            bottom: 6px;
+            width: 28px;
+            height: 28px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(96, 165, 250, 0.4);
+            border-radius: 6px;
+        }
+
+        .laptop-keyboard {
+            width: 174px;
+            height: 12px;
+            background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
+            border-radius: 0 0 10px 10px;
+            margin-left: -12px;
+            position: relative;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: center;
+        }
+
+        .trackpad {
+            width: 30px;
+            height: 4px;
+            background: #64748b;
+            border-radius: 2px;
+            margin-top: 2px;
+        }
+
+        .books-stack {
+            position: absolute;
+            right: 0px;
+            bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+            z-index: 3;
+        }
+
+        .book-item {
+            height: 13px;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+        }
+
+        .b-top {
+            width: 55px;
+            background: linear-gradient(90deg, #2563eb, #3b82f6);
+            transform: rotate(-4deg);
+        }
+
+        .b-bottom {
+            width: 65px;
+            background: linear-gradient(90deg, #0284c7, #38bdf8);
+        }
+
+        .sparkle {
+            position: absolute;
+            color: #60a5fa;
+            font-size: 16px;
+            z-index: 1;
+            opacity: 0.8;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        .sp-1 { top: 15px; right: 25px; font-size: 18px; color: #3b82f6; }
+        .sp-2 { bottom: 25px; left: 10px; font-size: 14px; color: #93c5fd; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .right-section {
+            width: 100%;
+            min-height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 40px 36px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .login-card h2 {
+            text-align: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+        }
+
+        .role-buttons {
+            display: flex;
+            gap: 8px;
+            background: #F1F5F9;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .role {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .role-icon {
+            width: 18px;
+            height: 18px;
+        }
+
+        .icon-span {
+            display: flex;
+            align-items: center;
+            color: #94A3B8;
+            margin-right: 10px;
+        }
+
+        .input-icon {
+            width: 18px;
+            height: 18px;
+        }
+
+        .eye-icon {
+            width: 18px;
+            height: 18px;
+            color: #94A3B8;
+            transition: color 0.2s;
+        }
+
+        .eye-icon:hover {
+            color: #475569;
+        }
+
+        .google-svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .role.active {
+            background: var(--primary);
+            color: #FFFFFF;
+            box-shadow: 0 4px 10px rgba(40, 140, 240, 0.2);
+        }
+
+        .input-box {
+            height: 46px;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            background: #F8FAFC;
+            padding: 0 14px;
+            display: flex;
+            align-items: center;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            box-shadow: 0 2px 4px rgba(148, 163, 184, 0.06), 0 1px 2px rgba(148, 163, 184, 0.04);
+        }
+
+        .input-box:hover {
+            border-color: #CBD5E1;
+            box-shadow: 0 4px 10px rgba(148, 163, 184, 0.12);
+        }
+
+        .input-box:focus-within {
+            border-color: #288CF0;
+            background: #FFFFFF;
+            box-shadow: 0 0 0 4px rgba(40, 140, 240, 0.12), 0 4px 12px rgba(40, 140, 240, 0.08);
+        }
+
+        .icon-span {
+            display: flex;
+            align-items: center;
+            color: #94A3B8;
+            margin-right: 10px;
+        }
+
+        .input-icon {
+            width: 18px;
+            height: 18px;
+        }
+
+        .input-box input {
+            flex: 1;
+            height: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 14px;
+            color: #334155;
+        }
+
+        .eye {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            margin-left: 8px;
+        }
+
+        .eye-icon {
+            width: 20px;
+            height: 20px;
+            color: #94A3B8;
+            transition: color 0.2s ease;
+            pointer-events: none;
+        }
+
+        .eye:hover .eye-icon {
+            color: #288CF0;
+        }
+
+        .input-box span {
+            margin-right: 10px;
+        }
+
+        .input-box input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            color: var(--text-dark);
+            background: transparent;
+        }
+
+        .input-box input::placeholder {
+            color: #94A3B8;
+        }
+
+        .eye {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .login-button {
+            width: 100%;
+            height: 46px;
+            border-radius: 12px;
+            border: none;
+            background: var(--primary);
+            color: #FFFFFF;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+            box-shadow: 0 4px 12px rgba(40, 140, 240, 0.25);
+            transition: all 0.2s;
+        }
+
+        .login-button:hover {
+            background: var(--primary-hover);
+        }
+
+        .google-button {
+            width: 100%;
+            height: 44px;
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            background: #FFFFFF;
+            color: var(--text-dark);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .google-button:hover {
+            background: #F8FAFC;
+        }
+
+        .google { color: #4285F4; font-weight: bold; }
+        .or { text-align: center; margin: 16px 0; font-size: 13px; color: #A0AEC0; }
+        .register { text-align: center; margin-top: 18px; font-size: 13px; color: var(--text-muted); }
+        .register a { color: var(--primary); font-weight: 600; text-decoration: none; }
         .register a:hover { text-decoration: underline; }
-        @media (max-width: 900px) {
-            .page { flex-direction: column; }
-            .left-section { width: 100%; min-height: 45vh; padding-top: 40px; }
-            .right-section { width: 100%; padding: 30px 0; }
-            .illustration { transform: scale(0.7); transform-origin: top center; margin-top: 20px; margin-bottom: -120px; }
-            .brand h1 { font-size: 28px; } .brand p { font-size: 16px; }
+
+        .google-modal-overlay {
+            display: none !important;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.4);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
-        @media (max-width: 480px) {
-            .login-card { padding: 30px 22px; } .login-card h2 { font-size: 23px; } .role { padding: 12px 8px; font-size: 15px; }
+
+        .google-modal-overlay.active {
+            display: flex !important;
         }
+
+        .google-modal {
+            width: 400px;
+            max-width: 100%;
+            background: #FFFFFF;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .google-modal-logo { font-size: 32px; font-weight: bold; color: #4285F4; margin-bottom: 6px; }
+        .google-modal h3 { font-size: 18px; color: var(--text-dark); margin-bottom: 4px; }
+        .google-modal p { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+        .google-modal input { width: 100%; height: 44px; border: 1px solid var(--border-light); border-radius: 10px; padding: 0 14px; font-size: 14px; margin-bottom: 10px; outline: none; }
+        .google-modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+        .google-modal-cancel { flex: 1; height: 42px; border: 1px solid var(--border-light); border-radius: 10px; background: white; color: var(--text-muted); font-size: 14px; cursor: pointer; }
+        .google-modal-submit { flex: 1; height: 42px; border: none; border-radius: 10px; background: var(--primary); color: white; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+        @media (max-width: 800px) {
+            .page { grid-template-columns: 1fr; max-width: 420px; }
+            .left-section { border-right: none; border-bottom: 1px solid var(--border-light); padding: 24px 20px; }
+            .illustration { display: none; }
+            .right-section { padding: 28px 20px; }
+        }
+
     </style>
 </head>
 
@@ -58,9 +535,41 @@
                 <p>ติดตามพัฒนาการพิมพ์ของนักเรียน</p>
             </div>
             <div class="illustration">
-                <div class="plant">🌱</div>
-                <div class="student">👩🏻‍💻</div>
-                <div class="laptop">💻</div>
+                <div class="illustration-3d-wrapper">
+                    <div class="glow-badge">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="4" width="20" height="16" rx="3" />
+                            <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M8 16h8" />
+                        </svg>
+                    </div>
+
+                    <div class="laptop-3d">
+                        <div class="laptop-screen">
+                            <div class="screen-top-bar">
+                                <div class="dot d-red"></div>
+                                <div class="dot d-yellow"></div>
+                                <div class="dot d-green"></div>
+                            </div>
+                            <div class="screen-body">
+                                <div class="code-line cl-blue"></div>
+                                <div class="code-line cl-purple"></div>
+                                <div class="code-line cl-cyan"></div>
+                                <div class="code-block"></div>
+                            </div>
+                        </div>
+                        <div class="laptop-keyboard">
+                            <div class="trackpad"></div>
+                        </div>
+                    </div>
+
+                    <div class="books-stack">
+                        <div class="book-item b-top"></div>
+                        <div class="book-item b-bottom"></div>
+                    </div>
+
+                    <div class="sparkle sp-1">✦</div>
+                    <div class="sparkle sp-2">✦</div>
+                </div>
             </div>
         </section>
 
@@ -69,20 +578,47 @@
                 <h2>เข้าสู่ระบบ / สมัครสมาชิก</h2>
 
                 <div class="role-buttons">
-                    <button type="button" class="role active">👤 นักเรียน</button>
-                    <button type="button" class="role">🎓 อาจารย์</button>
+                    <button type="button" class="role active">
+                        <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        นักเรียน
+                    </button>
+                    <button type="button" class="role">
+                        <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                        </svg>
+                        อาจารย์
+                    </button>
                 </div>
 
                 <form id="loginForm" onsubmit="handleLogin(event)">
                     <div class="input-box">
-                        <span>👤</span>
+                        <span class="icon-span">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </span>
                         <input type="text" name="username" placeholder="ชื่อผู้ใช้ / อีเมล" required>
                     </div>
 
                     <div class="input-box">
-                        <span>🔒</span>
+                        <span class="icon-span">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </span>
                         <input type="password" id="passwordInput" name="password" placeholder="รหัสผ่าน" required>
-                        <span class="eye" onclick="togglePassword()">👁</span>
+                        <span class="eye" onclick="togglePassword()">
+                            <svg id="eyeIcon" class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </span>
                     </div>
 
                     <button type="submit" class="login-button">เข้าสู่ระบบ</button>
@@ -90,8 +626,14 @@
 
                 <div class="or">หรือ</div>
 
-                <button type="button" class="google-button" onclick="handleLogin(event)">
-                    <span class="google">G</span> เข้าสู่ระบบด้วย Google
+                <button type="button" class="google-button" onclick="handleGoogleLogin()">
+                    <svg class="google-svg" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>
+                    เข้าสู่ระบบด้วย Google
                 </button>
 
                 <p class="register">
@@ -102,25 +644,53 @@
         </section>
     </div>
 
-<script>
-        // เปิด/ปิด การมองเห็นรหัสผ่าน
-        function togglePassword() {
+    <div id="googleModal" class="google-modal-overlay" onclick="if(event.target === this) closeGoogleModal()">
+        <div class="google-modal">
+            <div class="google-modal-logo">G</div>
+            <h3>เข้าสู่ระบบด้วย Google</h3>
+            <p id="googleRoleSubtitle">ดำเนินการต่อในฐานะ นักเรียน</p>
+            <form onsubmit="submitGoogleModal(event)">
+                <input type="email" id="googleEmailInput" placeholder="อีเมล Google (เช่น example@gmail.com)" required>
+                <input type="text" id="googleNameInput" placeholder="ชื่อ-นามสกุล (หากเข้าใช้งานครั้งแรก)">
+                <div class="google-modal-actions">
+                    <button type="button" class="google-modal-cancel" onclick="closeGoogleModal()">ยกเลิก</button>
+                    <button type="submit" class="google-modal-submit">ดำเนินการต่อ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        const GOOGLE_CLIENT_ID = "{{ google_client_id or config.get('GOOGLE_CLIENT_ID', '') }}";
+
+            function togglePassword() {
             const pwdInput = document.getElementById("passwordInput");
-            pwdInput.type = pwdInput.type === "password" ? "text" : "password";
+            const eyeIcon = document.getElementById("eyeIcon");
+            
+            if (pwdInput.type === "password") {
+                pwdInput.type = "text";
+                eyeIcon.innerHTML = `
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                `;
+            } else {
+                pwdInput.type = "password";
+                eyeIcon.innerHTML = `
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                `;
+            }
         }
 
-        // จัดการคลิกเลือก Role (นักเรียน/อาจารย์)
-        let selectedRole = "Student"; // ค่าเริ่มต้น
+        let selectedRole = "Student";
         const roles = document.querySelectorAll(".role");
         
         roles.forEach(role => {
             role.addEventListener("click", () => {
-                // ลบ class active ออกจากทุกปุ่ม
                 roles.forEach(r => r.classList.remove("active"));
-                // เพิ่ม class active ให้ปุ่มที่ถูกคลิก
                 role.classList.add("active");
                 
-                // เก็บค่า Role ที่เลือก
                 if (role.innerText.includes("อาจารย์")) {
                     selectedRole = "Teacher";
                 } else {
@@ -129,48 +699,165 @@
             });
         });
 
-        // จัดการเมื่อกดปุ่มล็อกอิน
-        async function handleLogin(e) {
-            e.preventDefault(); // ป้องกันไม่ให้หน้าเว็บรีเฟรช
+        function handleAuthSuccess(data, fallbackIdentifier) {
+            const token = data.access_token || data.token;
+            if (token) {
+                localStorage.setItem("token", token);
+                localStorage.setItem("accessToken", token);
+                document.cookie = "access_token=" + encodeURIComponent(token) + "; path=/; max-age=86400; SameSite=Lax";
+            }
+            if (data.user) {
+                localStorage.setItem("user", JSON.stringify(data.user));
+                localStorage.setItem("username", data.user.username || fallbackIdentifier);
+                if (data.user.role) {
+                    document.cookie = "user_role=" + encodeURIComponent(data.user.role) + "; path=/; max-age=86400; SameSite=Lax";
+                }
+            }
 
-            // ดึงค่าจากฟอร์ม
-            const emailOrUsername = document.querySelector('input[name="username"]').value;
+            // 🌟 เช็ก Role จริงจาก Database เพื่อ Redirect 🌟
+            const userRole = (data.user?.role || "").trim().toLowerCase();
+            if (userRole === "teacher") {
+                window.location.replace("{{ url_for('teacher.teacher_dashboard_page') }}");
+            } else {
+                window.location.replace("{{ url_for('api.classroom') }}");
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+
+            const emailOrUsername = document.querySelector('input[name="username"]').value.trim();
             const password = document.querySelector('input[name="password"]').value;
 
+            if (!emailOrUsername || !password) {
+                showModernPopup({
+                    type: 'warning',
+                    title: 'กรุณากรอกข้อมูล',
+                    message: 'กรุณากรอกชื่อผู้ใช้หรืออีเมล และรหัสผ่าน'
+                });
+                return;
+            }
+
             try {
-                // ยิง API ไปที่ Backend ของทีมอาจารย์
                 const response = await fetch('/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        email: emailOrUsername, // หาก backend รองรับ username ให้ปรับ field ตรงนี้ตามที่ทีมออกแบบไว้
-                        password: password 
+                        username: emailOrUsername,
+                        email: emailOrUsername,
+                        password: password,
+                        role: selectedRole
                     })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    // หากมี token ให้เก็บไว้ใน localStorage (เผื่อเอาไปใช้ต่อ)
-                    if (data.token) {
-                        localStorage.setItem("token", data.token);
-                    }
-
-                    // 🌟 เช็ก Role ที่เลือกและ Redirect 🌟
-                    if (selectedRole === "Teacher") {
-                        window.location.href = "{{ url_for('teacher.teacher_dashboard_page') }}";
-                    } else {
-                        window.location.href = "{{ url_for('api.classroom') }}";
-                    }
+                    handleAuthSuccess(data, emailOrUsername);
                 } else {
-                    // ล็อกอินไม่ผ่าน (รหัสผิด หรือเมลผิด)
-                    alert("เข้าสู่ระบบไม่สำเร็จ: " + (data.message || data.error || "กรุณาลองใหม่อีกครั้ง"));
+                    showModernPopup({
+                        type: 'error',
+                        title: 'เข้าสู่ระบบไม่สำเร็จ',
+                        message: data.message || data.error || 'กรุณาลองใหม่อีกครั้ง'
+                    });
                 }
             } catch (error) {
                 console.error("Error during login:", error);
-                alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+                showModernPopup({
+                    type: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'
+                });
             }
         }
+
+        function handleGoogleLogin() {
+            if (GOOGLE_CLIENT_ID) {
+                if (window.google && google.accounts && google.accounts.oauth2) {
+                    const tokenClient = google.accounts.oauth2.initTokenClient({
+                        client_id: GOOGLE_CLIENT_ID,
+                        scope: 'email profile openid',
+                        callback: async (tokenResponse) => {
+                            if (tokenResponse && tokenResponse.access_token) {
+                                await loginWithGoogleBackend("", "", tokenResponse.access_token);
+                            }
+                        }
+                    });
+                    tokenClient.requestAccessToken({ prompt: 'select_account' });
+                    return;
+                }
+                window.location.href = `/auth/google/oauth?role=${encodeURIComponent(selectedRole)}`;
+                return;
+            }
+
+            const roleLabel = selectedRole === "Teacher" ? "อาจารย์ (Teacher)" : "นักเรียน (Student)";
+            document.getElementById("googleRoleSubtitle").innerText = `ดำเนินการต่อในฐานะ ${roleLabel}`;
+            document.getElementById("googleModal").classList.add("active");
+            document.getElementById("googleEmailInput").focus();
+        }
+
+        function closeGoogleModal() {
+            document.getElementById("googleModal").classList.remove("active");
+        }
+
+        async function submitGoogleModal(e) {
+            e.preventDefault();
+            const email = document.getElementById("googleEmailInput").value.trim();
+            const fullName = document.getElementById("googleNameInput").value.trim();
+            if (!email) return;
+            closeGoogleModal();
+            await loginWithGoogleBackend(email, fullName, "");
+        }
+
+        async function loginWithGoogleBackend(email, fullName, googleAccessToken = "") {
+            try {
+                const response = await fetch('/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: email,
+                        full_name: fullName,
+                        access_token: googleAccessToken,
+                        role: selectedRole
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.needs_registration && data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                        return;
+                    }
+                    handleAuthSuccess(data, email);
+                } else {
+                    showModernPopup({
+                        type: 'error',
+                        title: 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ',
+                        message: data.message || data.error || 'กรุณาลองใหม่อีกครั้ง'
+                    });
+                }
+            } catch (error) {
+                console.error("Error during Google login:", error);
+                showModernPopup({
+                    type: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'
+                });
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const errorMsg = params.get('error');
+            if (errorMsg) {
+                showModernPopup({
+                    type: 'error',
+                    title: 'แจ้งเตือน',
+                    message: decodeURIComponent(errorMsg)
+                });
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
     </script>
 </body>
 

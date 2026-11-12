@@ -1,40 +1,45 @@
-import os
+import logging
 from flask import Flask
 from flask_socketio import SocketIO
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from .config import Config
 
 socketio = SocketIO()
 jwt = JWTManager()
 
+
 def create_app():
+    """
+    Application Factory สำหรับสร้างและตั้งค่า Flask Application
+    สอดคล้องกับหลัก Modular Architecture และ Separation of Concerns
+    """
     app = Flask(__name__)
-    
-    # 1. ตั้งค่า Secret Key สำหรับ Session และ JWT
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'typeclass-super-secret-key')
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'typeclass-jwt-secret-key')
+
+    # 1. โหลดการตั้งค่าระบบจาก Config Object
+    app.config.from_object(Config)
 
     # 2. เปิดใช้งาน Extensions
     CORS(app)
     jwt.init_app(app)
-    socketio.init_app(app, cors_allowed_origins="*")
+    socketio.init_app(app, cors_allowed_origins="*", async_mode="threading")
 
-    # 3. ลงทะเบียน Route ฝั่งนักเรียน (ถอด url_prefix='/api' ออก เพื่อให้เข้าหน้าแรก / ได้ตามปกติ)
-    from .route import api_bp, register_socket_events
-    app.register_blueprint(api_bp)
+    # 3. ลงทะเบียน Route Blueprints (Presentation Layer)
+    from .routes import auth_bp, teacher_bp, student_bp
+    app.register_blueprint(student_bp)
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(teacher_bp, url_prefix='/teacher')
+
+    # 4. ลงทะเบียน WebSocket Event Listeners (Real-time Layer)
+    from .sockets import register_socket_events
     register_socket_events(socketio)
 
-    # 4. ลงทะเบียน Route ฝั่งอาจารย์ และระบบ Auth
-    try:
-        from .auth_routes import auth_bp
-        app.register_blueprint(auth_bp, url_prefix='/auth')
-    except (ImportError, AttributeError):
-        pass
+    @app.after_request
+    def add_no_cache_headers(response):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
 
-    try:
-        from .teacher_routes import teacher_bp
-        app.register_blueprint(teacher_bp, url_prefix='/teacher')
-    except (ImportError, AttributeError):
-        pass
-
+    logging.info("Typeclass Application Initialized Successfully")
     return app

@@ -1,280 +1,294 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ประวัติการพิมพ์ | Typing Classroom</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>ประวัติการพิมพ์ - ระบบห้องเรียนฝึกพิมพ์</title>
+    <style id="auth-guard-style">html { display: none !important; }</style>
+    <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
+    <script>requireAuth('student');</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern_modal.css') }}">
+    <script src="{{ url_for('static', filename='js/modern_modal.js') }}"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Prompt', sans-serif; background: #f5f8fc; color: #52647c; min-height: 100vh; }
-        .app { display: flex; min-height: 100vh; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Prompt', 'Inter', sans-serif; }
+        body { background-color: #F4F7FC; height: 100vh; display: flex; overflow: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: 260px; background-color: #fff; padding: 25px 20px; display: flex; flex-direction: column; z-index: 10; border-right: 1px solid #D8E7F4; }
+        .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; text-decoration: none;}
+        .brand-icon { width: 40px; height: 40px; background-color: #288CF0; border-radius: 12px; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 20px; }
+        .brand-text h2 { color: #17345C; font-size: 16px; font-weight: 700; }
+        .brand-text p { color: #71829B; font-size: 11px; }
+        
+        /* Profile & Dropdown */
+        .user-profile { background-color: #F4F7FC; padding: 12px; border-radius: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 30px; position: relative; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
+        .user-profile:hover { border-color: #288CF0; }
+        .avatar { width: 40px; height: 40px; background-color: #DDF0FD; border: 2px solid #288CF0; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #288CF0; font-size: 18px; }
+        .user-info .name { color: #17345C; font-size: 14px; font-weight: 700; }
+        .user-info .role { color: #20A873; font-size: 12px; font-weight: 600; }
+        
+        .dropdown-menu { display: none; position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: #fff; border-radius: 12px; box-shadow: 0 5px 15px rgba(23, 52, 92, 0.1); flex-direction: column; overflow: hidden; z-index: 100; border: 1px solid #D8E7F4; }
+        .dropdown-menu.show { display: flex; }
+        .dropdown-menu a { padding: 12px 15px; color: #17345C; text-decoration: none; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .dropdown-menu a:hover { background: #F4F7FC; color: #288CF0; }
+        .dropdown-menu a.text-danger:hover { color: #E95C68; background: #FDEBED; }
 
-        .sidebar { width: 245px; min-width: 245px; background: linear-gradient(180deg, #c6e1f7 0%, #b7d7ed 100%); padding: 28px 15px; display: flex; flex-direction: column; }
-        .profile { display: flex; align-items: center; gap: 10px; padding: 8px 7px 35px; }
-        .avatar { width: 46px; height: 46px; border-radius: 50%; background: #f5c3d1; display: flex; align-items: center; justify-content: center; font-size: 25px; flex-shrink: 0; border: 2px solid rgba(255, 255, 255, .7); }
-        .profile-name { font-size: 12px; font-weight: 600; color: #355777; }
-        .profile-role { font-size: 11px; color: #6f8ca7; margin-top: 3px; }
-        .nav-menu { display: flex; flex-direction: column; gap: 8px; }
-        .nav-item { display: flex; align-items: center; gap: 13px; padding: 14px 13px; border-radius: 12px; text-decoration: none; color: #42617d; font-size: 14px; transition: .2s; }
-        .nav-item:hover { background: rgba(255, 255, 255, .45); }
-        .nav-item.active { background: #f3f6fa; color: #405c7b; font-weight: 600; box-shadow: 0 3px 10px rgba(76, 113, 150, .06); }
-        .nav-icon { width: 27px; text-align: center; font-size: 21px; flex-shrink: 0; }
+        .menu-list { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+        .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; color: #71829B; text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.2s; }
+        .menu-item:hover { background-color: #F4F7FC; color: #17345C; }
+        .menu-item.active { background-color: #288CF0; color: #fff; font-weight: 700; box-shadow: 0 4px 10px rgba(40, 140, 240, 0.2); }
+        .menu-item i { font-size: 18px; width: 24px; text-align: center; }
 
-        .main { flex: 1; min-width: 0; padding: 30px 34px 24px; }
-        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 32px; }
-        .page-heading { display: flex; align-items: center; gap: 18px; }
-        .heading-icon { width: 55px; height: 55px; border-radius: 13px; background: #7199e8; color: white; display: flex; align-items: center; justify-content: center; font-size: 27px; flex-shrink: 0; }
-        .page-heading h1 { font-size: 25px; color: #425879; font-weight: 600; }
-        .page-heading p { font-size: 12px; color: #98a7b9; margin-top: 4px; }
-        .encouragement { display: flex; align-items: center; gap: 12px; color: #729c91; font-size: 13px; line-height: 1.8; flex-shrink: 0; }
-        .encouragement-icon { font-size: 35px; }
+        /* Main Content */
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .topbar { padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .content-scroll { flex: 1; overflow-y: auto; padding: 10px 30px 30px 30px; display: flex; flex-direction: column; gap: 20px; }
+        
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .page-header-left { display: flex; align-items: center; gap: 15px; }
+        .header-icon { width: 50px; height: 50px; background: #E7F3FE; border-radius: 16px; display: flex; justify-content: center; align-items: center; font-size: 24px; color: #288CF0; }
+        .page-header h1 { color: #17345C; font-size: 24px; font-weight: 700; margin-bottom: 2px; }
+        .page-header p { color: #71829B; font-size: 13px; }
 
-        .filter-panel { display: grid; grid-template-columns: 1fr 1fr 1.1fr; gap: 22px; align-items: end; margin-bottom: 25px; }
-        .filter-group { min-width: 0; }
-        .filter-label { display: block; font-size: 12px; color: #899bb0; margin-bottom: 8px; }
-        .filter-control { width: 100%; height: 42px; border: none; border-bottom: 1px solid #e1e8f0; background: transparent; outline: none; font-family: inherit; font-size: 13px; color: #63758e; padding: 0 8px; }
-        .filter-control:focus { border-bottom-color: #7199e8; }
-        select.filter-control { cursor: pointer; }
-        .search-wrap { position: relative; }
-        .search-icon { position: absolute; left: 8px; top: 10px; font-size: 18px; color: #8c9bb0; pointer-events: none; }
-        .search-input { padding-left: 35px; }
+        /* การ์ดตาราง */
+        .card { background: #fff; border-radius: 20px; padding: 25px 30px; box-shadow: 0 10px 30px rgba(6, 51, 118, 0.05); }
+        
+        .filter-tools { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 25px; border-bottom: 1px dashed #D8E7F4; padding-bottom: 25px;}
+        .form-group { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 150px;}
+        .form-label { font-size: 12px; color: #71829B; font-weight: 600; }
+        .form-select, .form-input { padding: 10px 15px; border-radius: 12px; border: 1px solid #D8E7F4; font-size: 14px; outline: none; background: #F4F7FC; color: #17345C; font-family: 'Prompt'; }
+        .form-select:focus, .form-input:focus { border-color: #288CF0; background: #fff;}
+        
+        /* สไตล์ตารางใหม่ */
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 12px 10px; color: #71829B; font-size: 12px; font-weight: 700; border-bottom: 2px solid #F4F7FC; }
+        td { padding: 16px 10px; border-bottom: 1px solid #F4F7FC; font-size: 14px; color: #17345C; font-weight: 500; }
+        tr:hover td { background-color: #fcfdfe; }
+        
+        .wpm-text { color: #288CF0; font-weight: 700; }
+        .acc-text { color: #20A873; font-weight: 700; }
+        .score-text { color: #F2A93B; font-weight: 700; }
 
-        .table-container { width: 100%; overflow-x: auto; }
-        .history-table { width: 100%; min-width: 790px; border-collapse: collapse; table-layout: fixed; }
-        .history-table th { text-align: left; padding: 12px 10px; font-size: 12px; color: #899bb0; border-bottom: 1px solid #e1e8f0; }
-        .history-table td { padding: 14px 10px; border-bottom: 1px solid #f0f4f8; font-size: 13px; }
-
-        .date-cell { line-height: 1.6; color: #74859b; }
-        .date-cell .date { display: block; }
-        .date-cell .time { display: block; color: #9ba8b8; font-size: 11px; }
-        .room-name { font-weight: 500; color: #657b98; }
-        .wpm { color: #7196d9; font-weight: 500; }
-        .accuracy { display: inline-block; min-width: 49px; padding: 4px 9px; border-radius: 15px; background: #e6f4ed; color: #69a88b; text-align: center; }
-        .accuracy.medium { background: #fff2df; color: #c89b60; }
-        .accuracy.low { background: #fbe9eb; color: #c77d91; }
-        .score { color: #c9a07c; font-weight: 500; }
-        .score.low { color: #c78399; }
-        .detail-btn { display: inline-block; padding: 6px 13px; border: 1px solid #cbd8e8; border-radius: 20px; color: #7395c5; background: transparent; text-decoration: none; font-family: inherit; font-size: 11px; white-space: nowrap; transition: .2s; }
-        .detail-btn:hover { background: #eaf2fc; }
-
-        .table-footer { display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 20px 3px; }
-        .pagination { display: flex; align-items: center; gap: 9px; }
-        .page-number, .page-arrow { width: 30px; height: 30px; display: inline-flex; justify-content: center; align-items: center; border-radius: 7px; color: #7d8da3; font-size: 12px; text-decoration: none; transition: .2s; cursor: pointer; }
-        .page-number.active { background: #7199e8; color: white; }
-        .page-arrow { font-size: 21px; }
-        .page-number:hover, .page-arrow:hover { background: #e5eefb; }
-        .record-count { font-size: 11px; color: #8b9cb1; white-space: nowrap; }
-        .record-count span { color: #7199e8; margin-right: 5px; font-size: 15px; }
-
-        @media (max-width: 1000px) {
-            .sidebar { width: 210px; min-width: 210px; } .main { padding: 24px 20px; } .encouragement { display: none; } .filter-panel { gap: 12px; }
-        }
-        @media (max-width: 650px) {
-            .app { flex-direction: column; } .sidebar { width: 100%; min-width: 0; padding: 12px; } .profile { padding-bottom: 12px; }
-            .nav-menu { flex-direction: row; flex-wrap: wrap; } .nav-item { flex: 1; min-width: 120px; padding: 10px; font-size: 12px; }
-            .main { padding: 20px 14px; } .topbar { margin-bottom: 22px; } .page-heading h1 { font-size: 20px; } .filter-panel { grid-template-columns: 1fr; gap: 12px; }
-            .table-footer { flex-wrap: wrap; }
-        }
+        .btn-outline-sm { background: #fff; border: 1px solid #D8E7F4; color: #71829B; padding: 6px 15px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px;}
+        .btn-outline-sm:hover { border-color: #288CF0; color: #288CF0; background: #E7F3FE;}
     </style>
 </head>
-
 <body>
+    <aside class="sidebar">
+        <a href="#" class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-keyboard"></i></div>
+            <div class="brand-text"><h2>ห้องเรียนฝึกพิมพ์</h2><p>โหมดนักศึกษา</p></div>
+        </a>
 
-    <div class="app">
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <div class="profile">
-                <div class="avatar">👩🏻</div>
-                <div>
-                    <div class="profile-name">Ratsamee Saengthong</div>
-                    <div class="profile-role">นักเรียน</div>
-                </div>
+        <div class="user-profile" onclick="toggleProfileMenu(event)">
+            <div class="avatar"><i class="fa-regular fa-face-smile"></i></div>
+            <div class="user-info">
+                <div class="name" id="sidebarStudentName">นักเรียนนิรนาม</div>
+                <div class="role"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> กำลังออนไลน์</div>
             </div>
+            <i class="fa-solid fa-chevron-down" style="color: #288CF0; margin-left: auto; font-size: 12px;"></i>
+            
+            <div class="dropdown-menu" id="profileDropdown">
+                <a href="{{ url_for('api.student_profile_page') }}"><i class="fa-solid fa-user-pen"></i> ดูโปรไฟล์ส่วนตัว</a>
+                <a href="{{ url_for('api.login') }}" class="text-danger" onclick="event.stopPropagation(); localStorage.clear();"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a>
+            </div>
+        </div>
 
-            <nav class="nav-menu">
-                <a href="{{ url_for('api.classroom') }}" class="nav-item">
-                    <span class="nav-icon">🏠</span>
-                    <span>ห้องเรียน</span>
-                </a>
-                <a href="{{ url_for('api.progress') }}" class="nav-item">
-                    <span class="nav-icon">📊</span>
-                    <span>พัฒนาการ</span>
-                </a>
-                <a href="{{ url_for('api.typing_history') }}" class="nav-item active">
-                    <span class="nav-icon">📝</span>
-                    <span>ประวัติการพิมพ์</span>
-                </a>
-                <a href="{{ url_for('api.login') }}" class="nav-item">
-                    <span class="nav-icon">🚪</span>
-                    <span>ออกจากระบบ</span>
-                </a>
-            </nav>
-        </aside>
+        <div class="menu-list">
+            <!-- หน้าหลัก: พิมพ์อิสระ -->
+            <a href="{{ url_for('api.typing') }}" class="menu-item">
+                <i class="fa-solid fa-keyboard"></i> ห้องฝึกพิมพ์
+            </a>
+            <!-- หน้าใหม่: จัดการห้องเรียน -->
+            <a href="{{ url_for('api.student_classrooms_page') }}" class="menu-item">
+                <i class="fa-solid fa-door-open"></i> ห้องเรียนของฉัน
+            </a>
+            <!-- หน้าประวัติ -->
+            <a href="{{ url_for('api.typing_history') }}" class="menu-item active">
+                <i class="fa-solid fa-chart-simple"></i> ประวัติการพิมพ์
+            </a>
+        </div>
+    </aside>
 
-        <!-- MAIN CONTENT -->
-        <main class="main">
-            <div class="topbar">
-                <div class="page-heading">
-                    <div class="heading-icon">📝</div>
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div></div>
+        </header>
+
+        <div class="content-scroll">
+            <div class="page-header">
+                <div class="page-header-left">
+                    <div class="header-icon"><i class="fa-solid fa-file-contract"></i></div>
                     <div>
                         <h1>ประวัติการพิมพ์</h1>
                         <p>บันทึกผลงาน ย้อนดูพัฒนาการของคุณ</p>
                     </div>
                 </div>
-
-                <div class="encouragement">
-                    <span class="encouragement-icon">🌱</span>
-                    <div>ทุกการฝึกซ้อม มีความหมายเสมอ</div>
+                <div style="font-size: 13px; color: #20A873; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-seedling"></i> ทุกการฝึกซ้อม มีความหมายเสมอ
                 </div>
             </div>
 
-            <div class="filter-panel">
-                <div class="filter-group">
-                    <label class="filter-label">เรียงตาม</label>
-                    <select class="filter-control">
-                        <option>ล่าสุด</option>
-                        <option>เก่าที่สุด</option>
-                        <option>คะแนนสูงสุด</option>
-                    </select>
+            <div class="card">
+                <!-- เครื่องมือกรองข้อมูล (Filter) -->
+                <div class="filter-tools">
+                    <div class="form-group">
+                        <label class="form-label">เรียงตาม</label>
+                        <select class="form-select" id="sortSelect" onchange="renderHistoryTable()">
+                            <option value="latest">ล่าสุด</option>
+                            <option value="score">คะแนนสูงสุด</option>
+                            <option value="wpm">WPM สูงสุด</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">เลือกห้องเรียน</label>
+                        <select class="form-select" id="roomFilterSelect" onchange="renderHistoryTable()">
+                            <option value="all">ทั้งหมด</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 2;">
+                        <label class="form-label"><i class="fa-solid fa-magnifying-glass"></i> ค้นหา</label>
+                        <input type="text" id="searchInput" class="form-input" placeholder="พิมพ์ชื่อห้องหรือรหัสห้อง..." style="width: 100%;" oninput="renderHistoryTable()">
+                    </div>
                 </div>
 
-                <div class="filter-group">
-                    <label class="filter-label">เลือกห้องเรียน</label>
-                    <select class="filter-control">
-                        <option>ทั้งหมด</option>
-                        <option>ห้อง A</option>
-                        <option>ห้อง B</option>
-                    </select>
-                </div>
-
-                <div class="filter-group search-wrap">
-                    <label class="filter-label">ค้นหา</label>
-                    <span class="search-icon">🔍</span>
-                    <input type="text" class="filter-control search-input" placeholder="พิมพ์ชื่อห้อง...">
-                </div>
-            </div>
-
-            <section class="table-container">
-                <table class="history-table">
+                <!-- ตารางข้อมูล (ดึงจาก U.SUBMISSION_RESULTS บน Oracle DB) -->
+                <table>
                     <thead>
                         <tr>
-                            <th>ลำดับ</th>
-                            <th>▦ วันที่/เวลา</th>
-                            <th>▣ ชื่อห้อง</th>
-                            <th>◉ WPM</th>
-                            <th>◎ Accuracy</th>
-                            <th>★ คะแนน</th>
-                            <th>▤ รายละเอียด</th>
+                            <th style="width: 50px;">ลำดับ</th>
+                            <th><i class="fa-regular fa-calendar"></i> วันที่/เวลา</th>
+                            <th><i class="fa-solid fa-door-open"></i> ชื่อห้อง</th>
+                            <th><i class="fa-solid fa-gauge-high"></i> WPM</th>
+                            <th><i class="fa-solid fa-bullseye"></i> Accuracy</th>
+                            <th><i class="fa-solid fa-star"></i> คะแนนรวม</th>
+                            <th style="text-align: right;">รายละเอียด</th>
                         </tr>
                     </thead>
-
-                    <!-- ข้อมูลจะเปลี่ยนตามหน้าที่กด -->
-                    <tbody id="historyTbody"></tbody>
+                    <tbody id="historyTableBody">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 40px; color: #71829B;">
+                                กำลังโหลดประวัติการพิมพ์จากฐานข้อมูล...
+                            </td>
+                        </tr>
+                    </tbody>
                 </table>
-            </section>
+            </div>
 
-            <footer class="table-footer">
-                <nav class="pagination" aria-label="เปลี่ยนหน้า">
-                    <a class="page-arrow" onclick="prevPage()">‹</a>
-                    <a class="page-number active" data-page="1" onclick="goToPage(1)">1</a>
-                    <a class="page-number" data-page="2" onclick="goToPage(2)">2</a>
-                    <a class="page-number" data-page="3" onclick="goToPage(3)">3</a>
-                    <a class="page-arrow" onclick="nextPage()">›</a>
-                </nav>
-
-                <div class="record-count">
-                    <span>▥</span> ทั้งหมด 50 ครั้ง
-                </div>
-            </footer>
-        </main>
+        </div>
     </div>
 
-    <!-- JAVASCRIPT สำหรับเปลี่ยนหน้า TABLE -->
     <script>
-        const detailUrl = "{{ url_for('api.typing_result') }}";
+        const authToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        document.getElementById('sidebarStudentName').innerText = storedUser.full_name || storedUser.username || localStorage.getItem('username') || 'นักเรียน';
+        if (storedUser.profile_image_url) {
+            const sbAv = document.querySelector('.user-profile .avatar');
+            if (sbAv) sbAv.innerHTML = `<img src="${storedUser.profile_image_url}" alt="Profile" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.remove();">`;
+        }
 
-        // ข้อมูลตัวอย่างแบ่งตามหน้า (Page 1, 2, 3)
-        const historyData = {
-            1: [
-                { id: 1, date: "12 ก.ย. 2568", time: "14:32", room: "ห้อง A", wpm: 45, acc: "97%", accClass: "", score: 980, scoreClass: "" },
-                { id: 2, date: "10 ก.ย. 2568", time: "16:18", room: "ห้อง B", wpm: 42, acc: "95%", accClass: "", score: 920, scoreClass: "" },
-                { id: 3, date: "8 ก.ย. 2568", time: "13:07", room: "ห้อง C", wpm: 38, acc: "94%", accClass: "", score: 870, scoreClass: "" }
-            ],
-            2: [
-                { id: 4, date: "5 ก.ย. 2568", time: "15:45", room: "ห้อง D", wpm: 35, acc: "92%", accClass: "", score: 820, scoreClass: "" },
-                { id: 5, date: "2 ก.ย. 2568", time: "11:22", room: "ห้อง A", wpm: 32, acc: "90%", accClass: "", score: 760, scoreClass: "" },
-                { id: 6, date: "30 ส.ค. 2568", time: "14:36", room: "ห้อง E", wpm: 28, acc: "88%", accClass: "medium", score: 720, scoreClass: "" }
-            ],
-            3: [
-                { id: 7, date: "28 ส.ค. 2568", time: "10:12", room: "ห้อง B", wpm: 26, acc: "85%", accClass: "medium", score: 680, scoreClass: "low" },
-                { id: 8, date: "25 ส.ค. 2568", time: "16:40", room: "ห้อง C", wpm: 24, acc: "82%", accClass: "medium", score: 640, scoreClass: "low" },
-                { id: 9, date: "22 ส.ค. 2568", time: "13:25", room: "ห้อง D", wpm: 22, acc: "78%", accClass: "low", score: 590, scoreClass: "low" }
-            ]
-        };
+        let allHistory = [];
 
-        let currentPage = 1;
-        const totalPages = 3;
+        function toggleProfileMenu(event) {
+            event.stopPropagation();
+            document.getElementById('profileDropdown').classList.toggle('show');
+        }
 
-        function renderPage(page) {
-            const tbody = document.getElementById("historyTbody");
-            tbody.innerHTML = "";
-
-            const rows = historyData[page] || [];
-            rows.forEach(item => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${item.id}</td>
-                    <td class="date-cell">
-                        <span class="date">${item.date}</span>
-                        <span class="time">${item.time}</span>
-                    </td>
-                    <td class="room-name">${item.room}</td>
-                    <td class="wpm">${item.wpm}</td>
-                    <td><span class="accuracy ${item.accClass}">${item.acc}</span></td>
-                    <td class="score ${item.scoreClass}">${item.score}</td>
-                    <td><a href="${detailUrl}" class="detail-btn">⊙ ดูรายละเอียด</a></td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            // อัปเดตสถานะปุ่ม Active
-            document.querySelectorAll(".page-number").forEach(btn => {
-                const btnPage = parseInt(btn.getAttribute("data-page"));
-                if (btnPage === page) {
-                    btn.classList.add("active");
-                } else {
-                    btn.classList.remove("active");
+        window.onclick = function(event) {
+            if (!event.target.closest('.user-profile')) {
+                const dropdown = document.getElementById('profileDropdown');
+                if (dropdown && dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
                 }
+            }
+        }
+
+        async function loadHistory() {
+            const tbody = document.getElementById('historyTableBody');
+            if (!authToken) {
+                window.location.href = "{{ url_for('api.login') }}";
+                return;
+            }
+            try {
+                const res = await fetch('/api/student/history', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (res.status === 401 || res.status === 422) {
+                    localStorage.clear();
+                    window.location.href = "{{ url_for('api.login') }}";
+                    return;
+                }
+                const data = await res.json();
+                allHistory = data.history || [];
+
+                // เติมตัวเลือกห้องเรียนจากข้อมูลจริง
+                const roomSelect = document.getElementById('roomFilterSelect');
+                const uniqueRooms = [...new Set(allHistory.map(h => h.room_name).filter(Boolean))];
+                roomSelect.innerHTML = `<option value="all">ทั้งหมด</option>` +
+                    uniqueRooms.map(r => `<option value="${r}">${r}</option>`).join('');
+
+                renderHistoryTable();
+            } catch (err) {
+                console.error("Load history error:", err);
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#E95C68;">ไม่สามารถดึงประวัติการพิมพ์ได้</td></tr>`;
+            }
+        }
+
+        function renderHistoryTable() {
+            const tbody = document.getElementById('historyTableBody');
+            const sortBy = document.getElementById('sortSelect').value;
+            const roomFilter = document.getElementById('roomFilterSelect').value;
+            const searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+
+            let filtered = allHistory.filter(item => {
+                if (roomFilter !== 'all' && item.room_name !== roomFilter) return false;
+                if (searchQuery) {
+                    const hay = `${item.room_name} ${item.room_code}`.toLowerCase();
+                    if (!hay.includes(searchQuery)) return false;
+                }
+                return true;
             });
 
-            currentPage = page;
-        }
-
-        function goToPage(page) {
-            if (page >= 1 && page <= totalPages) {
-                renderPage(page);
+            if (sortBy === 'score') {
+                filtered.sort((a, b) => b.score - a.score);
+            } else if (sortBy === 'wpm') {
+                filtered.sort((a, b) => b.wpm - a.wpm);
             }
-        }
 
-        function prevPage() {
-            if (currentPage > 1) {
-                renderPage(currentPage - 1);
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:50px 20px; color:#71829B;">
+                            ยังไม่มีประวัติการพิมพ์ เริ่มต้นฝึกพิมพ์ได้ที่เมนู <a href="{{ url_for('api.typing') }}" style="color:#288CF0; font-weight:700; text-decoration:none;">ห้องฝึกพิมพ์</a>
+                        </td>
+                    </tr>
+                `;
+                return;
             }
+
+            tbody.innerHTML = filtered.map((item, idx) => {
+                const detailUrl = `/result?wpm=${item.wpm}&acc=${item.accuracy}&score=${item.score}&time=${item.time_spent}&errors=${item.error_count}&room_code=${encodeURIComponent(item.room_code === '-' ? '' : item.room_code)}`;
+                return `
+                    <tr>
+                        <td style="color: #71829B;">${idx + 1}</td>
+                        <td>${item.date}<br><span style="font-size: 11px; color: #71829B;">${item.time}</span></td>
+                        <td style="font-weight: 600;">${item.room_name} <span style="font-size:11px; color:#71829B;">(${item.room_code})</span></td>
+                        <td class="wpm-text">${item.wpm}</td>
+                        <td class="acc-text">${item.accuracy}%</td>
+                        <td class="score-text">${item.score}</td>
+                        <td style="text-align: right;">
+                            <a href="${detailUrl}" class="btn-outline-sm" style="text-decoration:none;"><i class="fa-solid fa-circle-info"></i> ดูรายละเอียด</a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
-        function nextPage() {
-            if (currentPage < totalPages) {
-                renderPage(currentPage + 1);
-            }
-        }
-
-        // แสดงผลหน้า 1 ตั้งแต่เริ่มต้น
-        window.addEventListener("load", function() {
-            renderPage(1);
-        });
+        document.addEventListener('DOMContentLoaded', loadHistory);
     </script>
 </body>
-
 </html>
