@@ -73,7 +73,7 @@ flowchart TD
 
     ServiceLayer --> ModelLayer
     ModelLayer -.-> BaseTyping
-    BaseTyping <|-- StdTyping
+    BaseTyping -->|Extends / Implements| StdTyping
 
     ServiceLayer --> OracleDB
     Flask_HTTP --> OracleDB

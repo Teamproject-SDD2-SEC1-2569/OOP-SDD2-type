@@ -113,7 +113,7 @@ flowchart TD
 
     ServiceLayer --> ModelLayer
     ModelLayer -.-> BaseTypingMode
-    BaseTypingMode <|-- StandardTypingSession
+    BaseTypingMode -->|Extends / Implements| StandardTypingSession
 
     ServiceLayer --> DB_Connector
     HTTP_Student --> DB_Connector
@@ -460,3 +460,4 @@ sequenceDiagram
 
 ---
 *เอกสารฉบับนี้จัดทำขึ้นโดยทีมงาน TypeClass เพื่อใช้เป็นเอกสารประกอบการประเมินโครงงาน วิชา Software Design and Development 2 (พฤศจิกายน 2026)*
+
