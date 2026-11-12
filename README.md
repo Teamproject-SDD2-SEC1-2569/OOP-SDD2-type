@@ -91,6 +91,7 @@ python run.py
 ---
 
 ## 📚 เอกสารประกอบโครงการ (Documentation)
+* [🎓 เอกสารสรุปเนื้อหาโครงงานสำหรับการประเมินผล อ.ไพบูลย์ (Presentation Guide)](docs/PRESENTATION_SDD2_PAIBOON.md)
 * [📘 คู่มือโครงสร้างระบบและฟังก์ชันฉบับละเอียด (Project Structure & Function Reference)](docs/PROJECT_STRUCTURE_AND_FUNCTION_REFERENCE.md)
 * [🗄️ แผนภาพฐานข้อมูล ER Diagram และ Data Dictionary (Oracle Cloud Database)](docs/oracle_database_erd.md)
 * [⚡ เอกสารระบบ WebSocket Real-time API Specification](docs/websocket_api_spec.md)
