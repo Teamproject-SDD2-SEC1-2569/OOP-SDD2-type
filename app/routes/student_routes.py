@@ -777,7 +777,25 @@ def submit_typing_result():
     time_spent = max(1, int(float(data.get("time_spent") or 60)))
     error_count = max(0, int(float(data.get("error_count") or 0)))
     room_code = (data.get("room_code") or "").strip().upper()
-    score = round(wpm * (accuracy / 100.0) * 10, 0)
+
+    # Anti-Bot & Anti-Cheat Validation
+    bot_flagged = bool(data.get("bot_flagged"))
+    bot_reason = str(data.get("bot_reason") or "")
+
+    if wpm > 240:
+        bot_flagged = True
+        bot_reason = f"ความเร็วการพิมพ์เกินเพดานสูงสุดของมนุษย์ ({wpm} WPM)"
+
+    if time_spent < 5 and wpm > 100:
+        bot_flagged = True
+        bot_reason = f"เวลาทำข้อสอบสั้นเกินความเป็นจริง ({time_spent} วินาที)"
+
+    teacher_comment = None
+    if bot_flagged:
+        score = 0
+        teacher_comment = f"[ANTI_BOT_FLAGGED] {bot_reason}"
+    else:
+        score = round(wpm * (accuracy / 100.0) * 10, 0)
 
     conn = get_db_connection()
     if not conn:
@@ -793,11 +811,11 @@ def submit_typing_result():
                 """
                 INSERT INTO U.SUBMISSION_RESULTS (
                     ASSIGNMENT_ID, STUDENT_ID, WPM, ACCURACY,
-                    TIME_SPENT, ERROR_COUNT, GRADE_OR_SCORE, SUBMITTED_AT
+                    TIME_SPENT, ERROR_COUNT, GRADE_OR_SCORE, TEACHER_COMMENT, SUBMITTED_AT
                 )
                 VALUES (
                     :aid, :user_id, :wpm, :acc,
-                    :time_spent, :err_cnt, :score, CURRENT_TIMESTAMP
+                    :time_spent, :err_cnt, :score, :comment, CURRENT_TIMESTAMP
                 )
                 RETURNING RESULT_ID INTO :rid
                 """,
@@ -809,6 +827,7 @@ def submit_typing_result():
                     "time_spent": time_spent,
                     "err_cnt": error_count,
                     "score": score,
+                    "comment": teacher_comment,
                     "rid": result_id_var
                 }
             )
@@ -817,7 +836,7 @@ def submit_typing_result():
             conn.commit()
 
             return jsonify({
-                "message": "บันทึกผลคะแนนสำเร็จ",
+                "message": "ตรวจพบบอท ผลคะแนนถูกระงับ" if bot_flagged else "บันทึกผลคะแนนสำเร็จ",
                 "result": {
                     "result_id": result_id,
                     "wpm": wpm,
@@ -825,7 +844,9 @@ def submit_typing_result():
                     "score": int(score),
                     "time_spent": time_spent,
                     "error_count": error_count,
-                    "room_code": room_code
+                    "room_code": room_code,
+                    "bot_flagged": bot_flagged,
+                    "flag_reason": bot_reason
                 }
             }), 201
     except Exception as e:

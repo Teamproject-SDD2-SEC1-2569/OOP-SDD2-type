@@ -1506,7 +1506,8 @@ def api_teacher_history():
                 f"""
                 SELECT sr.RESULT_ID, sr.SUBMITTED_AT, c.ROOM_CODE, c.ROOM_NAME,
                        u.USERNAME, u.FULL_NAME, s.STUDENT_CODE,
-                       sr.WPM, sr.ACCURACY, sr.TIME_SPENT, sr.ERROR_COUNT, sr.GRADE_OR_SCORE
+                       sr.WPM, sr.ACCURACY, sr.TIME_SPENT, sr.ERROR_COUNT, sr.GRADE_OR_SCORE,
+                       sr.TEACHER_COMMENT
                 FROM U.SUBMISSION_RESULTS sr
                 JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID
                 JOIN U.CLASSROOMS c ON a.CLASSROOM_ID = c.CLASSROOM_ID
@@ -1522,6 +1523,8 @@ def api_teacher_history():
             for r in cursor.fetchall():
                 wpm = _num(r[7])
                 acc = _num(r[8], 2)
+                comment = str(r[12] or "")
+                is_bot = "[ANTI_BOT_FLAGGED]" in comment
                 history.append({
                     "result_id": r[0],
                     "submitted_at": _fmt_dt(r[1]),
@@ -1534,7 +1537,9 @@ def api_teacher_history():
                     "time_spent": int(r[9] or 0),
                     "error_count": int(r[10] or 0),
                     "score": _num(r[11]),
-                    "passed": wpm >= PASS_MIN_WPM and acc >= PASS_MIN_ACCURACY,
+                    "passed": (wpm >= PASS_MIN_WPM and acc >= PASS_MIN_ACCURACY) and not is_bot,
+                    "is_bot": is_bot,
+                    "bot_reason": comment.replace("[ANTI_BOT_FLAGGED]", "").strip() if is_bot else "",
                 })
 
             return jsonify({

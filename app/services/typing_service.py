@@ -91,17 +91,33 @@ class TypingService:
         final_accuracy = max(0.0, min(100.0, float(data.get("accuracy") or 0)))
         error_count = max(0, int(float(data.get("error_count") or 0)))
 
-        # 1. Anti-Cheat: ป้องกัน WPM สูงเกินจริง (> MAX_WPM_THRESHOLD)
-        if final_wpm > MAX_WPM_THRESHOLD:
-            return False, {
-                "status": "error",
-                "message": "Score flagged as invalid (Anti-Cheat triggered)."
-            }
-
-        # คำนวณคะแนนรวม
-        score = int(round(final_wpm * (final_accuracy / 100.0) * 10, 0))
-
         user_meta = self.active_sessions.get(sid) or {}
+        session = user_meta.get("session")
+
+        # 1. Anti-Cheat & Anti-Bot Verification
+        bot_flagged = bool(data.get("bot_flagged"))
+        bot_reason = str(data.get("bot_reason") or "")
+
+        if session and session.is_flagged:
+            bot_flagged = True
+            bot_reason = session.flag_reason or "Session flagged as bot pattern"
+
+        if final_wpm > MAX_WPM_THRESHOLD:
+            bot_flagged = True
+            bot_reason = f"ความเร็วเกินเพดานสูงสุดของมนุษย์ ({final_wpm} WPM)"
+
+        if time_spent < 5 and final_wpm > 100:
+            bot_flagged = True
+            bot_reason = f"เวลาในการทดสอบสั้นผิดปกติ ({time_spent}s)"
+
+        teacher_comment = None
+        if bot_flagged:
+            score = 0
+            teacher_comment = f"[ANTI_BOT_FLAGGED] {bot_reason}"
+        else:
+            # คำนวณคะแนนรวมตามปกติ
+            score = int(round(final_wpm * (final_accuracy / 100.0) * 10, 0))
+
         raw_uid = data.get("user_id") or user_meta.get("user_id")
         room_code = (data.get("room_code") or user_meta.get("room") or "").strip().upper()
 
@@ -122,20 +138,22 @@ class TypingService:
 
                 sql = """
                     INSERT INTO U.SUBMISSION_RESULTS 
-                    (ASSIGNMENT_ID, STUDENT_ID, WPM, ACCURACY, TIME_SPENT, ERROR_COUNT, GRADE_OR_SCORE, SUBMITTED_AT)
-                    VALUES (:1, :2, :3, :4, :5, :6, :7, CURRENT_TIMESTAMP)
+                    (ASSIGNMENT_ID, STUDENT_ID, WPM, ACCURACY, TIME_SPENT, ERROR_COUNT, GRADE_OR_SCORE, TEACHER_COMMENT, SUBMITTED_AT)
+                    VALUES (:1, :2, :3, :4, :5, :6, :7, :8, CURRENT_TIMESTAMP)
                 """
                 cursor.execute(
                     sql,
-                    (assignment_id, student_id, final_wpm, final_accuracy, time_spent, error_count, score)
+                    (assignment_id, student_id, final_wpm, final_accuracy, time_spent, error_count, score, teacher_comment)
                 )
                 conn.commit()
                 cursor.close()
-                print(f"✅ [DB] Successfully saved score: {score} for student_id: {student_id}")
+                print(f"✅ [DB] Successfully saved score: {score} (Flagged: {bot_flagged}) for student_id: {student_id}")
                 return True, {
-                    "status": "success",
-                    "message": "Score saved successfully!",
-                    "score": score
+                    "status": "flagged" if bot_flagged else "success",
+                    "message": "ตรวจพบบอท ผลคะแนนถูกระงับ" if bot_flagged else "Score saved successfully!",
+                    "score": score,
+                    "bot_flagged": bot_flagged,
+                    "flag_reason": bot_reason
                 }
             except Exception as e:
                 print(f"❌ [DB] Error saving score: {e}")

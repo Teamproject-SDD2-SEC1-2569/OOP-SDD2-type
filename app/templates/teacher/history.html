@@ -511,9 +511,11 @@
                     <td>${h.error_count}</td>
                     <td>${h.score}</td>
                     <td>
-                        ${h.passed
-                            ? '<span class="status-badge status-pass"><i class="fa-solid fa-check"></i> ผ่านเกณฑ์</span>'
-                            : '<span class="status-badge status-fail"><i class="fa-solid fa-xmark"></i> ควรปรับปรุง</span>'}
+                        ${h.is_bot
+                            ? `<span class="status-badge" style="background:#FDE8E8; color:#E02424; border:1px solid #F8B4B4; cursor:help;" title="${TC.escape(h.bot_reason || 'ระบบตรวจพบพฤติกรรมบอทช่วยพิมพ์')}"><i class="fa-solid fa-robot"></i> ตรวจพบบอท</span>`
+                            : (h.passed
+                                ? '<span class="status-badge status-pass"><i class="fa-solid fa-check"></i> ผ่านเกณฑ์</span>'
+                                : '<span class="status-badge status-fail"><i class="fa-solid fa-xmark"></i> ควรปรับปรุง</span>')}
                     </td>
                 </tr>
             `).join('');

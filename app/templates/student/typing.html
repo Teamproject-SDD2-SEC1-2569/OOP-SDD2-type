@@ -599,6 +599,106 @@
             timerElement.textContent = String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
         }
 
+        // ================= ระบบตรวจจับและป้องกันบอท (Anti-Bot & Anti-Cheat Engine) =================
+        const AntiBot = {
+            keystrokeTimes: [],
+            maxHistory: 30,
+            isTriggered: false,
+            flagReason: "",
+
+            reset() {
+                this.keystrokeTimes = [];
+                this.isTriggered = false;
+                this.flagReason = "";
+            },
+
+            recordKeystroke(e, currentLen, prevLen) {
+                if (this.isTriggered) return false;
+
+                // 1. ตรวจสอบ isTrusted (สคริปต์ที่สั่ง dispatchEvent เองจะมี e.isTrusted === false)
+                if (e && e.isTrusted === false) {
+                    this.trigger("ตรวจพบการจำลองการกดแป้นพิมพ์ผ่านสคริปต์ภายนอก (Untrusted DOM Event)");
+                    return false;
+                }
+
+                // 2. ตรวจสอบการแทรกข้อความหลายตัวพร้อมกัน (Bulk Input Insertion / Fast Paste)
+                if (currentLen - prevLen > 1) {
+                    this.trigger("ตรวจพบการแทรกตัวอักษรหลายตัวพร้อมกันผิดปกติ (Bulk Text Insertion)");
+                    return false;
+                }
+
+                // 3. วิเคราะห์ความสม่ำเสมอของจังหวะพิมพ์ (Keystroke Dynamics / IKI Analysis)
+                const now = performance.now();
+                this.keystrokeTimes.push(now);
+                if (this.keystrokeTimes.length > this.maxHistory) {
+                    this.keystrokeTimes.shift();
+                }
+
+                if (this.keystrokeTimes.length >= 15) {
+                    const intervals = [];
+                    for (let i = 1; i < this.keystrokeTimes.length; i++) {
+                        intervals.push(this.keystrokeTimes[i] - this.keystrokeTimes[i - 1]);
+                    }
+
+                    const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+                    const variance = intervals.reduce((sum, val) => sum + Math.pow(val - avgInterval, 2), 0) / intervals.length;
+                    const stdDev = Math.sqrt(variance);
+
+                    // มนุษย์ทั่วไปจะมี stdDev ของ IKI มากกว่า 15-30ms เสมอ
+                    // บอทที่วนลูปหน่วงเวลาคงที่จะมีค่า stdDev ต่ำผิดธรรมชาติ (< 3.5ms)
+                    if (stdDev < 3.5 && intervals.length >= 15) {
+                        this.trigger(`ตรวจพบจังหวะการกดแป้นพิมพ์สม่ำเสมอผิดธรรมชาติของมนุษย์ (Bot Uniformity: σ=${stdDev.toFixed(2)}ms)`);
+                        return false;
+                    }
+
+                    // ความเร็วพิมพ์เฉลี่ยสูงเกิน 30ms ต่อตัวอักษร (> 400 WPM)
+                    if (avgInterval < 30.0) {
+                        this.trigger(`ตรวจพบความเร็วในการเคาะแป้นสูงเกินขีดจำกัดมนุษย์ (${Math.round(60000 / avgInterval / 5)} WPM)`);
+                        return false;
+                    }
+                }
+
+                return true;
+            },
+
+            trigger(reason) {
+                if (this.isTriggered) return;
+                this.isTriggered = true;
+                this.flagReason = reason;
+
+                // หยุดตัวจับเวลาและล็อกช่องพิมพ์ทันที
+                clearInterval(timerInterval);
+                timerStarted = false;
+                typingInput.disabled = true;
+                typingInput.blur();
+                typingInput.value = "";
+
+                // ล้างการแสดงผล
+                textDisplay.innerHTML = `
+                    <div style="color: #E95C68; font-weight: 600; padding: 30px; text-align: center;">
+                        <i class="fa-solid fa-shield-halved" style="font-size: 38px; margin-bottom: 12px; display: block; color: #E95C68;"></i>
+                        <span style="font-size: 20px; display: block; margin-bottom: 6px;">ระงับการทดสอบ (Anti-Bot)</span>
+                        <span style="font-size: 14px; color: #71829B; font-weight: 400;">${reason}</span>
+                    </div>
+                `;
+
+                // แจ้งเตือนผ่าน Modern Modal
+                showModernPopup({
+                    type: 'error',
+                    title: 'ตรวจพบพฤติกรรมบอท (Anti-Bot)',
+                    message: `${reason}\n\nระบบระงับการทดสอบนี้เพื่อความโปร่งใสและยุติธรรมในการประเมินผล`,
+                    buttonText: isExamMode ? 'กลับสู่หน้ารวมห้องเรียน' : 'เริ่มฝึกใหม่',
+                    onConfirm: () => {
+                        if (isExamMode) {
+                            window.location.href = '/classroom';
+                        } else {
+                            window.location.reload();
+                        }
+                    }
+                });
+            }
+        };
+
         function startTimer() {
             timerStarted = true;
             timerLabel.textContent = "เวลาที่เหลือ";
@@ -638,7 +738,9 @@
                             accuracy: currentLiveAccuracy,
                             time_spent: timeToSend,
                             error_count: errorCount,
-                            room_code: currentRoom
+                            room_code: currentRoom,
+                            bot_flagged: AntiBot.isTriggered,
+                            bot_reason: AntiBot.flagReason
                         })
                     });
                     const data = await res.json();
@@ -654,7 +756,9 @@
                     accuracy: currentLiveAccuracy,
                     time_spent: timeToSend,
                     error_count: errorCount,
-                    room_code: currentRoom
+                    room_code: currentRoom,
+                    bot_flagged: AntiBot.isTriggered,
+                    bot_reason: AntiBot.flagReason
                 });
             }
 
@@ -670,8 +774,14 @@
             window.location.href = `/result?${params.toString()}`;
         }
 
-        typingInput.addEventListener("input", function () {
+        typingInput.addEventListener("input", function (e) {
             const userVal = this.value;
+
+            // ตรวจสอบ Anti-Bot ผ่าน Keystroke Dynamics และความถูกต้องของ Event
+            if (!AntiBot.recordKeystroke(e, userVal.length, lastLength)) {
+                return;
+            }
+
             if (!timerStarted && userVal.length > 0) startTimer();
 
             if (userVal.length > lastLength) {
@@ -715,6 +825,7 @@
         });
 
         function restartTyping() {
+            AntiBot.reset();
             clearInterval(timerInterval);
             timerStarted = false;
             timeLeft = defaultTime;
@@ -732,7 +843,17 @@
             socket.emit("start_typing"); 
         }
 
-        typingInput.addEventListener("paste", e => e.preventDefault());
+        typingInput.addEventListener("paste", e => {
+            e.preventDefault();
+            AntiBot.trigger("ไม่อนุญาตให้วางข้อความลงในช่องพิมพ์ (Paste Blocked)");
+        });
+        typingInput.addEventListener("drop", e => {
+            e.preventDefault();
+            AntiBot.trigger("ไม่อนุญาตให้ลากวางข้อความลงในช่องพิมพ์ (Drop Blocked)");
+        });
+        typingInput.addEventListener("contextmenu", e => {
+            e.preventDefault();
+        });
         textDisplay.addEventListener("click", () => {
             if(!typingInput.disabled) typingInput.focus();
         });
