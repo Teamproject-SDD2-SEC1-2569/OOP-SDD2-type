@@ -5,51 +5,257 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>สมัครสมาชิก | Typing Competition</title>
-    <style id="auth-guard-style">html { display: none !important; }</style>
+    <style id="auth-guard-style">
+        html {
+            display: none !important;
+        }
+    </style>
     <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
     <script>redirectIfAuthenticated();</script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Prompt', Arial, sans-serif; }
-        body { background: #f4f8ff; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .register-container { width: 1100px; max-width: 100%; min-height: 650px; background: white; border-radius: 30px; box-shadow: 0 10px 35px rgba(70, 120, 180, 0.12); display: flex; overflow: hidden; }
-        .register-form { width: 58%; padding: 45px 55px; }
-        .title { color: #3f6fb5; font-size: 42px; font-weight: bold; margin-bottom: 8px; }
-        .subtitle { color: #777; font-size: 18px; margin-bottom: 28px; }
-        .section-title { color: #333; font-size: 18px; font-weight: bold; margin-bottom: 12px; }
-        .role-container { display: flex; gap: 18px; margin-bottom: 25px; }
-        .role-button { flex: 1; height: 55px; border: 1px solid #d7dce5; border-radius: 14px; background: white; color: #555; font-size: 17px; font-weight: bold; cursor: pointer; }
-        .role-button.active { background: #5d91df; color: white; border-color: #5d91df; }
-        .form-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; width: 100%; }
-        .form-group { display: flex; flex-direction: column; min-width: 0; }
-        .form-group label { color: #333; font-size: 16px; font-weight: bold; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .form-group input, .form-group select { width: 100%; max-width: 100%; min-width: 0; height: 52px; border: 1px solid #d7dce5; border-radius: 14px; padding: 0 16px; font-size: 15px; outline: none; background: #fff; color: #333; transition: border-color 0.2s, box-shadow 0.2s; text-overflow: ellipsis; }
-        .form-group input:focus, .form-group select:focus { border-color: #5d91df; box-shadow: 0 0 0 3px rgba(93, 145, 223, 0.12); }
-        .form-group input.input-error, .form-group select.input-error { border-color: #e11d48; box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.14); animation: shakeInput 0.35s ease; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Prompt', Arial, sans-serif;
+        }
+
+        body {
+            background: #f4f8ff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .register-container {
+            width: 1100px;
+            max-width: 100%;
+            min-height: 650px;
+            background: white;
+            border-radius: 30px;
+            box-shadow: 0 10px 35px rgba(70, 120, 180, 0.12);
+            display: flex;
+            overflow: hidden;
+        }
+
+        .register-form {
+            width: 58%;
+            padding: 45px 55px;
+        }
+
+        .title {
+            color: #3f6fb5;
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #777;
+            font-size: 18px;
+            margin-bottom: 28px;
+        }
+
+        .section-title {
+            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .role-container {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .role-button {
+            flex: 1;
+            height: 55px;
+            border: 1px solid #d7dce5;
+            border-radius: 14px;
+            background: white;
+            color: #555;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .role-button.active {
+            background: #5d91df;
+            color: white;
+            border-color: #5d91df;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 18px;
+            width: 100%;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .form-group label {
+            color: #333;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            height: 52px;
+            border: 1px solid #d7dce5;
+            border-radius: 14px;
+            padding: 0 16px;
+            font-size: 15px;
+            outline: none;
+            background: #fff;
+            color: #333;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            text-overflow: ellipsis;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #5d91df;
+            box-shadow: 0 0 0 3px rgba(93, 145, 223, 0.12);
+        }
+
+        .form-group input.input-error,
+        .form-group select.input-error {
+            border-color: #e11d48;
+            box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.14);
+            animation: shakeInput 0.35s ease;
+        }
+
         @keyframes shakeInput {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
         }
-        .register-button { width: 70%; height: 58px; margin-top: 28px; border: none; border-radius: 15px; background: #5d91df; color: white; font-size: 20px; font-weight: bold; cursor: pointer; }
-        .register-button:hover { background: #4c80cf; }
-        .login-link { margin-top: 25px; text-align: center; color: #666; font-size: 16px; }
-        .login-link a { color: #5d91df; text-decoration: none; font-weight: bold; margin-left: 5px; }
-        .register-image { width: 42%; background: #eef5ff; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
-        .image-content { text-align: center; padding: 30px; }
-        .keyboard-icon { font-size: 150px; margin-bottom: 20px; }
-        .image-content h2 { color: #4778bd; font-size: 28px; margin-bottom: 10px; }
-        .image-content p { color: #777; font-size: 16px; }
+
+        .register-button {
+            width: 70%;
+            height: 58px;
+            margin-top: 28px;
+            border: none;
+            border-radius: 15px;
+            background: #5d91df;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .register-button:hover {
+            background: #4c80cf;
+        }
+
+        .login-link {
+            margin-top: 25px;
+            text-align: center;
+            color: #666;
+            font-size: 16px;
+        }
+
+        .login-link a {
+            color: #5d91df;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .register-image {
+            width: 42%;
+            background: #eef5ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .image-content {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .keyboard-icon {
+            font-size: 150px;
+            margin-bottom: 20px;
+        }
+
+        .image-content h2 {
+            color: #4778bd;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .image-content p {
+            color: #777;
+            font-size: 16px;
+        }
+
         @media (max-width: 1024px) {
-            .register-container { width: 100%; max-width: 680px; min-height: auto; margin: 20px auto; }
-            .register-form { width: 100%; padding: 40px 35px; }
-            .register-image { display: none; }
+            .register-container {
+                width: 100%;
+                max-width: 680px;
+                min-height: auto;
+                margin: 20px auto;
+            }
+
+            .register-form {
+                width: 100%;
+                padding: 40px 35px;
+            }
+
+            .register-image {
+                display: none;
+            }
         }
+
         @media (max-width: 600px) {
-            .register-form { padding: 30px 20px; }
-            .form-grid { grid-template-columns: 1fr; gap: 15px; }
-            .title { font-size: 32px; }
-            .register-button { width: 100%; }
+            .register-form {
+                padding: 30px 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .title {
+                font-size: 32px;
+            }
+
+            .register-button {
+                width: 100%;
+            }
         }
 
         /* Modern Notification Popup Modal */
@@ -68,10 +274,12 @@
             transition: opacity 0.25s ease, visibility 0.25s ease;
             padding: 20px;
         }
+
         .modern-modal-backdrop.show {
             opacity: 1;
             visibility: visible;
         }
+
         .modern-modal-card {
             background: #ffffff;
             width: 100%;
@@ -84,9 +292,11 @@
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
         }
+
         .modern-modal-backdrop.show .modern-modal-card {
             transform: translateY(0) scale(1);
         }
+
         .modern-modal-icon {
             width: 76px;
             height: 76px;
@@ -99,33 +309,39 @@
             font-weight: bold;
             position: relative;
         }
+
         .modern-modal-icon.success {
             background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
             color: #059669;
             box-shadow: 0 10px 25px rgba(16, 185, 129, 0.22);
         }
+
         .modern-modal-icon.error {
             background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
             color: #e11d48;
             box-shadow: 0 10px 25px rgba(225, 29, 72, 0.2);
         }
+
         .modern-modal-icon.info {
             background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
             color: #2563eb;
             box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
         }
+
         .modern-modal-title {
             color: #1e293b;
             font-size: 22px;
             font-weight: 700;
             margin-bottom: 10px;
         }
+
         .modern-modal-message {
             color: #64748b;
             font-size: 15px;
             line-height: 1.6;
             margin-bottom: 26px;
         }
+
         .modern-modal-btn {
             width: 100%;
             height: 50px;
@@ -137,21 +353,26 @@
             cursor: pointer;
             transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
         }
+
         .modern-modal-btn:hover {
             transform: translateY(-1px);
             opacity: 0.96;
         }
+
         .modern-modal-btn:active {
             transform: translateY(0);
         }
+
         .modern-modal-btn.success {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
         }
+
         .modern-modal-btn.error {
             background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
             box-shadow: 0 8px 20px rgba(225, 29, 72, 0.28);
         }
+
         .modern-modal-btn.info {
             background: linear-gradient(135deg, #5d91df 0%, #3b82f6 100%);
             box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
@@ -168,17 +389,20 @@
             flex-direction: column;
             gap: 8px;
         }
+
         .password-checklist-title {
             font-size: 13px;
             font-weight: 600;
             color: #475569;
             margin-bottom: 2px;
         }
+
         .checklist-items {
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
+
         .checklist-item {
             display: flex;
             align-items: center;
@@ -189,6 +413,7 @@
             word-break: break-word;
             transition: color 0.2s ease;
         }
+
         .checklist-item .chk-badge {
             width: 20px;
             height: 20px;
@@ -204,10 +429,12 @@
             transition: all 0.2s ease;
             flex-shrink: 0;
         }
+
         .checklist-item.valid {
             color: #059669;
             font-weight: 600;
         }
+
         .checklist-item.valid .chk-badge {
             background: #10b981;
             border-color: #10b981;
@@ -233,12 +460,14 @@
             <form onsubmit="handleRegister(event)" novalidate>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>ชื่อจริง <span style="font-size:12px; color:#777; font-weight:normal;">(3-30 ตัวอักษร)</span></label>
+                        <label>ชื่อจริง <span style="font-size:12px; color:#777; font-weight:normal;">(3-30
+                                ตัวอักษร)</span></label>
                         <input type="text" id="regFirstName" placeholder="กรอกชื่อจริง (3-30 ตัวอักษร)" maxlength="30">
                     </div>
 
                     <div class="form-group">
-                        <label>นามสกุล <span style="font-size:12px; color:#777; font-weight:normal;">(3-30 ตัวอักษร)</span></label>
+                        <label>นามสกุล <span style="font-size:12px; color:#777; font-weight:normal;">(3-30
+                                ตัวอักษร)</span></label>
                         <input type="text" id="regLastName" placeholder="กรอกนามสกุล (3-30 ตัวอักษร)" maxlength="30">
                     </div>
 
@@ -260,13 +489,15 @@
                     <div class="form-group" id="teacherFacultyGroup" style="display: none;">
                         <label>สถานศึกษา</label>
                         <select id="regFaculty">
-                            <option value="สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง" selected>สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง</option>
+                            <option value="สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง" selected>
+                                สถาบันเทคโนโลยีพระจอมเกล้าเจ้าคุณทหารลาดกระบัง</option>
                         </select>
                     </div>
 
                     <div class="form-group" id="studentCodeGroup">
                         <label>รหัสนักศึกษา (8 หลัก)</label>
-                        <input type="text" id="regStudentCode" placeholder="กรอกรหัสนักศึกษา 8 หลัก" maxlength="8" inputmode="numeric" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 8)">
+                        <input type="text" id="regStudentCode" placeholder="กรอกรหัสนักศึกษา 8 หลัก" maxlength="8"
+                            inputmode="numeric" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 8)">
                     </div>
 
                     <div class="form-group" id="studentMajorGroup">
@@ -279,27 +510,30 @@
                     </div>
 
                     <div class="form-group">
-                        <label>ชื่อผู้ใช้ <span style="font-size:12px; color:#777; font-weight:normal;">(3-30 ตัวอักษร)</span></label>
+                        <label>ชื่อผู้ใช้ <span style="font-size:12px; color:#777; font-weight:normal;">(3-30
+                                ตัวอักษร)</span></label>
                         <input type="text" id="regUsername" placeholder="กรอกชื่อผู้ใช้ (3-30 ตัวอักษร)" maxlength="30">
                     </div>
 
                     <div class="form-group">
                         <label>อีเมล</label>
-                        <input type="email" id="regEmail" placeholder="กรอกอีเมล" oninput="if(!this.readOnly) this.value = this.value.replace(/[^\x21-\x7E]/g, '')">
+                        <input type="email" id="regEmail" placeholder="กรอกอีเมล"
+                            oninput="if(!this.readOnly) this.value = this.value.replace(/[^\x21-\x7E]/g, '')">
                     </div>
 
                     <div class="form-group">
                         <label>รหัสผ่าน</label>
-                        <input type="password" id="regPassword" placeholder="อย่างน้อย 8 ตัว และมีตัวอักษร ≥ 1 ตัว" oninput="updatePasswordChecklist()">
+                        <input type="password" id="regPassword" placeholder="อย่างน้อย 8 ตัว และมีตัวอักษร ≥ 1 ตัว"
+                            oninput="updatePasswordChecklist()">
                     </div>
 
                     <div class="form-group">
                         <label>ยืนยันรหัสผ่าน</label>
-                        <input type="password" id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน" oninput="updatePasswordChecklist()">
+                        <input type="password" id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน"
+                            oninput="updatePasswordChecklist()">
                     </div>
 
                     <div class="password-checklist" id="passwordChecklist">
-                        <div class="password-checklist-title">เงื่อนไขรหัสผ่าน:</div>
                         <div class="checklist-items">
                             <div class="checklist-item" id="chkLen">
                                 <span class="chk-badge">✓</span>
@@ -341,7 +575,8 @@
             <div class="modern-modal-icon info" id="modernPopupIcon">✦</div>
             <h3 class="modern-modal-title" id="modernPopupTitle">แจ้งเตือน</h3>
             <p class="modern-modal-message" id="modernPopupMessage">รายละเอียดข้อความ</p>
-            <button type="button" class="modern-modal-btn info" id="modernPopupBtn" onclick="closeModernPopup()">ตกลง</button>
+            <button type="button" class="modern-modal-btn info" id="modernPopupBtn"
+                onclick="closeModernPopup()">ตกลง</button>
         </div>
     </div>
 
