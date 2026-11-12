@@ -347,6 +347,19 @@
                         });
                         return;
                     }
+                    if (joinRes.status === 403) {
+                        const errData = await joinRes.json();
+                        showModernPopup({
+                            type: 'warning',
+                            title: 'ห้องเรียนปิดแล้ว',
+                            message: errData.error || `ห้องเรียน ${roomCodeUpper} ปิดการทดสอบแล้ว คุณไม่สามารถเข้าสอบได้`,
+                            buttonText: 'กลับสู่หน้ารวมห้อง',
+                            onConfirm: () => {
+                                window.location.href = '/classroom';
+                            }
+                        });
+                        return;
+                    }
                 } catch (e) {
                     console.warn("Join classroom API warning:", e);
                 }
@@ -403,6 +416,99 @@
         // ================= ระบบพิมพ์ =================
         const socket = io({
             auth: { token: localStorage.getItem('token') }
+        });
+
+        // 🚨 จัดการเมื่อห้องเรียนถูกปิดหรือลบแบบ Real-time โดยอาจารย์
+        let isKickingOut = false;
+        function handleRoomClosedNotification(data) {
+            if (isKickingOut) return;
+            const targetRoom = ((data && data.room_code) || currentRoom || "").trim().toUpperCase();
+
+            // ตรวจสอบว่ากำลังทำข้อสอบอยู่ในห้องนั้นจริงหรือไม่
+            if (!isExamMode || (currentRoom && currentRoom.toUpperCase() !== targetRoom)) {
+                return;
+            }
+
+            isKickingOut = true;
+
+            // 1. หยุดตัวจับเวลาทันที ไม่ให้จับเวลาต่อ
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            timerStarted = false;
+
+            // 2. ล็อกช่องพิมพ์ทันที และลบ focus เพื่อไม่ให้พิมพ์ตัวอักษรใดๆ ได้อีก
+            if (typingInput) {
+                typingInput.disabled = true;
+                typingInput.blur();
+                typingInput.value = "";
+            }
+
+            // 3. แจ้ง WebSocket Server ว่าออกจากห้อง
+            if (socket && socket.connected && currentRoom) {
+                socket.emit("leave_classroom", { room_code: currentRoom });
+            }
+
+            // 4. รีเซ็ตสถานะโหมดสอบ
+            const closedRoomCode = currentRoom;
+            isExamMode = false;
+            currentRoom = "";
+
+            // 5. ปรับเปลี่ยน UI ซ่อนการ์ดห้องสอบ
+            const participantCard = document.getElementById('participantCard');
+            if (participantCard) participantCard.style.display = 'none';
+
+            const roomBadgeDisplay = document.getElementById('roomBadgeDisplay');
+            if (roomBadgeDisplay) roomBadgeDisplay.style.display = 'none';
+
+            const btnToggleRoom = document.getElementById('btnToggleRoom');
+            if (btnToggleRoom) {
+                btnToggleRoom.innerHTML = '<i class="fa-solid fa-person-shelter"></i> เข้าสู่ห้องเรียน';
+                btnToggleRoom.className = 'btn-primary';
+                btnToggleRoom.onclick = openJoinModal;
+            }
+
+            const modeText = document.getElementById('typingModeText');
+            if (modeText) modeText.innerText = 'โหมดฝึกซ้อมส่วนตัว';
+
+            // 6. เปลี่ยนข้อความในจอแสดงผล
+            if (textDisplay) {
+                textDisplay.innerHTML = `
+                    <div style="color: #E95C68; font-weight: 600; padding: 30px; text-align: center;">
+                        <i class="fa-solid fa-lock" style="font-size: 32px; margin-bottom: 12px; display: block; color: #E95C68;"></i>
+                        <span style="font-size: 18px; display: block; margin-bottom: 6px;">ห้องเรียนปิดแล้ว</span>
+                        <span style="font-size: 14px; color: #71829B; font-weight: 400;">อาจารย์ได้ปิดการทดสอบแล้ว คุณถูกนำออกจากห้องสอบ</span>
+                    </div>
+                `;
+            }
+
+            // 7. แสดง Modern Modal แจ้งเตือนเด้งออกทันที
+            const reason = (data && data.message) || `อาจารย์ได้ปิดห้องทดสอบ (${closedRoomCode}) แล้ว`;
+            showModernPopup({
+                type: 'error',
+                title: 'ห้องเรียนปิดแล้ว',
+                message: `${reason}\nระบบได้นำคุณออกจากห้องสอบเรียบร้อยแล้ว`,
+                buttonText: 'กลับสู่หน้ารวมห้องเรียน',
+                onConfirm: () => {
+                    window.location.href = '/classroom';
+                }
+            });
+
+            // ป้องกันค้าง: หากผู้ใช้ไม่ได้กดปุ่ม ให้พาไปหน้า /classroom อัตโนมัติใน 5 วินาที
+            setTimeout(() => {
+                window.location.href = '/classroom';
+            }, 5000);
+        }
+
+        socket.on("room_status_changed", (data) => {
+            if (data && data.status === "closed") {
+                handleRoomClosedNotification(data);
+            }
+        });
+
+        socket.on("room_closed", (data) => {
+            handleRoomClosedNotification(data);
         });
 
         let targetText = "apple banana computer desk window school friend family house book water plane train car chair table phone sun moon star happy sad";

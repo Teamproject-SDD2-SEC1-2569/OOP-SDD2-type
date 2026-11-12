@@ -427,9 +427,23 @@ def update_room_status(room_code):
         # แจ้งนักศึกษาที่อยู่ในห้องแบบ Real-time ว่าสถานะห้องเปลี่ยนแล้ว
         try:
             from .. import socketio
+            # ส่งทั้งแบบระบุ room และแบบ broadcast เพื่อให้ครอบคลุมทุกกรณี
             socketio.emit("room_status_changed", {"room_code": room_code, "status": status}, room=room_code)
-        except Exception:
-            pass
+            socketio.emit("room_status_changed", {"room_code": room_code, "status": status})
+
+            if status == "closed":
+                socketio.emit("room_closed", {
+                    "room_code": room_code,
+                    "status": "closed",
+                    "message": "อาจารย์ได้ปิดห้องทดสอบแล้ว"
+                }, room=room_code)
+                socketio.emit("room_closed", {
+                    "room_code": room_code,
+                    "status": "closed",
+                    "message": "อาจารย์ได้ปิดห้องทดสอบแล้ว"
+                })
+        except Exception as e:
+            logger.error("Failed to emit room events: %s", e)
 
         return jsonify({
             "message": "เปลี่ยนสถานะห้องเรียนสำเร็จ",
@@ -1196,6 +1210,25 @@ def api_teacher_delete_room(room_code):
 
             room_settings.pop(room["room_code"], None)
             active_rooms.pop(room["room_code"], None)
+
+            # แจ้งนักศึกษาในห้องว่าห้องเรียนถูกลบ/ปิดแล้ว
+            try:
+                from .. import socketio
+                socketio.emit("room_status_changed", {"room_code": room["room_code"], "status": "closed"}, room=room["room_code"])
+                socketio.emit("room_status_changed", {"room_code": room["room_code"], "status": "closed"})
+                socketio.emit("room_closed", {
+                    "room_code": room["room_code"],
+                    "status": "closed",
+                    "message": f"อาจารย์ได้ลบห้องเรียน {room['room_name']} แล้ว"
+                }, room=room["room_code"])
+                socketio.emit("room_closed", {
+                    "room_code": room["room_code"],
+                    "status": "closed",
+                    "message": f"อาจารย์ได้ลบห้องเรียน {room['room_name']} แล้ว"
+                })
+            except Exception as e:
+                logger.error("Failed to emit room deletion events: %s", e)
+
             return jsonify({"message": f"ลบห้องเรียน {room['room_name']} เรียบร้อยแล้ว"}), 200
     except Exception as e:
         conn.rollback()

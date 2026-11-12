@@ -661,6 +661,34 @@ def join_student_classroom():
 
             classroom_id = room[0]
 
+            # ตรวจสอบสถานะห้องเรียนว่าปิดการทดสอบอยู่หรือไม่
+            cursor.execute(
+                """
+                SELECT COUNT(*)
+                FROM all_tab_columns
+                WHERE owner = 'U' AND table_name = 'CLASSROOMS' AND column_name = 'STATUS'
+                """
+            )
+            has_status_col = (cursor.fetchone()[0] or 0) > 0
+            room_status = "open"
+            if has_status_col:
+                cursor.execute(
+                    "SELECT STATUS FROM U.CLASSROOMS WHERE CLASSROOM_ID = :cid",
+                    {"cid": classroom_id}
+                )
+                s_row = cursor.fetchone()
+                if s_row and s_row[0]:
+                    room_status = s_row[0].lower()
+
+            if room_code in room_settings and room_settings[room_code].get("status"):
+                room_status = room_settings[room_code]["status"].lower()
+
+            if room_status == "closed":
+                return jsonify({
+                    "error": f"ห้องเรียน {room_code} ปิดการทดสอบแล้ว คุณไม่สามารถเข้าสอบได้",
+                    "status": "closed"
+                }), 403
+
             cursor.execute(
                 """
                 SELECT MEMBER_ID FROM U.CLASSROOM_MEMBERS

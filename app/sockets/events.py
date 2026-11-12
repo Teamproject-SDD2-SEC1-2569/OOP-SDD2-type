@@ -51,6 +51,21 @@ def register_socket_events(socketio: SocketIO):
             return
 
         room = room.strip().upper()
+
+        # ตรวจสอบว่าห้องเรียนปิดอยู่หรือไม่
+        try:
+            from ..routes.teacher_routes import room_settings
+            settings = room_settings.get(room, {})
+            if settings.get("status") == "closed":
+                emit('room_closed', {
+                    'room_code': room,
+                    'status': 'closed',
+                    'message': f'ห้องเรียน {room} ปิดการทดสอบแล้ว คุณไม่สามารถเข้าสอบได้'
+                })
+                return
+        except Exception:
+            pass
+
         join_room(room)
         user_session = typing_service.get_user_session(request.sid)
         if data.get('student_name') and user_session:
@@ -76,6 +91,19 @@ def register_socket_events(socketio: SocketIO):
                 reverse=True
             )
             emit('room_leaderboard_update', sorted_leaderboard, room=room)
+
+    @socketio.on('leave_classroom')
+    @socketio.on('leave_room')
+    def handle_leave_classroom(data):
+        """ออกจากห้องเรียนและเคลียร์สิทธิ์การรับ Event ของห้องนั้น"""
+        if not isinstance(data, dict):
+            return
+        room = data.get('room_code')
+        if not room:
+            return
+        room = room.strip().upper()
+        from flask_socketio import leave_room
+        leave_room(room)
 
     @socketio.on('teacher_join_room')
     def handle_teacher_join_room(data):
