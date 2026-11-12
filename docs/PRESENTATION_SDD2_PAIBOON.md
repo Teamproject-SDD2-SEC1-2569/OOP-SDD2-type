@@ -127,34 +127,34 @@ flowchart TD
 
 ```mermaid
 classDiagram
-    %% Inheritance ในส่วนผู้ใช้งาน (Domain Entities)
+    %% Domain Entities
     class User {
         +int user_id
         +string username
         +string email
         +string role
         +string full_name
-        +is_student(): bool
-        +is_teacher(): bool
-        +to_dict(): dict
+        +is_student() bool
+        +is_teacher() bool
+        +to_dict() dict
     }
 
     class Student {
         +string student_code
         +string major
-        +to_dict(): dict
+        +to_dict() dict
     }
 
     class Teacher {
         +string academic_title
         +string faculty
-        +to_dict(): dict
+        +to_dict() dict
     }
 
-    User <|-- Student : Inheritance (IS-A)
-    User <|-- Teacher : Inheritance (IS-A)
+    User <|-- Student : Inheritance
+    User <|-- Teacher : Inheritance
 
-    %% โครงสร้างเอนทิตีห้องเรียนและการส่งงาน
+    %% Classroom & Submission Entities
     class Classroom {
         +int room_id
         +string room_code
@@ -162,7 +162,7 @@ classDiagram
         +int teacher_id
         +string status
         +int duration
-        +is_active(): bool
+        +is_active() bool
     }
 
     class SubmissionResult {
@@ -178,11 +178,11 @@ classDiagram
     }
 
     Teacher "1" --> "0..*" Classroom : Owns
-    Classroom "1" --> "0..*" Student : Has Members (N:M)
+    Classroom "1" --> "0..*" Student : Has Members
     Student "1" --> "0..*" SubmissionResult : Submits
     Classroom "1" --> "0..*" SubmissionResult : Contains
 
-    %% หัวใจสำคัญของ OOP: Typing Engine
+    %% Typing Engine
     class BaseTypingMode {
         <<abstract>>
         #string _target_text
@@ -194,38 +194,38 @@ classDiagram
         #bool _is_flagged
         #string _flag_reason
         #list _keystroke_timestamps
-        +start_session()
-        +process_keystroke(is_correct: bool)
-        +get_current_stats(): dict
+        +start_session() void
+        +process_keystroke(bool is_correct) void
+        +get_current_stats() dict
         +calculate_score()* int
     }
 
     class StandardTypingSession {
-        +calculate_score(): int
-        +finalize_session(): dict
+        +calculate_score() int
+        +finalize_session() dict
     }
 
     class SuddenDeathTypingSession {
-        +process_keystroke(is_correct: bool)
-        +calculate_score(): int
+        +process_keystroke(bool is_correct) void
+        +calculate_score() int
     }
 
-    BaseTypingMode <|-- StandardTypingSession : Inheritance (Polymorphism)
-    BaseTypingMode <|-- SuddenDeathTypingSession : Future Extension (OCP)
+    BaseTypingMode <|-- StandardTypingSession : Realizes
+    BaseTypingMode <|-- SuddenDeathTypingSession : Future Extension
 
-    %% Service ที่นำ Model ไปใช้งาน
+    %% Service
     class TypingService {
         -dict active_sessions
         -dict room_leaderboards
-        +register_user_session(sid, user_id, username)
-        +join_room(sid, room_code)
-        +start_typing_session(sid): string
-        +process_keystroke(sid, is_correct): tuple
-        +submit_score(sid, data): tuple
-        +remove_session(sid)
+        +register_user_session(sid, user_id, username) void
+        +join_room(sid, room_code) void
+        +start_typing_session(sid) string
+        +process_keystroke(sid, is_correct) tuple
+        +submit_score(sid, data) tuple
+        +remove_session(sid) void
     }
 
-    TypingService o-- BaseTypingMode : Aggregates / Controls
+    TypingService o-- BaseTypingMode : Controls
 ```
 
 ---

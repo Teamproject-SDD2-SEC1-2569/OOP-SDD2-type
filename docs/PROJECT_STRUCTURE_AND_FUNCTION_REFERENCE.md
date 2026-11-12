@@ -264,42 +264,42 @@ OOP-SDD2-type/
 classDiagram
     class BaseTypingMode {
         <<abstract>>
-        -_target_text: str
-        -_start_time: datetime
-        -_end_time: datetime
-        -_total_chars_typed: int
-        -_correct_chars: int
-        -_is_flagged: bool
-        -_flag_reason: str
-        -_keystroke_timestamps: List
-        +start_session()
-        +process_keystroke(is_correct: bool)
-        +get_current_stats(): dict
+        -string _target_text
+        -datetime _start_time
+        -datetime _end_time
+        -int _total_chars_typed
+        -int _correct_chars
+        -bool _is_flagged
+        -string _flag_reason
+        -List _keystroke_timestamps
+        +start_session() void
+        +process_keystroke(bool is_correct) void
+        +get_current_stats() dict
         +calculate_score()* int
     }
 
     class StandardTypingSession {
-        +calculate_score(): int
-        +finalize_session(): dict
+        +calculate_score() int
+        +finalize_session() dict
     }
 
     class SuddenDeathTypingSession {
-        +process_keystroke(is_correct: bool)
-        +calculate_score(): int
+        +process_keystroke(bool is_correct) void
+        +calculate_score() int
     }
 
     class CodingSyntaxTypingSession {
-        +calculate_score(): int
+        +calculate_score() int
     }
 
     class TimedSprintTypingSession {
-        +calculate_score(): int
+        +calculate_score() int
     }
 
-    BaseTypingMode <|-- StandardTypingSession : ปัจจุบัน (Standard Mode)
-    BaseTypingMode <|-- SuddenDeathTypingSession : ส่วนขยายในอนาคต (Sudden Death)
-    BaseTypingMode <|-- CodingSyntaxTypingSession : ส่วนขยายในอนาคต (Code Typing)
-    BaseTypingMode <|-- TimedSprintTypingSession : ส่วนขยายในอนาคต (Speed Sprint)
+    BaseTypingMode <|-- StandardTypingSession : Standard Mode
+    BaseTypingMode <|-- SuddenDeathTypingSession : Sudden Death Mode
+    BaseTypingMode <|-- CodingSyntaxTypingSession : Code Typing Mode
+    BaseTypingMode <|-- TimedSprintTypingSession : Speed Sprint Mode
 ```
 
 #### 3. ตัวอย่างโค้ดสาธิตการขยายโหมดใหม่โดยไม่แก้คลาสแม่ (Code Extension Example):
