@@ -7,6 +7,8 @@
     <style id="auth-guard-style">html { display: none !important; }</style>
     <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
     <script>requireAuth('student');</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern_modal.css') }}">
+    <script src="{{ url_for('static', filename='js/modern_modal.js') }}"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -262,7 +264,7 @@
                         ? `<div class="status-badge closed"><i class="fa-solid fa-lock" style="font-size: 10px;"></i> ปิดทดสอบแล้ว</div>`
                         : `<div class="status-badge live"><i class="fa-solid fa-circle" style="font-size: 6px;"></i> เปิดทดสอบ</div>`;
                     const actionHtml = isClosed
-                        ? `<a href="#" class="btn-enter" style="background: #F4F7FC; color: #71829B;" onclick="alert('ห้องนี้ปิดการทดสอบแล้ว คุณไม่สามารถเข้าสอบได้'); return false;">
+                        ? `<a href="#" class="btn-enter" style="background: #F4F7FC; color: #71829B;" onclick="showModernPopup({ type: 'warning', title: 'ห้องเรียนปิดการทดสอบ', message: 'ห้องนี้ปิดการทดสอบแล้ว คุณไม่สามารถเข้าสอบได้' }); return false;">
                                <i class="fa-solid fa-ban"></i> ปิดทดสอบแล้ว
                            </a>`
                         : `<a href="{{ url_for('api.typing') }}?room_code=${encodeURIComponent(room.room_code)}" class="btn-enter">
@@ -307,7 +309,14 @@
         // บันทึกรหัสห้องเรียนลง Oracle Database
         async function submitJoinRoom() {
             const code = document.getElementById('inputRoomCode').value.trim().toUpperCase();
-            if (!code) return alert('กรุณากรอกรหัสห้อง');
+            if (!code) {
+                showModernPopup({
+                    type: 'warning',
+                    title: 'กรุณากรอกข้อมูล',
+                    message: 'กรุณากรอกรหัสห้อง'
+                });
+                return;
+            }
 
             try {
                 const res = await fetch('/api/student/classrooms/join', {
@@ -320,21 +329,44 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert(data.message || `เข้าร่วมห้องเรียน ${code} สำเร็จ!`);
-                    closeJoinModal();
-                    await loadStudentClassrooms();
+                    showModernPopup({
+                        type: 'success',
+                        title: 'สำเร็จ',
+                        message: data.message || `เข้าร่วมห้องเรียน ${code} สำเร็จ!`,
+                        onConfirm: async () => {
+                            closeJoinModal();
+                            await loadStudentClassrooms();
+                        }
+                    });
                 } else {
-                    alert(data.error || 'ไม่พบรหัสห้องเรียนนี้ในระบบ');
+                    showModernPopup({
+                        type: 'error',
+                        title: 'ไม่สามารถเข้าร่วมได้',
+                        message: data.error || 'ไม่พบรหัสห้องเรียนนี้ในระบบ'
+                    });
                 }
             } catch (err) {
                 console.error("Join room error:", err);
-                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                showModernPopup({
+                    type: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'
+                });
             }
         }
 
         // ออกจากห้องเรียนและลบจาก Oracle Database
         async function leaveRoom(roomCode) {
-            if (!confirm(`คุณต้องการออกจากห้องเรียน ${roomCode} ใช่หรือไม่?`)) return;
+            const confirmed = await showModernConfirm({
+                type: 'warning',
+                title: 'ยืนยันการออกจากห้องเรียน',
+                message: `คุณต้องการออกจากห้องเรียน ${roomCode} ใช่หรือไม่?`,
+                confirmText: 'ออกจากห้อง',
+                cancelText: 'ยกเลิก',
+                danger: true
+            });
+            if (!confirmed) return;
+
             try {
                 const res = await fetch(`/api/student/classrooms/${encodeURIComponent(roomCode)}/leave`, {
                     method: 'DELETE',
@@ -342,13 +374,28 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    await loadStudentClassrooms();
+                    showModernPopup({
+                        type: 'success',
+                        title: 'สำเร็จ',
+                        message: `ออกจากห้องเรียน ${roomCode} เรียบร้อยแล้ว`,
+                        onConfirm: async () => {
+                            await loadStudentClassrooms();
+                        }
+                    });
                 } else {
-                    alert(data.error || 'ไม่สามารถออกจากห้องเรียนได้');
+                    showModernPopup({
+                        type: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        message: data.error || 'ไม่สามารถออกจากห้องเรียนได้'
+                    });
                 }
             } catch (err) {
                 console.error("Leave room error:", err);
-                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                showModernPopup({
+                    type: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'
+                });
             }
         }
 

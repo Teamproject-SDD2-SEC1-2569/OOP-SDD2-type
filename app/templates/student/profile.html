@@ -7,6 +7,8 @@
     <style id="auth-guard-style">html { display: none !important; }</style>
     <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
     <script>requireAuth('student');</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern_modal.css') }}">
+    <script src="{{ url_for('static', filename='js/modern_modal.js') }}"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -383,20 +385,42 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert('บันทึกข้อมูลโปรไฟล์สำเร็จ!');
-                    closeEditModal();
-                    await loadProfile();
+                    showModernPopup({
+                        type: 'success',
+                        title: 'สำเร็จ',
+                        message: 'บันทึกข้อมูลโปรไฟล์สำเร็จ!',
+                        onConfirm: async () => {
+                            closeEditModal();
+                            await loadProfile();
+                        }
+                    });
                 } else {
-                    alert(data.error || 'ไม่สามารถบันทึกข้อมูลได้');
+                    showModernPopup({
+                        type: 'error',
+                        title: 'ไม่สามารถบันทึกได้',
+                        message: data.error || 'ไม่สามารถบันทึกข้อมูลได้'
+                    });
                 }
             } catch (err) {
                 console.error("Save profile error:", err);
-                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                showModernPopup({
+                    type: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'
+                });
             }
         }
 
         async function deleteAccount() {
-            const confirmMsg = prompt("คำเตือน: การลบบัญชีจะทำให้ประวัติการพิมพ์หายไปอย่างถาวร\nพิมพ์คำว่า 'ยืนยัน' เพื่อดำเนินการลบ:");
+            const confirmMsg = await showModernPrompt({
+                type: 'error',
+                title: 'ยืนยันการลบบัญชีผู้ใช้',
+                message: 'คำเตือน: การลบบัญชีจะทำให้ข้อมูลและประวัติการพิมพ์หายไปอย่างถาวร\nพิมพ์คำว่า "ยืนยัน" เพื่อดำเนินการลบ:',
+                placeholder: 'พิมพ์คำว่า ยืนยัน',
+                confirmText: 'ลบบัญชีถาวร',
+                cancelText: 'ยกเลิก',
+                danger: true
+            });
             if (confirmMsg === "ยืนยัน") {
                 try {
                     const res = await fetch('/api/student/profile', {
@@ -405,15 +429,35 @@
                     });
                     if (res.ok) {
                         localStorage.clear();
-                        alert("ลบบัญชีเรียบร้อยแล้ว");
-                        window.location.href = "{{ url_for('api.login') }}";
+                        showModernPopup({
+                            type: 'success',
+                            title: 'ลบบัญชีสำเร็จ',
+                            message: 'ลบบัญชีของคุณเรียบร้อยแล้ว',
+                            onConfirm: () => {
+                                window.location.href = "{{ url_for('api.login') }}";
+                            }
+                        });
                     } else {
                         const data = await res.json();
-                        alert(data.error || "ไม่สามารถลบบัญชีได้");
+                        showModernPopup({
+                            type: 'error',
+                            title: 'ไม่สามารถลบบัญชีได้',
+                            message: data.error || 'ไม่สามารถลบบัญชีได้'
+                        });
                     }
                 } catch (err) {
-                    alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+                    showModernPopup({
+                        type: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'
+                    });
                 }
+            } else if (confirmMsg !== null) {
+                showModernPopup({
+                    type: 'warning',
+                    title: 'ยกเลิกการลบ',
+                    message: 'ข้อความยืนยันไม่ถูกต้อง ระบบจึงยกเลิกการลบบัญชี'
+                });
             }
         }
 

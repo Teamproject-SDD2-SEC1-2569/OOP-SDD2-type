@@ -8,6 +8,8 @@
     <style id="auth-guard-style">html { display: none !important; }</style>
     <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
     <script>requireAuth('student');</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern_modal.css') }}">
+    <script src="{{ url_for('static', filename='js/modern_modal.js') }}"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
