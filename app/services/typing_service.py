@@ -106,6 +106,16 @@ class TypingService:
             bot_flagged = True
             bot_reason = f"ความเร็วเกินเพดานสูงสุดของมนุษย์ ({final_wpm} WPM)"
 
+        # หากความเร็วเกินเกณฑ์หรือเซสชันถูก Flag ว่าเป็นบอท ปฏิเสธผลคะแนนทันที (Anti-Cheat Triggered)
+        if final_wpm > MAX_WPM_THRESHOLD or (session and session.is_flagged):
+            return False, {
+                "status": "error",
+                "message": f"Score flagged as invalid (Anti-Cheat triggered): {bot_reason}",
+                "score": 0,
+                "bot_flagged": True,
+                "flag_reason": bot_reason
+            }
+
         if time_spent < 5 and final_wpm > 100:
             bot_flagged = True
             bot_reason = f"เวลาในการทดสอบสั้นผิดปกติ ({time_spent}s)"

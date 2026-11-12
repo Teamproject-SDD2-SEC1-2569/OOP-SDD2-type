@@ -27,7 +27,7 @@ def get_db_connection():
         )
         print("✅ [Database] Connected successfully!")
         return connection
-    except oracledb.Error as e:
+    except Exception as e:
         print(f"❌ [Database] Could not connect to the database - Error: {e}")
         return None
 
