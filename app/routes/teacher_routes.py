@@ -427,9 +427,23 @@ def update_room_status(room_code):
         # แจ้งนักศึกษาที่อยู่ในห้องแบบ Real-time ว่าสถานะห้องเปลี่ยนแล้ว
         try:
             from .. import socketio
+            # ส่งทั้งแบบระบุ room และแบบ broadcast เพื่อให้ครอบคลุมทุกกรณี
             socketio.emit("room_status_changed", {"room_code": room_code, "status": status}, room=room_code)
-        except Exception:
-            pass
+            socketio.emit("room_status_changed", {"room_code": room_code, "status": status})
+
+            if status == "closed":
+                socketio.emit("room_closed", {
+                    "room_code": room_code,
+                    "status": "closed",
+                    "message": "อาจารย์ได้ปิดห้องทดสอบแล้ว"
+                }, room=room_code)
+                socketio.emit("room_closed", {
+                    "room_code": room_code,
+                    "status": "closed",
+                    "message": "อาจารย์ได้ปิดห้องทดสอบแล้ว"
+                })
+        except Exception as e:
+            logger.error("Failed to emit room events: %s", e)
 
         return jsonify({
             "message": "เปลี่ยนสถานะห้องเรียนสำเร็จ",
@@ -1196,6 +1210,25 @@ def api_teacher_delete_room(room_code):
 
             room_settings.pop(room["room_code"], None)
             active_rooms.pop(room["room_code"], None)
+
+            # แจ้งนักศึกษาในห้องว่าห้องเรียนถูกลบ/ปิดแล้ว
+            try:
+                from .. import socketio
+                socketio.emit("room_status_changed", {"room_code": room["room_code"], "status": "closed"}, room=room["room_code"])
+                socketio.emit("room_status_changed", {"room_code": room["room_code"], "status": "closed"})
+                socketio.emit("room_closed", {
+                    "room_code": room["room_code"],
+                    "status": "closed",
+                    "message": f"อาจารย์ได้ลบห้องเรียน {room['room_name']} แล้ว"
+                }, room=room["room_code"])
+                socketio.emit("room_closed", {
+                    "room_code": room["room_code"],
+                    "status": "closed",
+                    "message": f"อาจารย์ได้ลบห้องเรียน {room['room_name']} แล้ว"
+                })
+            except Exception as e:
+                logger.error("Failed to emit room deletion events: %s", e)
+
             return jsonify({"message": f"ลบห้องเรียน {room['room_name']} เรียบร้อยแล้ว"}), 200
     except Exception as e:
         conn.rollback()
@@ -1207,7 +1240,9 @@ def api_teacher_delete_room(room_code):
 @teacher_bp.route("/api/students", methods=["GET"])
 @require_role("Teacher")
 def api_teacher_students():
-    """รายชื่อนักศึกษาทั้งหมดในห้องเรียนของอาจารย์ พร้อมสถิติการพิมพ์"""
+    """รายชื่อนักศึกษาในห้องเรียนของอาจารย์ (กรองตาม room_code ได้) พร้อมสรุปข้อมูลห้องเรียน"""
+    room_code = (request.args.get("room_code") or "").strip().upper()
+
     conn = get_db_connection()
     if not conn:
         return jsonify({"error": "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"}), 500
@@ -1218,15 +1253,68 @@ def api_teacher_students():
             if teacher_id is None:
                 return jsonify({"error": "ไม่พบข้อมูลอาจารย์สำหรับบัญชีนี้"}), 403
 
+            # 1. ดึงรายการห้องเรียนทั้งหมดของอาจารย์พร้อมสถิติสรุป
             cursor.execute(
                 """
+                SELECT c.CLASSROOM_ID, c.ROOM_NAME, c.ROOM_CODE, c.STATUS, c.DURATION, c.CREATED_AT,
+                       (SELECT COUNT(*) FROM U.CLASSROOM_MEMBERS m WHERE m.CLASSROOM_ID = c.CLASSROOM_ID) AS student_count,
+                       (SELECT COUNT(*) FROM U.SUBMISSION_RESULTS sr 
+                        JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID 
+                        WHERE a.CLASSROOM_ID = c.CLASSROOM_ID) AS tests_completed,
+                       (SELECT ROUND(AVG(sr.WPM), 1) FROM U.SUBMISSION_RESULTS sr 
+                        JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID 
+                        WHERE a.CLASSROOM_ID = c.CLASSROOM_ID) AS avg_wpm,
+                       (SELECT ROUND(AVG(sr.ACCURACY), 1) FROM U.SUBMISSION_RESULTS sr 
+                        JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID 
+                        WHERE a.CLASSROOM_ID = c.CLASSROOM_ID) AS avg_accuracy
+                FROM U.CLASSROOMS c
+                WHERE c.TEACHER_ID = :teacher_id
+                ORDER BY c.CLASSROOM_ID DESC
+                """,
+                {"teacher_id": teacher_id}
+            )
+            rooms = []
+            current_room = None
+            for r in cursor.fetchall():
+                r_code = r[2]
+                r_info = {
+                    "classroom_id": r[0],
+                    "room_name": r[1],
+                    "room_code": r_code,
+                    "status": r[3] or "open",
+                    "duration": int(r[4] or 60),
+                    "created_at": _fmt_dt(r[5]),
+                    "student_count": int(r[6] or 0),
+                    "tests_completed": int(r[7] or 0),
+                    "avg_wpm": _num(r[8]),
+                    "avg_accuracy": _num(r[9], 1),
+                }
+                rooms.append(r_info)
+                if room_code and room_code != "ALL" and r_code.upper() == room_code:
+                    current_room = r_info
+
+            # เงื่อนไขการกรองห้องเรียน
+            room_filter = ""
+            params_members = {"teacher_id": teacher_id}
+            params_users = {"teacher_id": teacher_id}
+            params_stats = {"teacher_id": teacher_id}
+
+            if room_code and room_code != "ALL":
+                room_filter = " AND UPPER(c.ROOM_CODE) = :room_code"
+                params_members["room_code"] = room_code
+                params_users["room_code"] = room_code
+                params_stats["room_code"] = room_code
+
+            # 2. ดึงห้องเรียนของนักศึกษาแต่ละคน
+            cursor.execute(
+                f"""
                 SELECT m.STUDENT_ID, c.ROOM_NAME, c.ROOM_CODE
                 FROM U.CLASSROOM_MEMBERS m
                 JOIN U.CLASSROOMS c ON m.CLASSROOM_ID = c.CLASSROOM_ID
-                WHERE c.TEACHER_ID = :teacher_id
+                WHERE c.TEACHER_ID = :teacher_id{room_filter}
                 ORDER BY c.ROOM_NAME
                 """,
-                {"teacher_id": teacher_id}
+                params_members
             )
             rooms_by_student = {}
             for sid, room_name, code in cursor.fetchall():
@@ -1235,7 +1323,7 @@ def api_teacher_students():
             students = []
             if rooms_by_student:
                 cursor.execute(
-                    """
+                    f"""
                     SELECT u.USER_ID, u.USERNAME, u.FULL_NAME, u.EMAIL, s.STUDENT_CODE, s.MAJOR
                     FROM U.USERS u
                     LEFT JOIN U.STUDENTS s ON s.STUDENT_ID = u.USER_ID
@@ -1243,31 +1331,31 @@ def api_teacher_students():
                         SELECT m.STUDENT_ID
                         FROM U.CLASSROOM_MEMBERS m
                         JOIN U.CLASSROOMS c ON m.CLASSROOM_ID = c.CLASSROOM_ID
-                        WHERE c.TEACHER_ID = :teacher_id
+                        WHERE c.TEACHER_ID = :teacher_id{room_filter}
                     )
                     ORDER BY s.STUDENT_CODE, u.FULL_NAME
                     """,
-                    {"teacher_id": teacher_id}
+                    params_users
                 )
                 user_rows = cursor.fetchall()
 
                 cursor.execute(
-                    """
+                    f"""
                     SELECT sr.STUDENT_ID, COUNT(*), MAX(sr.WPM), MAX(sr.ACCURACY),
                            AVG(sr.WPM), AVG(sr.ACCURACY), NVL(SUM(sr.TIME_SPENT), 0)
                     FROM U.SUBMISSION_RESULTS sr
                     JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID
                     JOIN U.CLASSROOMS c ON a.CLASSROOM_ID = c.CLASSROOM_ID
-                    WHERE c.TEACHER_ID = :teacher_id
+                    WHERE c.TEACHER_ID = :teacher_id{room_filter}
                     GROUP BY sr.STUDENT_ID
                     """,
-                    {"teacher_id": teacher_id}
+                    params_stats
                 )
                 stats = {r[0]: r for r in cursor.fetchall()}
 
                 for u in user_rows:
                     st = stats.get(u[0])
-                    rooms = rooms_by_student.get(u[0], [])
+                    s_rooms = rooms_by_student.get(u[0], [])
                     students.append({
                         "user_id": u[0],
                         "username": u[1],
@@ -1275,8 +1363,8 @@ def api_teacher_students():
                         "email": u[3],
                         "student_code": u[4] or "-",
                         "major": u[5] or "-",
-                        "rooms": rooms,
-                        "room_count": len(rooms),
+                        "rooms": s_rooms,
+                        "room_count": len(s_rooms),
                         "tests_completed": int(st[1]) if st else 0,
                         "highest_wpm": _num(st[2]) if st else 0,
                         "highest_accuracy": _num(st[3], 2) if st else 0,
@@ -1285,7 +1373,13 @@ def api_teacher_students():
                         "total_time_seconds": int(st[6] or 0) if st else 0,
                     })
 
-            return jsonify({"students": students}), 200
+            return jsonify({
+                "rooms": rooms,
+                "current_room": current_room,
+                "filter_room_code": room_code,
+                "students": students,
+                "total_students": len(students)
+            }), 200
     except Exception as e:
         return jsonify({"error": f"ไม่สามารถดึงข้อมูลนักศึกษาได้: {e}"}), 500
     finally:
@@ -1353,17 +1447,46 @@ def api_teacher_history():
 
             cursor.execute(
                 """
-                SELECT ROOM_CODE, ROOM_NAME FROM U.CLASSROOMS
-                WHERE TEACHER_ID = :teacher_id
-                ORDER BY CLASSROOM_ID DESC
+                SELECT c.CLASSROOM_ID, c.ROOM_NAME, c.ROOM_CODE, c.STATUS, c.DURATION, c.CREATED_AT,
+                       (SELECT COUNT(*) FROM U.CLASSROOM_MEMBERS m WHERE m.CLASSROOM_ID = c.CLASSROOM_ID) AS student_count,
+                       (SELECT COUNT(*) FROM U.SUBMISSION_RESULTS sr 
+                        JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID 
+                        WHERE a.CLASSROOM_ID = c.CLASSROOM_ID) AS total_tests,
+                       (SELECT ROUND(AVG(sr.WPM), 1) FROM U.SUBMISSION_RESULTS sr 
+                        JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID 
+                        WHERE a.CLASSROOM_ID = c.CLASSROOM_ID) AS avg_wpm,
+                       (SELECT ROUND(AVG(sr.ACCURACY), 1) FROM U.SUBMISSION_RESULTS sr 
+                        JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID 
+                        WHERE a.CLASSROOM_ID = c.CLASSROOM_ID) AS avg_accuracy
+                FROM U.CLASSROOMS c
+                WHERE c.TEACHER_ID = :teacher_id
+                ORDER BY c.CLASSROOM_ID DESC
                 """,
                 {"teacher_id": teacher_id}
             )
-            rooms = [{"room_code": r[0], "room_name": r[1]} for r in cursor.fetchall()]
+            rooms = []
+            current_room = None
+            for r in cursor.fetchall():
+                r_code = r[2]
+                r_info = {
+                    "classroom_id": r[0],
+                    "room_name": r[1],
+                    "room_code": r_code,
+                    "status": r[3] or "open",
+                    "duration": int(r[4] or 60),
+                    "created_at": _fmt_dt(r[5]),
+                    "student_count": int(r[6] or 0),
+                    "total_tests": int(r[7] or 0),
+                    "avg_wpm": _num(r[8]),
+                    "avg_accuracy": _num(r[9], 1),
+                }
+                rooms.append(r_info)
+                if room_code and room_code != "ALL" and r_code.upper() == room_code:
+                    current_room = r_info
 
             room_filter = ""
             params = {"teacher_id": teacher_id}
-            if room_code:
+            if room_code and room_code != "ALL":
                 room_filter = " AND UPPER(c.ROOM_CODE) = :room_code"
                 params["room_code"] = room_code
 
@@ -1383,7 +1506,8 @@ def api_teacher_history():
                 f"""
                 SELECT sr.RESULT_ID, sr.SUBMITTED_AT, c.ROOM_CODE, c.ROOM_NAME,
                        u.USERNAME, u.FULL_NAME, s.STUDENT_CODE,
-                       sr.WPM, sr.ACCURACY, sr.TIME_SPENT, sr.ERROR_COUNT, sr.GRADE_OR_SCORE
+                       sr.WPM, sr.ACCURACY, sr.TIME_SPENT, sr.ERROR_COUNT, sr.GRADE_OR_SCORE,
+                       sr.TEACHER_COMMENT
                 FROM U.SUBMISSION_RESULTS sr
                 JOIN U.ASSIGNMENTS a ON sr.ASSIGNMENT_ID = a.ASSIGNMENT_ID
                 JOIN U.CLASSROOMS c ON a.CLASSROOM_ID = c.CLASSROOM_ID
@@ -1399,6 +1523,8 @@ def api_teacher_history():
             for r in cursor.fetchall():
                 wpm = _num(r[7])
                 acc = _num(r[8], 2)
+                comment = str(r[12] or "")
+                is_bot = "[ANTI_BOT_FLAGGED]" in comment
                 history.append({
                     "result_id": r[0],
                     "submitted_at": _fmt_dt(r[1]),
@@ -1411,11 +1537,15 @@ def api_teacher_history():
                     "time_spent": int(r[9] or 0),
                     "error_count": int(r[10] or 0),
                     "score": _num(r[11]),
-                    "passed": wpm >= PASS_MIN_WPM and acc >= PASS_MIN_ACCURACY,
+                    "passed": (wpm >= PASS_MIN_WPM and acc >= PASS_MIN_ACCURACY) and not is_bot,
+                    "is_bot": is_bot,
+                    "bot_reason": comment.replace("[ANTI_BOT_FLAGGED]", "").strip() if is_bot else "",
                 })
 
             return jsonify({
                 "rooms": rooms,
+                "current_room": current_room,
+                "filter_room_code": room_code,
                 "history": history,
                 "stats": {
                     "total_tests": int(agg[0] or 0),

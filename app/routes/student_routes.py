@@ -661,6 +661,34 @@ def join_student_classroom():
 
             classroom_id = room[0]
 
+            # ตรวจสอบสถานะห้องเรียนว่าปิดการทดสอบอยู่หรือไม่
+            cursor.execute(
+                """
+                SELECT COUNT(*)
+                FROM all_tab_columns
+                WHERE owner = 'U' AND table_name = 'CLASSROOMS' AND column_name = 'STATUS'
+                """
+            )
+            has_status_col = (cursor.fetchone()[0] or 0) > 0
+            room_status = "open"
+            if has_status_col:
+                cursor.execute(
+                    "SELECT STATUS FROM U.CLASSROOMS WHERE CLASSROOM_ID = :cid",
+                    {"cid": classroom_id}
+                )
+                s_row = cursor.fetchone()
+                if s_row and s_row[0]:
+                    room_status = s_row[0].lower()
+
+            if room_code in room_settings and room_settings[room_code].get("status"):
+                room_status = room_settings[room_code]["status"].lower()
+
+            if room_status == "closed":
+                return jsonify({
+                    "error": f"ห้องเรียน {room_code} ปิดการทดสอบแล้ว คุณไม่สามารถเข้าสอบได้",
+                    "status": "closed"
+                }), 403
+
             cursor.execute(
                 """
                 SELECT MEMBER_ID FROM U.CLASSROOM_MEMBERS
@@ -749,7 +777,25 @@ def submit_typing_result():
     time_spent = max(1, int(float(data.get("time_spent") or 60)))
     error_count = max(0, int(float(data.get("error_count") or 0)))
     room_code = (data.get("room_code") or "").strip().upper()
-    score = round(wpm * (accuracy / 100.0) * 10, 0)
+
+    # Anti-Bot & Anti-Cheat Validation
+    bot_flagged = bool(data.get("bot_flagged"))
+    bot_reason = str(data.get("bot_reason") or "")
+
+    if wpm > 240:
+        bot_flagged = True
+        bot_reason = f"ความเร็วการพิมพ์เกินเพดานสูงสุดของมนุษย์ ({wpm} WPM)"
+
+    if time_spent < 5 and wpm > 100:
+        bot_flagged = True
+        bot_reason = f"เวลาทำข้อสอบสั้นเกินความเป็นจริง ({time_spent} วินาที)"
+
+    teacher_comment = None
+    if bot_flagged:
+        score = 0
+        teacher_comment = f"[ANTI_BOT_FLAGGED] {bot_reason}"
+    else:
+        score = round(wpm * (accuracy / 100.0) * 10, 0)
 
     conn = get_db_connection()
     if not conn:
@@ -765,11 +811,11 @@ def submit_typing_result():
                 """
                 INSERT INTO U.SUBMISSION_RESULTS (
                     ASSIGNMENT_ID, STUDENT_ID, WPM, ACCURACY,
-                    TIME_SPENT, ERROR_COUNT, GRADE_OR_SCORE, SUBMITTED_AT
+                    TIME_SPENT, ERROR_COUNT, GRADE_OR_SCORE, TEACHER_COMMENT, SUBMITTED_AT
                 )
                 VALUES (
                     :aid, :user_id, :wpm, :acc,
-                    :time_spent, :err_cnt, :score, CURRENT_TIMESTAMP
+                    :time_spent, :err_cnt, :score, :comment, CURRENT_TIMESTAMP
                 )
                 RETURNING RESULT_ID INTO :rid
                 """,
@@ -781,6 +827,7 @@ def submit_typing_result():
                     "time_spent": time_spent,
                     "err_cnt": error_count,
                     "score": score,
+                    "comment": teacher_comment,
                     "rid": result_id_var
                 }
             )
@@ -789,7 +836,7 @@ def submit_typing_result():
             conn.commit()
 
             return jsonify({
-                "message": "บันทึกผลคะแนนสำเร็จ",
+                "message": "ตรวจพบบอท ผลคะแนนถูกระงับ" if bot_flagged else "บันทึกผลคะแนนสำเร็จ",
                 "result": {
                     "result_id": result_id,
                     "wpm": wpm,
@@ -797,7 +844,9 @@ def submit_typing_result():
                     "score": int(score),
                     "time_spent": time_spent,
                     "error_count": error_count,
-                    "room_code": room_code
+                    "room_code": room_code,
+                    "bot_flagged": bot_flagged,
+                    "flag_reason": bot_reason
                 }
             }), 201
     except Exception as e:
