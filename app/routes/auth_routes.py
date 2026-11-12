@@ -824,7 +824,7 @@ def google_oauth_callback():
         resp.set_cookie("user_role", role, max_age=3600*24, httponly=False, samesite="Lax", path="/")
         return resp
     except Exception as err:
-        return f"<script>alert('เข้าสู่ระบบด้วย Google ไม่สำเร็จ: {err}'); window.location.href='/';</script>"
+        return redirect(url_for("api.login", error=f"เข้าสู่ระบบด้วย Google ไม่สำเร็จ: {err}"))
 
 
 @auth_bp.route("/logout", methods=["GET", "POST"])
