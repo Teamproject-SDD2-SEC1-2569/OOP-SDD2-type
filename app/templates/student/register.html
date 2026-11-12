@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>สมัครสมาชิก | Typing Competition</title>
+    <style id="auth-guard-style">html { display: none !important; }</style>
+    <script src="{{ url_for('static', filename='js/auth_guard.js') }}"></script>
+    <script>redirectIfAuthenticated();</script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Prompt', Arial, sans-serif; }

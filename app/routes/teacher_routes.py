@@ -7,6 +7,7 @@ from ..utils.auth_utils import require_role
 from ..database import get_db_connection
 from ..services.storage_service import upload_profile_image
 from .auth_routes import in_memory_users
+from .route_guards import view_require_auth
 
 logger = logging.getLogger(__name__)
 
@@ -543,18 +544,21 @@ def teacher_register_page():
 
 
 @teacher_bp.route("/dashboard", methods=["GET"])
+@view_require_auth('teacher')
 def teacher_dashboard_page():
     # ข้อมูลห้องเรียนถูกโหลดผ่าน GET /teacher/api/dashboard (ใช้ JWT ของอาจารย์ที่ล็อกอินอยู่)
     return render_template("teacher/Dashboard.html")
 
 
 @teacher_bp.route("/create-room", methods=["GET", "POST"])
+@view_require_auth('teacher')
 def teacher_create_room_page():
     # การสร้างห้องย้ายไปใช้ POST /teacher/rooms (ผูกกับอาจารย์ที่ล็อกอินผ่าน JWT) แล้ว
     return redirect(url_for('teacher.teacher_dashboard_page'))
 
 
 @teacher_bp.route("/manage-classroom", methods=["GET"])
+@view_require_auth('teacher')
 def teacher_manage_classroom_page():
     room_code = (request.args.get('room_code') or '').strip().upper()
     if not room_code:
@@ -565,23 +569,27 @@ def teacher_manage_classroom_page():
 
 
 @teacher_bp.route("/menu", methods=["GET"])
+@view_require_auth('teacher')
 def teacher_menu_page():
     return redirect(url_for('teacher.teacher_dashboard_page'))
 
 
 @teacher_bp.route("/students", methods=["GET"])
+@view_require_auth('teacher')
 def teacher_students_page():
     # ในอนาคตจะดึงข้อมูลรายชื่อนักศึกษาจาก Database ส่งไปแสดงผลที่นี่
     return render_template("teacher/students.html")
 
 
 @teacher_bp.route("/history", methods=["GET"])
+@view_require_auth('teacher')
 def teacher_history_page():
     # ในอนาคตจะดึงข้อมูลคะแนนสอบจาก Database ส่งไปแสดงผลที่นี่
     return render_template("teacher/history.html")
 
 
 @teacher_bp.route("/profile", methods=["GET"])
+@view_require_auth('teacher')
 def teacher_profile_page():
     return render_template("teacher/profile.html")
 

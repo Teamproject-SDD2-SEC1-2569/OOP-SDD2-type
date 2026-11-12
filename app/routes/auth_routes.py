@@ -7,7 +7,7 @@ import urllib.request
 import requests
 from datetime import timedelta
 from dotenv import load_dotenv
-from flask import Blueprint, current_app, jsonify, redirect, request, url_for
+from flask import Blueprint, current_app, jsonify, make_response, redirect, request, url_for
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from ..database import get_db_connection
@@ -414,7 +414,7 @@ def login():
         }
     )
 
-    return jsonify({
+    resp = jsonify({
         "message": "เข้าสู่ระบบสำเร็จ",
         "access_token": access_token,
         "token": access_token,
@@ -426,7 +426,10 @@ def login():
             "role": role,
             "profile_image_url": profile_img_val
         }
-    }), 200
+    })
+    resp.set_cookie("access_token", access_token, max_age=3600*24, httponly=False, samesite="Lax", path="/")
+    resp.set_cookie("user_role", role, max_age=3600*24, httponly=False, samesite="Lax", path="/")
+    return resp, 200
 
 
 @auth_bp.route("/api/user/avatar", methods=["POST"])
@@ -705,7 +708,7 @@ def google_login():
         }
     )
 
-    return jsonify({
+    resp = jsonify({
         "message": "เข้าสู่ระบบด้วย Google สำเร็จ",
         "access_token": access_token,
         "token": access_token,
@@ -716,7 +719,10 @@ def google_login():
             "email": db_email,
             "role": role
         }
-    }), 200
+    })
+    resp.set_cookie("access_token", access_token, max_age=3600*24, httponly=False, samesite="Lax", path="/")
+    resp.set_cookie("user_role", role, max_age=3600*24, httponly=False, samesite="Lax", path="/")
+    return resp, 200
 
 
 @auth_bp.route("/google/oauth", methods=["GET"])
@@ -807,12 +813,24 @@ def google_oauth_callback():
             "role": role,
         }
         target_url = url_for("teacher.teacher_dashboard_page") if role == "Teacher" else url_for("api.classroom")
-        return f"""<!DOCTYPE html><html><body><script>
+        resp = make_response(f"""<!DOCTYPE html><html><body><script>
             localStorage.setItem("token", {json.dumps(jwt_token)});
             localStorage.setItem("accessToken", {json.dumps(jwt_token)});
             localStorage.setItem("user", JSON.stringify({json.dumps(user_obj)}));
             localStorage.setItem("username", {json.dumps(db_username)});
             window.location.replace({json.dumps(target_url)});
-        </script></body></html>"""
+        </script></body></html>""")
+        resp.set_cookie("access_token", jwt_token, max_age=3600*24, httponly=False, samesite="Lax", path="/")
+        resp.set_cookie("user_role", role, max_age=3600*24, httponly=False, samesite="Lax", path="/")
+        return resp
     except Exception as err:
         return f"<script>alert('เข้าสู่ระบบด้วย Google ไม่สำเร็จ: {err}'); window.location.href='/';</script>"
+
+
+@auth_bp.route("/logout", methods=["GET", "POST"])
+def logout():
+    """ออกจากระบบ ล้างคุกกี้ทั้งหมดและนำส่งกลับไปหน้าแรก"""
+    resp = redirect(url_for("api.login"))
+    resp.set_cookie("access_token", "", expires=0, path="/", samesite="Lax")
+    resp.set_cookie("user_role", "", expires=0, path="/", samesite="Lax")
+    return resp
